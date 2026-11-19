@@ -1,0 +1,38 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.mmansillaf/a2a-defense-gateway",
+  "description": "Production Agent-to-Agent (A2A) defense & monetization gateway: L402 Lightning micropayments, Why-Trail cryptographic court, factual oracle (S_c), and AST security scanner over Streamable HTTP.",
+  "version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/mmansillaf/a2a-defense-gateway",
+    "source": "github"
+  },
+  "homepage": "https://a2a.vilmamonroy.com",
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "l402",
+    "lightning",
+    "security",
+    "ai-agents",
+    "forensics",
+    "why-trail",
+    "sunat-cpe"
+  ],
+  "packages": [
+    {
+      "registry_type": "docker",
+      "identifier": "mmansillaf/a2a-defense-gateway",
+      "version": "1.0.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ],
+  "remotes": [
+    {
+      "url": "https://a2a.vilmamonroy.com/mcp",
+      "type": "streamable-http"
+    }
+  ]
+}
