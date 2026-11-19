@@ -38,10 +38,11 @@ def test_mcp_tools_list():
     response = client.post("/mcp", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert len(data["result"]["tools"]) == 13
+    assert len(data["result"]["tools"]) == 14
     tool_names = [t["name"] for t in data["result"]["tools"]]
     assert "compute_procedural_deadline" in tool_names
     assert "verify_normative_validity" in tool_names
+    assert "audit_sunat_cpe_xml" in tool_names
 
 
 def test_mcp_call_compute_procedural_deadline():
@@ -69,3 +70,27 @@ def test_mcp_call_compute_procedural_deadline():
     assert res["dias_contados"] == 3
     assert res["fecha_vencimiento"] == "2026-04-08"
     assert "DEADLINE-HAB" in res["doc_id"]
+
+
+def test_mcp_call_audit_sunat_cpe_xml():
+    sample_xml = "<Invoice><cbc:ID>F001-123</cbc:ID><cac:AccountingSupplierParty><cbc:ID>20131312955</cbc:ID></cac:AccountingSupplierParty><cac:TaxTotal><cbc:TaxAmount>18.00</cbc:TaxAmount><cbc:TaxableAmount>100.00</cbc:TaxableAmount></cac:TaxTotal><cac:LegalMonetaryTotal><cbc:PayableAmount>118.00</cbc:PayableAmount></cac:LegalMonetaryTotal></Invoice>"
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 4,
+        "method": "tools/call",
+        "params": {
+            "name": "audit_sunat_cpe_xml",
+            "arguments": {
+                "xml_content": sample_xml
+            }
+        }
+    }
+    response = client.post("/mcp", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    import json
+    res = json.loads(data["result"]["content"][0]["text"])
+    assert res["es_valido"] is True
+    assert res["emisor_ruc"] == "20131312955"
+    assert res["emisor_ruc_valido"] is True
+    assert res["monto_total"] == 118.00

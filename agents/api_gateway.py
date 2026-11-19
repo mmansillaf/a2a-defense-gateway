@@ -252,6 +252,7 @@ LLMS_TXT_CONTENT = """# A2A Defense and Monetization API Gateway
 11. `execute_sandboxed_computation`: Deterministic, isolated Python runtime with strict memory and CPU limits.
 12. `compute_procedural_deadline`: Arithmetic calculation of Peruvian judicial/administrative deadlines excluding official holidays and weekends.
 13. `verify_normative_validity`: Deterministic graph lookup of legal validity (VIGENTE, MODIFICADO, DEROGADO) with statutory citation.
+14. `audit_sunat_cpe_xml`: Forensic UBL 2.1 XML electronic invoice auditor for SUNAT Peru (RUC Modulo 11, 18% IGV consistency, and DigestValue verification).
 
 ## Protocol Interaction Contract
 
@@ -665,6 +666,11 @@ LANDING_HTML = """<!DOCTYPE html>
             <td class="tool-name">verify_normative_validity</td>
             <td>Normative Graph</td>
             <td>Deterministic statute validity verification (CT, CC, LPAG) with modifying legal citations.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">audit_sunat_cpe_xml</td>
+            <td>Forensic Tax Audit</td>
+            <td>Electronic invoice UBL 2.1 XML auditor (RUC Modulo 11 check, 18% IGV ledger balance, DigestValue).</td>
           </tr>
         </tbody>
       </table>

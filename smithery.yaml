@@ -30,3 +30,5 @@ tools:
     description: Arithmetic legal deadline calculator excluding holidays.
   - name: verify_normative_validity
     description: Deterministic graph verification of legal statute validity.
+  - name: audit_sunat_cpe_xml
+    description: Forensic UBL 2.1 XML electronic invoice auditor for SUNAT Peru.

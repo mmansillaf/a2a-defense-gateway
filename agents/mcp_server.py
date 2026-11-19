@@ -22,6 +22,7 @@ from market_intelligence_miner import MarketIntelligenceMiner
 from monetization_models import ServiceRequest
 from sandbox_compute_service import SandboxComputeService, SandboxExecutionRequest
 from skill_security_certifier import SkillSecurityCertifier
+from sunat_cpe_auditor import CpeAuditInput, audit_sunat_cpe_xml
 from token_pricing_engine import TokenPricingEngine
 
 
@@ -231,6 +232,18 @@ class MoltbookMonetizationMCPServer:
                     "required": ["codigo_norma", "articulo"],
                 },
             },
+            {
+                "name": "audit_sunat_cpe_xml",
+                "description": "Auditoría forense determinista de facturas y comprobantes electrónicos XML UBL 2.1 SUNAT Perú (Módulo 11 de RUC, cuadre del 18% IGV y validación de firma).",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "xml_content": {"type": "string", "description": "Contenido XML del comprobante UBL 2.1"},
+                        "strict_tax_check": {"type": "boolean", "default": True, "description": "Exigir cuadre aritmético estricto de IGV al centavo"},
+                    },
+                    "required": ["xml_content"],
+                },
+            },
         ]
 
     def call_tool(self, name: str, arguments: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
@@ -371,6 +384,14 @@ class MoltbookMonetizationMCPServer:
                 payload_norm = NormativeValidityInput.model_validate(arguments)
                 res_norm = verify_normative_validity(payload_norm)
                 return res_norm.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "audit_sunat_cpe_xml":
+            try:
+                payload_cpe = CpeAuditInput.model_validate(arguments)
+                res_cpe = audit_sunat_cpe_xml(payload_cpe)
+                return res_cpe.model_dump(mode="json")
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 
