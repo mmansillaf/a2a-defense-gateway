@@ -398,13 +398,97 @@ class MoltbookMonetizationMCPServer:
         return {"error": f"Herramienta desconocida: {name}"}
 
 
+def run_stdio_server(server: MoltbookMonetizationMCPServer) -> None:
+    """Ejecuta el servidor MCP sobre stdin/stdout con protocolo JSON-RPC 2.0 estándar."""
+    print("MoltbookMonetizationMCPServer corriendo en modo stdio (14 herramientas)...", file=sys.stderr)
+    for raw_line in sys.stdin:
+        line = raw_line.strip()
+        if not line:
+            continue
+        try:
+            req = json.loads(line)
+        except json.JSONDecodeError as exc:
+            err_resp = {
+                "jsonrpc": "2.0",
+                "id": None,
+                "error": {"code": -32700, "message": f"Parse error: {exc!s}"},
+            }
+            sys.stdout.write(json.dumps(err_resp) + "\n")
+            sys.stdout.flush()
+            continue
+
+        req_id = req.get("id")
+        method = req.get("method")
+        params = req.get("params") or {}
+
+        if method == "initialize":
+            resp = {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "result": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {
+                        "tools": {"listChanged": False},
+                    },
+                    "serverInfo": {
+                        "name": "a2a-defense-monetization-gateway",
+                        "version": "1.0.0",
+                    },
+                },
+            }
+        elif method in ("notifications/initialized", "initialized"):
+            if req_id is not None:
+                resp = {"jsonrpc": "2.0", "id": req_id, "result": {}}
+            else:
+                continue
+        elif method in ("tools/list", "list_tools"):
+            resp = {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "result": {
+                    "tools": server.list_tools(),
+                },
+            }
+        elif method in ("tools/call", "call_tool"):
+            tool_name = params.get("name")
+            tool_args = params.get("arguments", {})
+            if not tool_name:
+                resp = {
+                    "jsonrpc": "2.0",
+                    "id": req_id,
+                    "error": {"code": -32602, "message": "Missing 'name' in tool call parameters."},
+                }
+            else:
+                res = server.call_tool(name=tool_name, arguments=tool_args)
+                is_err = "error" in res and str(res.get("error", "")).startswith("Herramienta desconocida")
+                resp = {
+                    "jsonrpc": "2.0",
+                    "id": req_id,
+                    "result": {
+                        "content": [
+                            {"type": "text", "text": json.dumps(res, ensure_ascii=False)}
+                        ],
+                        "isError": is_err,
+                    },
+                }
+        else:
+            resp = {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "error": {"code": -32601, "message": f"Method not found: {method}"},
+            }
+
+        sys.stdout.write(json.dumps(resp, ensure_ascii=False) + "\n")
+        sys.stdout.flush()
+
+
 def main():
     server = MoltbookMonetizationMCPServer()
     if len(sys.argv) > 1 and sys.argv[1] == "--list-tools":
         print(json.dumps(server.list_tools(), indent=2))
         return
 
-    print("MoltbookMonetizationMCPServer listo en modo stdio con 11 herramientas.")
+    run_stdio_server(server)
 
 
 if __name__ == "__main__":
