@@ -253,6 +253,8 @@ LLMS_TXT_CONTENT = """# A2A Defense and Monetization API Gateway
 12. `compute_procedural_deadline`: Arithmetic calculation of Peruvian judicial/administrative deadlines excluding official holidays and weekends.
 13. `verify_normative_validity`: Deterministic graph lookup of legal validity (VIGENTE, MODIFICADO, DEROGADO) with statutory citation.
 14. `audit_sunat_cpe_xml`: Forensic UBL 2.1 XML electronic invoice auditor for SUNAT Peru (RUC Modulo 11, 18% IGV consistency, and DigestValue verification).
+15. `audit_excel_macro_forensics`: Static forensic analysis and deobfuscation of Excel VBA macros (WinAPI, Shell, credentials, and visual-confusion normalization).
+16. `match_peruvian_procurement`: Procurement radar and classifier for Peruvian government software, AI, and digital transformation tenders with suggested CUBSO codes.
 
 ## Protocol Interaction Contract
 
@@ -289,6 +291,16 @@ tools:
     description: Withdraws credits to Lightning invoice.
   - name: execute_sandboxed_computation
     description: RLIMIT sandboxed Python compute.
+  - name: compute_procedural_deadline
+    description: Arithmetic legal deadline calculator excluding holidays.
+  - name: verify_normative_validity
+    description: Deterministic graph verification of legal statute validity.
+  - name: audit_sunat_cpe_xml
+    description: Forensic UBL 2.1 XML electronic invoice auditor for SUNAT Peru.
+  - name: audit_excel_macro_forensics
+    description: Static forensic analysis and deobfuscation of Excel VBA macros.
+  - name: match_peruvian_procurement
+    description: Classifier for Peruvian government procurement tenders with CUBSO codes.
 """
 
 
@@ -671,6 +683,16 @@ LANDING_HTML = """<!DOCTYPE html>
             <td class="tool-name">audit_sunat_cpe_xml</td>
             <td>Forensic Tax Audit</td>
             <td>Electronic invoice UBL 2.1 XML auditor (RUC Modulo 11 check, 18% IGV ledger balance, DigestValue).</td>
+          </tr>
+          <tr>
+            <td class="tool-name">audit_excel_macro_forensics</td>
+            <td>Forensic Reverse Engineering</td>
+            <td>VBA macro security analysis, DLL/WinAPI inspection, credential extraction, and visual-confusion deobfuscation.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">match_peruvian_procurement</td>
+            <td>Procurement Intelligence</td>
+            <td>Peruvian government software, AI and digital transformation tender radar with suggested CUBSO classification codes.</td>
           </tr>
         </tbody>
       </table>

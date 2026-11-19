@@ -1,3 +1,5 @@
+import json
+
 from api_gateway import app
 from fastapi.testclient import TestClient
 
@@ -38,11 +40,56 @@ def test_mcp_tools_list():
     response = client.post("/mcp", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert len(data["result"]["tools"]) == 14
+    assert len(data["result"]["tools"]) == 16
     tool_names = [t["name"] for t in data["result"]["tools"]]
     assert "compute_procedural_deadline" in tool_names
     assert "verify_normative_validity" in tool_names
     assert "audit_sunat_cpe_xml" in tool_names
+    assert "audit_excel_macro_forensics" in tool_names
+    assert "match_peruvian_procurement" in tool_names
+
+
+def test_mcp_call_audit_excel_macro_forensics():
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 105,
+        "method": "tools/call",
+        "params": {
+            "name": "audit_excel_macro_forensics",
+            "arguments": {
+                "vba_code": "Sub Test()\n Shell \"cmd.exe\"\nEnd Sub",
+                "auto_deobfuscate": True,
+            },
+        },
+    }
+    response = client.post("/mcp", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == 105
+    res = json.loads(data["result"]["content"][0]["text"])
+    assert res["is_suspicious"] is True
+    assert "Shell" in res["detected_shell_invocations"]
+
+
+def test_mcp_call_match_peruvian_procurement():
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 106,
+        "method": "tools/call",
+        "params": {
+            "name": "match_peruvian_procurement",
+            "arguments": {
+                "requirement_text": "Servicio de desarrollo de software para mesa de partes virtual",
+            },
+        },
+    }
+    response = client.post("/mcp", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == 106
+    res = json.loads(data["result"]["content"][0]["text"])
+    assert res["is_match"] is True
+    assert len(res["matched_clusters"]) >= 1
 
 
 def test_mcp_call_compute_procedural_deadline():

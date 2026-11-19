@@ -32,3 +32,7 @@ tools:
     description: Deterministic graph verification of legal statute validity.
   - name: audit_sunat_cpe_xml
     description: Forensic UBL 2.1 XML electronic invoice auditor for SUNAT Peru.
+  - name: audit_excel_macro_forensics
+    description: Static forensic analysis and deobfuscation of Excel VBA macros.
+  - name: match_peruvian_procurement
+    description: Classifier for Peruvian government procurement tenders with CUBSO codes.

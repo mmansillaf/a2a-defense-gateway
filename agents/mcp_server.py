@@ -20,10 +20,18 @@ from legal_procedural_tools import (
 )
 from market_intelligence_miner import MarketIntelligenceMiner
 from monetization_models import ServiceRequest
+from peruvian_procurement_radar import (
+    ProcurementMatchInput,
+    match_peruvian_procurement,
+)
 from sandbox_compute_service import SandboxComputeService, SandboxExecutionRequest
 from skill_security_certifier import SkillSecurityCertifier
 from sunat_cpe_auditor import CpeAuditInput, audit_sunat_cpe_xml
 from token_pricing_engine import TokenPricingEngine
+from vba_macro_forensics import (
+    MacroForensicsInput,
+    audit_vba_macro_code,
+)
 
 
 class MoltbookMonetizationMCPServer:
@@ -244,6 +252,29 @@ class MoltbookMonetizationMCPServer:
                     "required": ["xml_content"],
                 },
             },
+            {
+                "name": "audit_excel_macro_forensics",
+                "description": "Auditoría forense estática de código VBA de macros Excel y desofuscación de identificadores de confusión visual (WinAPI, Shell, credenciales y URLs).",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "vba_code": {"type": "string", "description": "Código fuente VBA para auditar e inspeccionar"},
+                        "auto_deobfuscate": {"type": "boolean", "default": True, "description": "Normalizar identificadores ofuscados confusos (O/0/l/1)"},
+                    },
+                    "required": ["vba_code"],
+                },
+            },
+            {
+                "name": "match_peruvian_procurement",
+                "description": "Radar y clasificador de requerimientos técnicos y convocatorias SEACE/OSCE de software, IA y digitalización en el Estado peruano con códigos CUBSO sugeridos.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "requirement_text": {"type": "string", "description": "Texto del requerimiento, TDR o título de licitación en Perú"},
+                    },
+                    "required": ["requirement_text"],
+                },
+            },
         ]
 
     def call_tool(self, name: str, arguments: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
@@ -395,12 +426,28 @@ class MoltbookMonetizationMCPServer:
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 
+        if name == "audit_excel_macro_forensics":
+            try:
+                payload_macro = MacroForensicsInput.model_validate(arguments)
+                res_macro = audit_vba_macro_code(payload_macro)
+                return res_macro.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "match_peruvian_procurement":
+            try:
+                payload_proc = ProcurementMatchInput.model_validate(arguments)
+                res_proc = match_peruvian_procurement(payload_proc)
+                return res_proc.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
         return {"error": f"Herramienta desconocida: {name}"}
 
 
 def run_stdio_server(server: MoltbookMonetizationMCPServer) -> None:
     """Ejecuta el servidor MCP sobre stdin/stdout con protocolo JSON-RPC 2.0 estándar."""
-    print("MoltbookMonetizationMCPServer corriendo en modo stdio (14 herramientas)...", file=sys.stderr)
+    print("MoltbookMonetizationMCPServer corriendo en modo stdio (16 herramientas)...", file=sys.stderr)
     for raw_line in sys.stdin:
         line = raw_line.strip()
         if not line:
