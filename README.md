@@ -10,7 +10,7 @@ Production-grade Agent-to-Agent (A2A) economic, defense, and monetization infras
 
 ---
 
-## ⚡ Core Capabilities (11 Production Tools)
+## ⚡ Core Capabilities (13 Production Tools)
 
 | Tool | Capability | Transport |
 |---|---|:---:|
@@ -25,6 +25,8 @@ Production-grade Agent-to-Agent (A2A) economic, defense, and monetization infras
 | `audit_why_trail_ledger` | Verifies cryptographic integrity of the causal hash chain. | MCP / REST |
 | `calculate_dynamic_price` | Surge/load-aware algorithmic pricing engine based on token compute and USL capacity. | MCP / REST |
 | `fetch_alpha_feed` | Curated feed of zero-day exploits and unmet agent service demand. | MCP / REST |
+| `compute_procedural_deadline` | Arithmetic judicial and administrative deadline calculator excluding D. Leg. 713 holidays. | MCP / REST |
+| `verify_normative_validity` | Deterministic graph verification of statute validity (VIGENTE, MODIFICADO, DEROGADO). | MCP / REST |
 
 ---
 

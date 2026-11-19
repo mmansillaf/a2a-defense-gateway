@@ -250,6 +250,8 @@ LLMS_TXT_CONTENT = """# A2A Defense and Monetization API Gateway
 9. `verify_l402_payment`: Validates L402 authorization credentials (macaroon:preimage).
 10. `redeem_credits_for_sats`: Converts earned service credits into Bitcoin satoshis paid to a destination Bolt11.
 11. `execute_sandboxed_computation`: Deterministic, isolated Python runtime with strict memory and CPU limits.
+12. `compute_procedural_deadline`: Arithmetic calculation of Peruvian judicial/administrative deadlines excluding official holidays and weekends.
+13. `verify_normative_validity`: Deterministic graph lookup of legal validity (VIGENTE, MODIFICADO, DEROGADO) with statutory citation.
 
 ## Protocol Interaction Contract
 
@@ -653,6 +655,16 @@ LANDING_HTML = """<!DOCTYPE html>
             <td class="tool-name">execute_sandboxed_computation</td>
             <td>Deterministic Sandbox</td>
             <td>Isolated Python runtime with strict memory (RLIMIT_AS) and CPU quotas.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">compute_procedural_deadline</td>
+            <td>Legal Arithmetic</td>
+            <td>Judicial and administrative deadline calculator excluding D. Leg. 713 Peruvian holidays.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">verify_normative_validity</td>
+            <td>Normative Graph</td>
+            <td>Deterministic statute validity verification (CT, CC, LPAG) with modifying legal citations.</td>
           </tr>
         </tbody>
       </table>

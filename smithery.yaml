@@ -26,3 +26,7 @@ tools:
     description: Withdraws credits to Lightning invoice.
   - name: execute_sandboxed_computation
     description: RLIMIT sandboxed Python compute.
+  - name: compute_procedural_deadline
+    description: Arithmetic legal deadline calculator excluding holidays.
+  - name: verify_normative_validity
+    description: Deterministic graph verification of legal statute validity.

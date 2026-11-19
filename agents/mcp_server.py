@@ -8,9 +8,16 @@ from a2a_court_arbitrator import A2ACourtArbitrator
 from a2a_oracle_service import A2AOracleService
 from credit_redemption_pool import CreditRedemptionPool
 from crypto_audit_log import MultiCaMeLLedger
+from deterministic_hooks import DeterministicHookEngine, HookViolationError
 from escrow_manager import EscrowManager
 from grammar_compiler_service import GrammarCompilerService
 from l402_gateway import L402Gateway
+from legal_procedural_tools import (
+    NormativeValidityInput,
+    ProceduralDeadlineInput,
+    compute_procedural_deadline,
+    verify_normative_validity,
+)
 from market_intelligence_miner import MarketIntelligenceMiner
 from monetization_models import ServiceRequest
 from sandbox_compute_service import SandboxComputeService, SandboxExecutionRequest
@@ -45,6 +52,7 @@ class MoltbookMonetizationMCPServer:
         self.l402_gateway = L402Gateway()
         self.redemption_pool = CreditRedemptionPool()
         self.sandbox = SandboxComputeService()
+        self.hook_engine = DeterministicHookEngine()
 
     def list_tools(self) -> list[dict]:
         return [
@@ -193,10 +201,51 @@ class MoltbookMonetizationMCPServer:
                     "required": ["code"],
                 },
             },
+            {
+                "name": "compute_procedural_deadline",
+                "description": "Cálculo aritmético determinista de plazos procesales judiciales y administrativos (días hábiles o calendario, descontando feriados oficiales de Perú).",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "fecha_inicio": {"type": "string", "description": "Fecha inicial (YYYY-MM-DD)"},
+                        "dias_plazo": {"type": "integer", "description": "Cantidad de días del plazo legal"},
+                        "tipo_dias": {
+                            "type": "string",
+                            "enum": ["HABILES_JUDICIALES", "CALENDARIO"],
+                            "default": "HABILES_JUDICIALES",
+                        },
+                    },
+                    "required": ["fecha_inicio", "dias_plazo"],
+                },
+            },
+            {
+                "name": "verify_normative_validity",
+                "description": "Verificación determinista en grafo legal de vigencia, modificación o derogación de artículos normativos (Código Tributario, Civil, LPAG).",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "codigo_norma": {"type": "string", "description": "Código de la norma (ej. CODIGO_TRIBUTARIO, CODIGO_CIVIL, LEY_27444)"},
+                        "articulo": {"type": "string", "description": "Número de artículo a verificar (ej. 43, 44, 1989, 207)"},
+                        "fecha_corte": {"type": "string", "description": "Fecha de corte opcional (YYYY-MM-DD)"},
+                    },
+                    "required": ["codigo_norma", "articulo"],
+                },
+            },
         ]
 
-    def call_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    def call_tool(self, name: str, arguments: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
+        # 1. Pre-Execution Hook Determinista
+        try:
+            self.hook_engine.pre_tool_hook(name, arguments, tenant_id=tenant_id)
+        except (HookViolationError, ValueError, KeyError) as exc:
+            return {"error": f"HOOK_VIOLATION: {exc!s}", "status": "BLOCKED"}
+
         result = self._dispatch_tool(name, arguments)
+
+        # 2. Registrar doc_id si se recupera un artefacto auditable
+        if isinstance(result, dict) and "doc_id" in result:
+            self.hook_engine.record_retrieved_doc(result["doc_id"])
+
         actor = (
             arguments.get("client_id")
             or arguments.get("agent_id")
@@ -308,6 +357,22 @@ class MoltbookMonetizationMCPServer:
             )
             res = self.sandbox.run_isolated(req)
             return res.model_dump(mode="json")
+
+        if name == "compute_procedural_deadline":
+            try:
+                payload = ProceduralDeadlineInput.model_validate(arguments)
+                res_deadline = compute_procedural_deadline(payload)
+                return res_deadline.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "verify_normative_validity":
+            try:
+                payload_norm = NormativeValidityInput.model_validate(arguments)
+                res_norm = verify_normative_validity(payload_norm)
+                return res_norm.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 
         return {"error": f"Herramienta desconocida: {name}"}
 
