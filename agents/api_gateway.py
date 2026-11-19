@@ -367,6 +367,15 @@ async def get_sitemap_xml():
     return Response(content=SITEMAP_XML_CONTENT, media_type="application/xml")
 
 
+MCP_REGISTRY_PROOF = "v=MCPv1; k=ed25519; p=gkhs+rk+TtC8D8nGnTs70CDzLSH68MF8qs+VpUzEQy4="
+
+
+@app.get("/.well-known/mcp-registry-auth", response_class=PlainTextResponse)
+async def get_mcp_registry_auth():
+    """Retorna la prueba criptográfica de posesión de dominio para el registro oficial de MCP."""
+    return MCP_REGISTRY_PROOF
+
+
 LANDING_HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>

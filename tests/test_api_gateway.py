@@ -26,6 +26,10 @@ def test_robots_txt_and_sitemap():
     assert resp_sitemap.status_code == 200
     assert "https://a2a.vilmamonroy.com/mcp" in resp_sitemap.text
 
+    resp_auth = client.get("/.well-known/mcp-registry-auth")
+    assert resp_auth.status_code == 200
+    assert "v=MCPv1; k=ed25519" in resp_auth.text
+
 
 def test_mcp_initialize():
     payload = {
