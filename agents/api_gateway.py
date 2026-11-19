@@ -307,8 +307,78 @@ LANDING_HTML = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>A2A Defense &amp; Monetization Gateway</title>
-  <meta name="description" content="Production Agent-to-Agent (A2A) economic infrastructure, factual truth oracle, L402 Lightning payments, and Why-Trail forensic court.">
+  <title>A2A Defense &amp; Monetization Gateway | MCP &amp; L402 Lightning</title>
+  <meta name="description" content="Production Agent-to-Agent (A2A) economic infrastructure, Model Context Protocol (MCP) server, L402 Lightning payments, Why-Trail forensic court, and AST security scanner.">
+  <meta name="keywords" content="MCP, Model Context Protocol, L402, Lightning Network, AI Agents, A2A, Bitcoin, Agent Escrow, AST Scanner, GBNF">
+  <meta name="author" content="Moises Mansilla F.">
+  <link rel="canonical" href="https://a2a.vilmamonroy.com/">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://a2a.vilmamonroy.com/">
+  <meta property="og:title" content="A2A Defense &amp; Monetization Gateway">
+  <meta property="og:description" content="Production Model Context Protocol (MCP) server with L402 Lightning payments, Why-Trail cryptographic court, and AST security oracle.">
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="A2A Defense &amp; Monetization Gateway">
+  <meta name="twitter:description" content="L402 Lightning payments, Why-Trail forensic court, and AST security scanner for autonomous agents.">
+  
+  <!-- WebMCP & Agent Discovery -->
+  <link rel="mcp-server" href="https://a2a.vilmamonroy.com/mcp">
+  <link rel="alternate" type="text/plain" href="https://a2a.vilmamonroy.com/llms.txt" title="LLMs.txt">
+  <link rel="alternate" type="text/yaml" href="https://a2a.vilmamonroy.com/smithery.yaml" title="Smithery Manifest">
+
+  <!-- Schema.org JSON-LD Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://a2a.vilmamonroy.com/#software",
+        "name": "A2A Defense & Monetization Gateway",
+        "url": "https://a2a.vilmamonroy.com",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Any",
+        "description": "Production Agent-to-Agent (A2A) economic infrastructure, Model Context Protocol (MCP) server, L402 Lightning payments gateway, Why-Trail forensic court, and AST security scanner.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0.00",
+          "priceCurrency": "USD",
+          "description": "Open public tools with micro-metered L402 Lightning payments"
+        },
+        "featureList": [
+          "Model Context Protocol (MCP) Streamable HTTP Server",
+          "L402 Lightning Network Micropayments (RFC-compliant)",
+          "Why-Trail Cryptographic Forensic Audit Ledger",
+          "Epistemic Confidence Truth Oracle (S_c)",
+          "AST SAST Malware Scanner for Agent Tools",
+          "GBNF Grammar-as-a-Service Compiler",
+          "ERC-8183 Conditional Agent Escrow and Slashing"
+        ],
+        "softwareVersion": "1.0.0",
+        "author": {
+          "@type": "Person",
+          "name": "Moises Mansilla F.",
+          "url": "https://github.com/mmansillaf"
+        }
+      },
+      {
+        "@type": "WebAPI",
+        "@id": "https://a2a.vilmamonroy.com/#api",
+        "name": "A2A MCP & L402 API",
+        "url": "https://a2a.vilmamonroy.com/mcp",
+        "documentation": "https://a2a.vilmamonroy.com/docs",
+        "provider": {
+          "@type": "Organization",
+          "name": "A2A Defense Systems",
+          "url": "https://a2a.vilmamonroy.com"
+        }
+      }
+    ]
+  }
+  </script>
   <style>
     :root {
       --bg: #090d16;
