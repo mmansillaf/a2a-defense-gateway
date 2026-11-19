@@ -105,3 +105,21 @@ def test_sandbox_compute_limits():
     req_timeout = SandboxExecutionRequest(code=code_timeout, timeout_seconds=1, max_memory_mb=64)
     res_timeout = sandbox.run_isolated(req_timeout)
     assert res_timeout.status == "TIMEOUT"
+
+
+def test_sandbox_pep578_blocks_network_and_subprocesses():
+    sandbox = SandboxComputeService()
+
+    # 1. Intento de apertura de socket de red (SSRF / exfiltración)
+    code_socket = "import socket\ns = socket.socket()\ns.connect(('127.0.0.1', 80))\n"
+    req_socket = SandboxExecutionRequest(code=code_socket, timeout_seconds=2, max_memory_mb=64)
+    res_socket = sandbox.run_isolated(req_socket)
+    assert res_socket.status == "ERROR"
+    assert "PermissionError" in res_socket.stderr or "[SECURITY_VIOLATION]" in res_socket.stderr
+
+    # 2. Intento de ejecución de subproceso / comando de sistema
+    code_subproc = "import subprocess\nsubprocess.run(['ls', '-la'])\n"
+    req_subproc = SandboxExecutionRequest(code=code_subproc, timeout_seconds=2, max_memory_mb=64)
+    res_subproc = sandbox.run_isolated(req_subproc)
+    assert res_subproc.status == "ERROR"
+    assert "PermissionError" in res_subproc.stderr or "[SECURITY_VIOLATION]" in res_subproc.stderr

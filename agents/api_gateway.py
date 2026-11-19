@@ -1,10 +1,13 @@
 import json
+import threading
 import time
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, PlainTextResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
+from l402_gateway import L402Gateway
 from mcp_server import MoltbookMonetizationMCPServer
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -24,6 +27,88 @@ app.add_middleware(
 )
 
 server = MoltbookMonetizationMCPServer()
+
+
+class WhiteMarchManager:
+    """
+    Gestiona la fase de Marcha Blanca de 14 días (Free Tier para Agentes).
+    Permite hasta 100 llamadas gratuitas por día por agente (identificado por X-Agent-ID o IP).
+    Una vez superada la cuota diaria o finalizada la marcha blanca, transiciona
+    sin fricción al protocolo L402 Lightning.
+    """
+
+    def __init__(
+        self,
+        start_date_str: str = "2026-11-19",
+        duration_days: int = 14,
+        daily_limit: int = 100,
+    ):
+        self.start_date = datetime.fromisoformat(start_date_str).replace(tzinfo=UTC)
+        self.end_date = self.start_date + timedelta(days=duration_days)
+        self.daily_limit = daily_limit
+        self._daily_usage: dict[str, int] = {}
+        self._lock = threading.Lock()
+
+    def get_days_left(self) -> int:
+        now = datetime.now(UTC)
+        if now >= self.end_date:
+            return 0
+        delta = self.end_date - now
+        return max(0, delta.days + (1 if delta.seconds > 0 else 0))
+
+    def is_active(self) -> bool:
+        now = datetime.now(UTC)
+        return self.start_date <= now <= self.end_date
+
+    def evaluate_request(
+        self,
+        client_id: str,
+        auth_header: str | None,
+        l402_gateway: L402Gateway,
+    ) -> tuple[bool, int, str]:
+        # 1. Si el cliente incluye credenciales L402 válidas, tiene acceso ilimitado
+        if auth_header and auth_header.startswith("L402 "):
+            res = l402_gateway.verify_authorization(auth_header)
+            if res.is_valid:
+                return True, 9999, "L402_AUTHORIZED"
+
+        # 2. Si la Marcha Blanca ha expirado y no pagó L402
+        if not self.is_active():
+            return False, 0, "WHITE_MARCH_EXPIRED"
+
+        # 3. Evaluación de cuota diaria gratuita dentro de la Marcha Blanca
+        today_key = f"{datetime.now(UTC).strftime('%Y-%m-%d')}:{client_id}"
+        with self._lock:
+            if len(self._daily_usage) > 20_000:
+                cur_day = datetime.now(UTC).strftime("%Y-%m-%d")
+                self._daily_usage = {k: v for k, v in self._daily_usage.items() if k.startswith(cur_day)}
+
+            used = self._daily_usage.get(today_key, 0)
+            if used >= self.daily_limit:
+                return False, 0, "QUOTA_EXCEEDED"
+
+            used += 1
+            self._daily_usage[today_key] = used
+            remaining = max(0, self.daily_limit - used)
+            return True, remaining, "FREE_TIER_GRANTED"
+
+
+white_march = WhiteMarchManager(start_date_str="2026-11-19", duration_days=14, daily_limit=100)
+
+EXEMPT_PATHS = (
+    "/health",
+    "/docs",
+    "/redoc",
+    "/openapi.json",
+    "/llms.txt",
+    "/llms-full.txt",
+    "/smithery.yaml",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/.well-known",
+    "/api/v1/l402",
+    "/api/v1/audit/verify",
+)
 
 
 @app.middleware("http")
@@ -50,6 +135,91 @@ async def audit_http_interaction_middleware(request: Request, call_next):
                 "user_agent": request.headers.get("user-agent", "unknown"),
             },
         )
+    return response
+
+
+@app.middleware("http")
+async def white_march_quota_middleware(request: Request, call_next):
+    """
+    Middleware de gobernanza de Marcha Blanca (Free Tier) y transición L402.
+    Otorga 100 requests diarios sin costo por agente y desafía con L402 al agotarse.
+    """
+    path = request.url.path
+    is_exempt = path == "/" or any(path.startswith(p) for p in EXEMPT_PATHS)
+
+    client_host = request.client.host if request.client else "unknown"
+    agent_id = request.headers.get("x-agent-id", f"agent_{client_host}")
+
+    if is_exempt:
+        response = await call_next(request)
+        response.headers["X-White-March-Status"] = "ACTIVE" if white_march.is_active() else "EXPIRED"
+        response.headers["X-White-March-Days-Left"] = str(white_march.get_days_left())
+        response.headers["X-Free-Quota-Remaining"] = "EXEMPT"
+        return response
+
+    auth_header = request.headers.get("authorization")
+    is_allowed, remaining_quota, reason = white_march.evaluate_request(
+        client_id=agent_id,
+        auth_header=auth_header,
+        l402_gateway=server.l402_gateway,
+    )
+
+    if not is_allowed:
+        challenge, _ = server.l402_gateway.create_challenge(
+            service="gateway_access",
+            amount_sats=50,
+            client_id=agent_id,
+            ttl_seconds=1800,
+        )
+        server.ledger.record_event(
+            event_type="L402_CHALLENGE_ISSUED",
+            payload_data={
+                "path": path,
+                "reason": reason,
+                "amount_sats": 50,
+                "payment_hash": challenge.payment_hash,
+            },
+            actor_agent_id=agent_id,
+            metadata={
+                "client_ip": client_host,
+                "white_march_status": "ACTIVE" if white_march.is_active() else "EXPIRED",
+            },
+        )
+        return JSONResponse(
+            status_code=402,
+            headers={
+                "WWW-Authenticate": challenge.www_authenticate_header,
+                "X-White-March-Status": "ACTIVE" if white_march.is_active() else "EXPIRED",
+                "X-White-March-Days-Left": str(white_march.get_days_left()),
+                "X-Free-Quota-Remaining": "0/100",
+            },
+            content={
+                "error": "L402_PAYMENT_REQUIRED",
+                "status": 402,
+                "reason": reason,
+                "detail": (
+                    "Cuota diaria de 100 llamadas gratuitas de Marcha Blanca agotada para este agente. "
+                    "Para continuar de inmediato sin esperar la renovación de medianoche UTC, "
+                    "pague el micro-desafío L402 Lightning adjunto (50 sats)."
+                    if reason == "QUOTA_EXCEEDED"
+                    else "La Marcha Blanca gratuita ha concluido. Presente cabecera 'Authorization: L402 <macaroon>:<preimage>' para acceder a los servicios A2A."
+                ),
+                "challenge": {
+                    "amount_sats": 50,
+                    "invoice_bolt11": challenge.invoice_bolt11,
+                    "macaroon_b64": challenge.macaroon_b64,
+                    "payment_hash": challenge.payment_hash,
+                    "auth_header_format": "Authorization: L402 <macaroon>:<preimage>",
+                },
+            },
+        )
+
+    response = await call_next(request)
+    response.headers["X-White-March-Status"] = "ACTIVE" if white_march.is_active() else "EXPIRED"
+    response.headers["X-White-March-Days-Left"] = str(white_march.get_days_left())
+    response.headers["X-Free-Quota-Remaining"] = (
+        f"{remaining_quota}/100" if remaining_quota <= 100 else "UNLIMITED"
+    )
     return response
 
 
@@ -630,6 +800,7 @@ LANDING_HTML = """<!DOCTYPE html>
     <header>
       <div class="badge-container">
         <span class="badge"><span class="pulse"></span> MCP Online</span>
+        <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">⚡ Marcha Blanca Activa: 100 Free Calls/Día</span>
         <span class="badge indigo">L402 Lightning Mainnet</span>
         <span class="badge">Why-Trail Verified</span>
       </div>
@@ -663,7 +834,7 @@ LANDING_HTML = """<!DOCTYPE html>
     </div>
 
     <div class="card" style="margin-top: 1.5rem;">
-      <h2>11 Production MCP Tools Available</h2>
+      <h2>16 Production MCP Tools Available (Marcha Blanca Free Tier)</h2>
       <table class="tools-table">
         <thead>
           <tr>

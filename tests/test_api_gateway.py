@@ -156,3 +156,56 @@ def test_mcp_call_audit_sunat_cpe_xml():
     assert res["emisor_ruc"] == "20131312955"
     assert res["emisor_ruc_valido"] is True
     assert res["monto_total"] == 118.00
+
+
+def test_white_march_headers_and_quota_consumption():
+    headers = {"X-Agent-ID": "test_agent_alpha_99"}
+    resp = client.get("/api/v1/tools", headers=headers)
+    assert resp.status_code == 200
+    assert resp.headers.get("X-White-March-Status") == "ACTIVE"
+    assert int(resp.headers.get("X-White-March-Days-Left", "0")) > 0
+    quota_header = resp.headers.get("X-Free-Quota-Remaining")
+    assert "/100" in quota_header
+
+
+def test_white_march_quota_exhaustion_returns_l402_challenge():
+    agent_id = "test_agent_exhaustion_99"
+    headers = {"X-Agent-ID": agent_id}
+
+    # Consumir las primeras 100 llamadas gratuitas
+    from api_gateway import white_march
+    today_key = f"{white_march.start_date.strftime('%Y-%m-%d')}:{agent_id}"
+    with white_march._lock:
+        white_march._daily_usage[today_key] = 100
+
+    # La llamada 101 debe rebotar con HTTP 402 L402
+    resp = client.post("/api/v1/tools/call", json={"name": "get_alpha_intelligence_feed", "arguments": {}}, headers=headers)
+    assert resp.status_code == 402
+    assert "L402 macaroon=" in resp.headers.get("WWW-Authenticate", "")
+    assert resp.headers.get("X-Free-Quota-Remaining") == "0/100"
+    data = resp.json()
+    assert data["error"] == "L402_PAYMENT_REQUIRED"
+    assert "invoice_bolt11" in data["challenge"]
+
+
+def test_white_march_l402_authorization_bypass():
+    from api_gateway import server, white_march
+    agent_id = "test_agent_vip_paying"
+    today_key = f"{white_march.start_date.strftime('%Y-%m-%d')}:{agent_id}"
+    with white_march._lock:
+        white_march._daily_usage[today_key] = 100  # Cuota agotada
+
+    # Generar token L402 válido pagado
+    challenge, preimage = server.l402_gateway.create_challenge(
+        service="gateway_access",
+        amount_sats=50,
+        client_id=agent_id,
+        ttl_seconds=300,
+    )
+    auth_header = f"L402 {challenge.macaroon_b64}:{preimage.hex()}"
+    headers = {"X-Agent-ID": agent_id, "Authorization": auth_header}
+
+    # Con L402 debe ingresar con 200 OK y cuota UNLIMITED
+    resp = client.get("/api/v1/tools", headers=headers)
+    assert resp.status_code == 200
+    assert resp.headers.get("X-Free-Quota-Remaining") == "UNLIMITED"

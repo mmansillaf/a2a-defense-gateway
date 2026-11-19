@@ -8,6 +8,17 @@ import time
 
 from pydantic import BaseModel, ConfigDict, Field
 
+_PEP578_SECURITY_HEADER = """import sys
+
+def _strict_sandbox_audithook(event, args):
+    if event.startswith(('socket.', 'urllib.', 'http.')):
+        raise PermissionError(f"[SECURITY_VIOLATION] Red no permitida en sandbox: {event}")
+    if event.startswith(('subprocess.', 'os.system', 'os.posix_spawn', 'os.spawn', 'pty.')):
+        raise PermissionError(f"[SECURITY_VIOLATION] Subprocesos no permitidos en sandbox: {event}")
+
+sys.addaudithook(_strict_sandbox_audithook)
+"""
+
 
 class SandboxExecutionRequest(BaseModel):
     """Solicitud de ejecución de código en runtime sandbox aislado."""
@@ -63,7 +74,7 @@ class SandboxComputeService:
 
         with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as tmp_file:
             tmp_path = tmp_file.name
-            tmp_file.write(request.code)
+            tmp_file.write(_PEP578_SECURITY_HEADER + "\n# --- Script Seguro ---\n" + request.code)
 
         try:
             # Entorno mínimo sin acceso a variables de entorno del host
