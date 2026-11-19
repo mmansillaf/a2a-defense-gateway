@@ -16,6 +16,17 @@ def test_root_landing_page():
     assert "arbitrate_dispute" in response.text
 
 
+def test_robots_txt_and_sitemap():
+    resp_robots = client.get("/robots.txt")
+    assert resp_robots.status_code == 200
+    assert "User-agent: *" in resp_robots.text
+    assert "Allow: /mcp" in resp_robots.text
+
+    resp_sitemap = client.get("/sitemap.xml")
+    assert resp_sitemap.status_code == 200
+    assert "https://a2a.vilmamonroy.com/mcp" in resp_sitemap.text
+
+
 def test_mcp_initialize():
     payload = {
         "jsonrpc": "2.0",

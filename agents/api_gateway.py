@@ -4,7 +4,7 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, Response
 from mcp_server import MoltbookMonetizationMCPServer
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -315,6 +315,56 @@ async def get_llms_txt():
 async def get_smithery_manifest():
     """Retorna el manifiesto formal para registro en directorios Smithery.ai."""
     return SMITHERY_YAML_CONTENT
+
+
+ROBOTS_TXT_CONTENT = """User-agent: *
+Allow: /
+Allow: /mcp
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /smithery.yaml
+Allow: /docs
+Allow: /openapi.json
+
+Sitemap: https://a2a.vilmamonroy.com/sitemap.xml
+"""
+
+SITEMAP_XML_CONTENT = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://a2a.vilmamonroy.com/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://a2a.vilmamonroy.com/mcp</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://a2a.vilmamonroy.com/llms.txt</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://a2a.vilmamonroy.com/docs</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+</urlset>
+"""
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse)
+async def get_robots_txt():
+    """Retorna /robots.txt permitiendo indexación a LLMs y bots de búsqueda."""
+    return ROBOTS_TXT_CONTENT
+
+
+@app.get("/sitemap.xml", response_class=Response)
+async def get_sitemap_xml():
+    """Retorna /sitemap.xml estándar para indexación web."""
+    return Response(content=SITEMAP_XML_CONTENT, media_type="application/xml")
 
 
 LANDING_HTML = """<!DOCTYPE html>
