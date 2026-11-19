@@ -165,15 +165,18 @@ def solve_verification_challenge(challenge_text: str) -> str:
     """
     Resuelve desafíos de verificación matemática de Moltbook con texto ofuscado.
     Expande operadores matemáticos (+, *), repara palabras fragmentadas (ej. 'twen ty' -> 'twenty'),
-    parsea números compuestos y detecta operaciones semánticas y aritméticas.
+    filtra descripciones no cuantificables (ej. 'with one claw'), deduplica tartamudeos
+    (ej. 'forty forty' -> 40), parsea números compuestos y resuelve la operación.
     """
     logger.info(f"Challenge Text Original: {challenge_text}")
     t_expanded = re.sub(r"\+", " plus ", challenge_text)
     t_expanded = re.sub(r"\*", " times ", t_expanded)
 
     clean = re.sub(r"[^a-zA-Z0-9\s]", "", t_expanded).lower()
+    clean = re.sub(r"\bfor\s+ce\b", "force", clean)
     clean = re.sub(r"\b(twen|thir|for|fif|six|seven|eigh|nine)\s+ty\b", r"\1ty", clean)
     clean = re.sub(r"\b(thir|four|fif|six|seven|eigh|nine)\s+teen\b", r"\1teen", clean)
+    clean = re.sub(r"\bwith\s+(?:one|two|a)\s+claws?\b", " ", clean)
     logger.info(f"Cleaned Text: {clean}")
 
     tens = {
@@ -181,7 +184,7 @@ def solve_verification_challenge(challenge_text: str) -> str:
         "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90,
     }
     ones = {
-        "zero": 0, "one": 1, "two": 2, "three": 3, "thre": 3, "four": 4, "for": 4,
+        "zero": 0, "one": 1, "two": 2, "three": 3, "thre": 3, "four": 4,
         "five": 5, "fiv": 5, "six": 6, "seven": 7, "sevn": 7, "eight": 8, "eigt": 8,
         "nine": 9, "nin": 9, "ten": 10, "eleven": 11, "elevn": 11, "twelve": 12, "twelv": 12,
         "thirteen": 13, "fourteen": 14, "fifteen": 15, "sixteen": 16,
@@ -211,9 +214,15 @@ def solve_verification_challenge(challenge_text: str) -> str:
             numbers.append(float(raw))
         i += 1
 
+    # Deduplicar tartamudeos consecutivos del mismo número (ej. 'forty fortyx forty' -> 40)
+    deduped: list[float] = []
+    for n in numbers:
+        if not deduped or n != deduped[-1]:
+            deduped.append(n)
+
     collapsed_str = re.sub(r"(.)\1+", r"\1", clean)
 
-    if any(k in collapsed_str for k in ["accelerat", "speed up", "gain", "plus", "add", "increas", "found", "catches"]):
+    if any(k in collapsed_str for k in ["accelerat", "speed up", "gain", "plus", "add", "increas", "found", "catches", "total"]):
         op = "+"
     elif any(k in collapsed_str for k in ["slow", "decelerat", "drop", "lose", "los", "shed", "minus", "subtract", "decreas", "reduc", "spend", "spent", "remain"]):
         op = "-"
@@ -224,8 +233,8 @@ def solve_verification_challenge(challenge_text: str) -> str:
     else:
         op = "+"
 
-    if len(numbers) >= 2:
-        a, b = numbers[0], numbers[1]
+    if len(deduped) >= 2:
+        a, b = deduped[0], deduped[1]
         ans = a + b if op == "+" else (a - b if op == "-" else (a * b if op == "*" else a / b))
         logger.info(f"Cálculo Determinista: {a} {op} {b} = {ans:.2f}")
         return f"{ans:.2f}"
