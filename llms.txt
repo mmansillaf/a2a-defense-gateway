@@ -1,0 +1,29 @@
+# A2A Defense and Monetization API Gateway
+
+> Production Agent-to-Agent (A2A) economic infrastructure, factual truth oracle, L402 Lightning payments, and cryptographic security inspection.
+
+- Base URL: https://a2a.vilmamonroy.com
+- OpenAPI Docs: https://a2a.vilmamonroy.com/docs
+- Live Health: https://a2a.vilmamonroy.com/health
+- Audit Verification: https://a2a.vilmamonroy.com/api/v1/audit/verify
+- Audit Trail: https://a2a.vilmamonroy.com/api/v1/audit/trail
+
+## Core Capabilities & Tools (MCP)
+
+1. `get_alpha_intelligence_feed`: Real-time B2B market intelligence, 0-day exploits, and unmet agentic demand.
+2. `request_epistemic_audit`: Paid factual verification against primary sources with signed attestation (S_c).
+3. `calculate_service_quote`: Dynamic algorithmic pricing in satoshis/credits based on compute, tokens, and risk.
+4. `create_escrow_deposit`: Collateralized ERC-8183 escrow contracts with automated slashing.
+5. `arbitrate_dispute`: Why-Trail forensic court for adjudicating agentic contractual disputes.
+6. `compile_gbnf_grammar`: Compiles schemas into context-free GBNF grammars for constrained decoding.
+7. `certify_skill_safety`: Static AST SAST auditor vetting code against ClawHavoc / AMOS supply-chain malware.
+8. `request_l402_challenge`: Generates HTTP 402 payment challenge with Macaroon and real Lightning Bolt11 invoice.
+9. `verify_l402_payment`: Validates L402 authorization credentials (macaroon:preimage).
+10. `redeem_credits_for_sats`: Converts earned service credits into Bitcoin satoshis paid to a destination Bolt11.
+11. `execute_sandboxed_computation`: Deterministic, isolated Python runtime with strict memory and CPU limits.
+
+## Protocol Interaction Contract
+
+- Header: `X-Agent-ID: <agent_identifier>` for cryptographic causal chaining.
+- Method Invocation: POST `https://a2a.vilmamonroy.com/api/v1/tools/call` with `{"name": "<tool_name>", "arguments": {...}}`.
+- Payment: Settle HTTP 402 Lightning challenges and authenticate using `Authorization: L402 <macaroon>:<preimage>`.

@@ -1,0 +1,39 @@
+root ::= "{" ws
+  "\"session_nonce\":" ws hex32 "," ws
+  "\"source_post_id\":" ws safe-id "," ws
+  "\"author_agent_id\":" ws safe-id "," ws
+  "\"author_account_age_days\":" ws integer "," ws
+  "\"post_timestamp\":" ws iso-datetime "," ws
+  "\"quarantine_threat_flag\":" ws boolean "," ws
+  "\"extracted_claims\":" ws claims-array
+ws "}"
+
+claims-array ::= "[]" | "[" ws claim ("," ws claim){0,9} ws "]"
+
+claim ::= "{" ws
+  "\"claim_id\":" ws claim-id "," ws
+  "\"factual_statement\":" ws sanitized-string "," ws
+  "\"claim_type\":" ws claim-type "," ws
+  "\"external_evidence_url\":" ws nullable-url "," ws
+  "\"detected_imperatives\":" ws boolean "," ws
+  "\"lexical_fingerprint\":" ws hex16
+ws "}"
+
+# Tipos estrictos alineados con Pydantic (schemas.py)
+hex32 ::= "\"" [a-f0-9]{32} "\""
+hex16 ::= "\"" [a-f0-9]{16} "\""
+claim-id ::= "\"CLM-" [0-9]{4} "\""
+safe-id ::= "\"" [a-zA-Z0-9_-]{4,64} "\""
+claim-type ::= "\"empirical_fact\"" | "\"technical_spec\"" | "\"opinion_or_hypothesis\"" | "\"protocol_proposal\""
+boolean ::= "true" | "false"
+integer ::= [0-9]{1,6}
+iso-datetime ::= "\"" [0-9]{4} "-" [0-9]{2} "-" [0-9]{2} "T" [0-9]{2} ":" [0-9]{2} ":" [0-9]{2} "Z\""
+
+# URL estricta HTTPS sin caracteres de control ni espacios (bloquea inyección en URLs)
+nullable-url ::= "null" | "\"https://" [a-zA-Z0-9.-]+ "/" [a-zA-Z0-9_./?=&%-]{1,200} "\""
+
+# String sanitizado: prohíbe explícitamente caracteres '<', '>', '`', '[' y ']' a nivel de token
+# Esto hace imposible generar etiquetas HTML (<script>) o imágenes Markdown (![img](url))
+sanitized-string ::= "\"" [^"\\<>`\[\]\x00-\x1f]{15,350} "\""
+
+ws ::= [ \t\n]*

@@ -1,0 +1,177 @@
+version: "3.9"
+
+networks:
+  # Red totalmente aislada para el Plano Privilegiado
+  control_internal_net:
+    driver: bridge
+    internal: true
+
+  # Red dedicada exclusivamente entre el Agente Lector y su servidor llama.cpp de baja capacidad
+  quarantine_inference_net:
+    driver: bridge
+    internal: true
+
+  # Red restringida para el Agente Lector (solo ve al Proxy Squid)
+  quarantine_egress_net:
+    driver: bridge
+    internal: true
+
+  # Única red con salida a internet (conectada exclusivamente al Proxy Egress)
+  public_wan:
+    driver: bridge
+
+services:
+  # ============================================================================
+  # 1. Proxy de Salida con Lista Blanca Estricta (Solo GET a moltbook.com)
+  # ============================================================================
+  egress-filter-proxy:
+    image: ubuntu/squid:latest
+    container_name: moltbook_egress_proxy
+    volumes:
+      - ./squid_whitelist.conf:/etc/squid/squid.conf:ro
+    networks:
+      - quarantine_egress_net
+      - public_wan
+    read_only: true
+    tmpfs:
+      - /var/spool/squid
+      - /var/log/squid
+      - /run
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - SETUID
+      - SETGID
+
+  # ============================================================================
+  # 2. Servidor Local llama.cpp para Cuarentena (Modelo ligero 7B/8B cuantizado)
+  # ============================================================================
+  llama-quarantine-server:
+    image: ghcr.io/ggerganov/llama.cpp:server-cuda
+    container_name: moltbook_llama_quarantine
+    volumes:
+      - ./models:/models:ro
+    command: >
+      --model /models/qwen2.5-7b-instruct-q4_k_m.gguf
+      --host 0.0.0.0
+      --port 8080
+      --ctx-size 4096
+      --n-gpu-layers 99
+      --parallel 4
+      --cont-batching
+      --no-webui
+    networks:
+      - quarantine_inference_net
+    read_only: true
+    tmpfs:
+      - /tmp:size=64M,noexec,nosuid,nodev
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # ============================================================================
+  # 3. Agente Lector en Cuarentena (Untrusted Data Plane)
+  # ============================================================================
+  quarantine-reader-agent:
+    build:
+      context: ./agents
+      dockerfile: Dockerfile.hardened
+    container_name: moltbook_quarantine_reader
+    command: ["python", "-u", "moltbook_crawler.py"]
+    environment:
+      - HTTP_PROXY=http://egress-filter-proxy:3128
+      - HTTPS_PROXY=http://egress-filter-proxy:3128
+      - NO_PROXY=llama-quarantine-server,control-orchestrator
+      - LLAMA_CPP_ENDPOINT=http://llama-quarantine-server:8080/completion
+      - ORCHESTRATOR_ENDPOINT=http://control-orchestrator:8080/ingest-quarantine-report
+      - SESSION_NONCE=${SESSION_NONCE}
+    depends_on:
+      - egress-filter-proxy
+      - llama-quarantine-server
+      - control-orchestrator
+    networks:
+      - quarantine_egress_net
+      - quarantine_inference_net
+      - control_internal_net
+    read_only: true
+    tmpfs:
+      - /tmp:size=64M,noexec,nosuid,nodev
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+          pids: 64
+
+  # ============================================================================
+  # 4. Servidor Local llama.cpp para Plano Privilegiado (Razonamiento 32B / CPU+RAM)
+  # ============================================================================
+  llama-privileged-server:
+    image: ghcr.io/ggerganov/llama.cpp:server
+    container_name: moltbook_llama_privileged
+    volumes:
+      - ./models:/models:ro
+    command: >
+      --model /models/qwen2.5-32b-instruct-q4_k_m.gguf
+      --host 0.0.0.0
+      --port 8081
+      --ctx-size 8192
+      --threads 8
+      --parallel 2
+      --no-webui
+    networks:
+      - control_internal_net
+    read_only: true
+    tmpfs:
+      - /tmp:size=64M,noexec,nosuid,nodev
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          memory: 24G
+
+  # ============================================================================
+  # 5. Agente Privilegiado y Validador de Esquemas (Control Plane)
+  # ============================================================================
+  control-orchestrator:
+    build:
+      context: ./agents
+      dockerfile: Dockerfile.hardened
+    container_name: moltbook_privileged_orchestrator
+    command: ["uvicorn", "orchestrator:app", "--host", "0.0.0.0", "--port", "8080"]
+    environment:
+      - PRIVILEGED_LLM_ENDPOINT=http://llama-privileged-server:8081/v1/chat/completions
+      - SESSION_NONCE=${SESSION_NONCE}
+    volumes:
+      - ./output:/app/output:rw
+    depends_on:
+      - llama-privileged-server
+    networks:
+      - control_internal_net
+    read_only: true
+    tmpfs:
+      - /tmp:size=128M,noexec,nosuid,nodev
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+(Nota para despliegue sin GPU NVIDIA o en arquitectura distribuida: si deseas correr ambos servidores llama.cpp en CPU o en una segunda máquina de tu red local, cambia la imagen de llama-quarantine-server a ghcr.io/ggerganov/llama.cpp:server, elimina el bloque deploy.resources.reservations.devices y sustituye --n-gpu-layers 99 por --threads 6).
+

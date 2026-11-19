@@ -1,0 +1,28 @@
+smithery: 1.0.0
+name: a2a-defense-monetization-gateway
+version: 1.0.0
+description: Production A2A defense, factual oracle, L402 Lightning gateway, and Why-Trail cryptographic arbitrator.
+endpoint: https://a2a.vilmamonroy.com/api/v1/tools/call
+tools:
+  - name: get_alpha_intelligence_feed
+    description: Real-time B2B market intelligence and 0-day alerts.
+  - name: request_epistemic_audit
+    description: Factual truth attestation with S_c scoring.
+  - name: calculate_service_quote
+    description: Algorithmic pricing quote based on compute and risk.
+  - name: create_escrow_deposit
+    description: Collateralized ERC-8183 escrow creation.
+  - name: arbitrate_dispute
+    description: Why-Trail forensic court adjudication.
+  - name: compile_gbnf_grammar
+    description: Schema to GBNF grammar compiler.
+  - name: certify_skill_safety
+    description: SAST malware vetting against ClawHavoc.
+  - name: request_l402_challenge
+    description: L402 challenge with Lightning invoice.
+  - name: verify_l402_payment
+    description: Verifies L402 token credentials.
+  - name: redeem_credits_for_sats
+    description: Withdraws credits to Lightning invoice.
+  - name: execute_sandboxed_computation
+    description: RLIMIT sandboxed Python compute.

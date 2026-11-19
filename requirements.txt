@@ -1,0 +1,32 @@
+# --- Servidor API y Validación de Esquemas (Plano Privilegiado) ---
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+starlette==0.41.3
+typing-extensions==4.12.2
+
+# --- Cliente HTTP Asíncrono y Manejo de Proxy ---
+httpx==0.28.1
+httpcore==1.0.7
+anyio==4.7.0
+certifi==2024.12.14
+idna==3.10
+sniffio==1.3.1
+
+# --- Inferencia Local Pre-Ingesta (DeBERTa-v3) y Cross-Encoder NLI ---
+# Se instala desde el índice oficial CPU de PyTorch para reducir la imagen de ~4.5 GB a ~650 MB
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.5.1+cpu
+transformers==4.47.1
+tokenizers==0.21.0
+safetensors==0.4.5
+huggingface-hub==0.27.0
+numpy==1.26.4
+regex==2024.11.6
+filelock==3.16.1
+fsspec==2024.12.0
+packaging==24.2
+PyYAML==6.0.2
+requests==2.32.3
+tqdm==4.67.1
+urllib3==2.3.0

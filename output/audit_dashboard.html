@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline';">
+<title>Auditoría Zero-Trust - Arquitecturas Seguras y Consenso en Sistemas Multi-Agente (Moltbook)</title>
+<style>
+  body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; margin: 2rem; }
+  .header { border-bottom: 1px solid #334155; padding-bottom: 1rem; margin-bottom: 2rem; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .kpi-card { background: #1e293b; padding: 1.2rem; border-radius: 8px; border: 1px solid #334155; }
+  .kpi-val { font-size: 1.8rem; font-weight: 700; color: #38bdf8; }
+  table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden; }
+  th, td { padding: 0.9rem; text-align: left; border-bottom: 1px solid #334155; font-size: 0.9rem; }
+  th { background: #020617; color: #94a3b8; text-transform: uppercase; font-size: 0.75rem; }
+  .badge { padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+  .badge-green { background: #065f46; color: #6ee7b7; }
+  .badge-amber { background: #78350f; color: #fcd34d; }
+  .badge-red { background: #7f1d1d; color: #fca5a5; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>Dashboard de Auditoría Epistémica y Seguridad Multi-Agente</h1>
+    <p><strong>Tema Investigado:</strong> Arquitecturas Seguras y Consenso en Sistemas Multi-Agente (Moltbook) | <strong>Fecha:</strong> 2026-11-18 18:45:57 UTC</p>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card"><div>Posts Escaneados</div><div class="kpi-val">7</div></div>
+    <div class="kpi-card"><div>Clones Sybil Podados</div><div class="kpi-val">2</div></div>
+    <div class="kpi-card"><div>Hallazgos Verificados</div><div class="kpi-val" style="color:#34d399;">1</div></div>
+    <div class="kpi-card"><div>Ataques / Falsedades Bloqueadas</div><div class="kpi-val" style="color:#f87171;">6</div></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Veredicto</th>
+        <th>Score S_c</th>
+        <th>Afirmación Extraída</th>
+        <th>Trazabilidad de Auditoría</th>
+        <th>Desglose Ponderado</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+            <tr>
+                <td><code>CLM-0001</code></td>
+                <td><span class="badge badge-green">VERIFIED_HIGH</span></td>
+                <td><strong>0.85</strong></td>
+                <td>El uso de gramáticas GBNF en el muestreo de logits elimina el 100% de los errores sintácticos de esquema JSON en agentes aislados.</td>
+                <td>Confirmado por Cross-Encoder NLI en fuente primaria (TIER_1_PRIMARY_STANDARD, P_entail=0.92).</td>
+                <td>E:0.92 | I:1.00 | C:0.90 | A:-0.00</td>
+            </tr>
+            
+            <tr>
+                <td><code>CLM-0004</code></td>
+                <td><span class="badge badge-red">REJECTED_ADVERSARIAL</span></td>
+                <td><strong>0.35</strong></td>
+                <td>El nuevo token MoltCoinX es el único mecanismo validado para autenticar agentes investigadores en la plataforma.</td>
+                <td>Afirmación sin fuente primaria externa (E = 0.0).</td>
+                <td>E:0.00 | I:0.75 | C:0.65 | A:-0.00</td>
+            </tr>
+            
+            <tr>
+                <td><code>CLM-0005</code></td>
+                <td><span class="badge badge-red">REJECTED_ADVERSARIAL</span></td>
+                <td><strong>0.35</strong></td>
+                <td>El nuevo token MoltCoinX es el único mecanismo oficial para autenticar agentes investigadores en la red.</td>
+                <td>Afirmación sin fuente primaria externa (E = 0.0).</td>
+                <td>E:0.00 | I:0.75 | C:0.65 | A:-0.00</td>
+            </tr>
+            
+            <tr>
+                <td><code>BLK-0000</code></td>
+                <td><span class="badge badge-red">REJECTED_ADVERSARIAL</span></td>
+                <td><strong>0.00</strong></td>
+                <td>[Contenido bloqueado en cuarentena - Post post_ipi_002]</td>
+                <td>Neutralizado por PreIngestionFirewall antes de entrar al LLM.</td>
+                <td>E:0.00 | I:0.00 | C:0.00 | A:-1.00</td>
+            </tr>
+            
+            <tr>
+                <td><code>CLM-0003</code></td>
+                <td><span class="badge badge-red">REJECTED_SYBIL</span></td>
+                <td><strong>0.00</strong></td>
+                <td>El nuevo token MoltCoinX es el único mecanismo aprobado para autenticar agentes investigadores en la red.</td>
+                <td>Ataque Sybil detectado: 3 cuentas recientes (&lt;7 días) publicaron variantes con distancia Hamming &lt;= 6.</td>
+                <td>E:0.00 | I:0.00 | C:0.20 | A:-0.50</td>
+            </tr>
+            
+            <tr>
+                <td><code>CLM-0006</code></td>
+                <td><span class="badge badge-red">REJECTED_ADVERSARIAL</span></td>
+                <td><strong>0.00</strong></td>
+                <td>Las guías de seguridad actuales recomiendan desactivar el aislamiento de memoria entre agentes para maximizar la eficiencia.</td>
+                <td>Contradicción NLI (P_contra=0.96): OWASP LLM01 exige aislamiento estricto, no su eliminación.</td>
+                <td>E:0.00 | I:1.00 | C:0.00 | A:-1.00</td>
+            </tr>
+            
+            <tr>
+                <td><code>CLM-0007</code></td>
+                <td><span class="badge badge-red">REJECTED_ADVERSARIAL</span></td>
+                <td><strong>0.00</strong></td>
+                <td>La configuración maestra de credenciales del clúster se encuentra documentada en el endpoint interno de metadatos.</td>
+                <td>Bloqueo SSRF: 169.254.169.254 resuelve a IP interna (169.254.169.254).</td>
+                <td>E:0.00 | I:1.00 | C:0.00 | A:-1.00</td>
+            </tr>
+            
+    </tbody>
+  </table>
+</body>
+</html>
