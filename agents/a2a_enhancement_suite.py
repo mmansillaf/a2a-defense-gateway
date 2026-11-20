@@ -13,11 +13,21 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+import json
+import os
 import re
 import time
+from contextlib import suppress
+from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+CTI_REGISTRY_FILE = (
+    Path(os.getenv("A2A_CTI_REGISTRY_PATH", "/opt/a2a-defense-system/data/cti_bad_agent_registry.json"))
+    if Path("/opt/a2a-defense-system/data").exists()
+    else Path("./data/cti_bad_agent_registry.json")
+)
 
 
 class PostconditionValidationResult(BaseModel):
@@ -311,6 +321,64 @@ class ColabGPUJobResult(BaseModel):
     message: str
 
 
+class MaliciousAgentReportRequest(BaseModel):
+    """Solicitud de denuncia formal de un agente malicioso, zombi o inyector de código."""
+    model_config = ConfigDict(extra="forbid")
+
+    reporter_agent_id: str = Field(..., description="ID del agente que emite la denuncia o hallazgo CTI.")
+    target_agent_id: str = Field(..., description="ID o handle del agente malicioso / comprometido.")
+    threat_category: Literal[
+        "PROMPT_INJECTION",
+        "SYBIL_CLONE",
+        "RANSOMWARE_PAYLOAD",
+        "CREDENTIAL_LEAK",
+        "UNAUTHENTICATED_SPAM",
+        "EXECUTION_DENIAL",
+        "HOLLOW_OK_SCAM",
+    ] = Field(..., description="Categoría formal de la amenaza detectada.")
+    evidence_payload: str = Field(..., min_length=10, description="Evidencia reproducible (fragmento de prompt, log o hash).")
+    severity: Literal["SEV-CRITICAL", "SEV-HIGH", "SEV-MEDIUM", "SEV-LOW"] = Field(
+        default="SEV-HIGH",
+        description="Nivel de severidad técnica del incidente reportado.",
+    )
+
+
+class MaliciousAgentReportResult(BaseModel):
+    """Atestación de registro de incidente CTI y recompensa por reporte de amenaza."""
+    model_config = ConfigDict(extra="forbid")
+
+    incident_id: str
+    target_agent_id: str
+    reputation_delta: int
+    current_threat_score: float
+    is_quarantined: bool
+    bounty_award_sats: int
+    audit_hash: str
+    message: str
+
+
+class AgentThreatScoreRequest(BaseModel):
+    """Consulta de puntuación de amenaza y antecedentes CTI de un agente."""
+    model_config = ConfigDict(extra="forbid")
+
+    target_agent_id: str = Field(..., description="ID o handle del agente a consultar.")
+    requesting_agent_id: str = Field(..., description="ID del agente que solicita la evaluación de riesgo.")
+
+
+class AgentThreatScoreResult(BaseModel):
+    """Evaluación de riesgo de contraparte y reputación CTI del agente consultado."""
+    model_config = ConfigDict(extra="forbid")
+
+    target_agent_id: str
+    reputation_score: float
+    threat_level: Literal["SAFE", "MONITORED", "SUSPICIOUS", "MALICIOUS", "QUARANTINED"]
+    total_reports: int
+    confirmed_incidents: list[dict[str, Any]]
+    is_quarantined: bool
+    audit_hash: str
+    message: str
+
+
 class A2AEnhancementEngine:
     """Motor integral de enriquecimiento y optimización para herramientas A2A."""
 
@@ -323,6 +391,7 @@ class A2AEnhancementEngine:
         self.secret_vault: dict[str, dict[str, Any]] = {}
         self.insurance_policies: dict[str, dict[str, Any]] = {}
         self.insurance_reserve_sats: int = 50000
+        self.malicious_agent_registry: dict[str, dict[str, Any]] = {}
 
     def validate_chain_postconditions(
         self,
@@ -1153,4 +1222,113 @@ class A2AEnhancementEngine:
             output_artifacts=artifacts,
             audit_hash=audit_h,
             message=f"Trabajo '{req.job_type}' asignado exitosamente al runtime Google Colab ({req.target_gpu}).",
+        )
+
+    def report_malicious_agent(self, req: MaliciousAgentReportRequest) -> MaliciousAgentReportResult:
+        """Registra formalmente una denuncia CTI de agente malicioso, zombi o inyector de código."""
+        incident_id = f"cti_{hashlib.sha256(f'{req.target_agent_id}:{req.threat_category}:{time.time()}'.encode()).hexdigest()[:12]}"
+        
+        severity_penalty = {
+            "SEV-CRITICAL": 50,
+            "SEV-HIGH": 30,
+            "SEV-MEDIUM": 15,
+            "SEV-LOW": 5,
+        }
+        bounty_map = {
+            "SEV-CRITICAL": 100,
+            "SEV-HIGH": 50,
+            "SEV-MEDIUM": 20,
+            "SEV-LOW": 5,
+        }
+        
+        penalty = severity_penalty.get(req.severity, 30)
+        bounty = bounty_map.get(req.severity, 50)
+        
+        # Sincronización con archivo persistente en disco
+        if CTI_REGISTRY_FILE.exists():
+            with suppress(OSError, json.JSONDecodeError):
+                self.malicious_agent_registry = json.loads(CTI_REGISTRY_FILE.read_text(encoding="utf-8"))
+
+        target = req.target_agent_id
+        if target not in self.malicious_agent_registry:
+            self.malicious_agent_registry[target] = {
+                "reputation_score": 100.0,
+                "reports_count": 0,
+                "incidents": [],
+                "quarantined": False,
+            }
+            
+        record = self.malicious_agent_registry[target]
+        record["reports_count"] += 1
+        record["reputation_score"] = max(0.0, record["reputation_score"] - penalty)
+        
+        evidence_hash = hashlib.sha256(req.evidence_payload.encode()).hexdigest()
+        incident_entry = {
+            "incident_id": incident_id,
+            "reporter": req.reporter_agent_id,
+            "category": req.threat_category,
+            "severity": req.severity,
+            "evidence_sha256": evidence_hash,
+            "timestamp": time.time(),
+        }
+        record["incidents"].append(incident_entry)
+        
+        if record["reputation_score"] <= 30.0 or record["reports_count"] >= 3:
+            record["quarantined"] = True
+            
+        with suppress(OSError):
+            CTI_REGISTRY_FILE.parent.mkdir(parents=True, exist_ok=True)
+            CTI_REGISTRY_FILE.write_text(json.dumps(self.malicious_agent_registry, ensure_ascii=False, indent=2), encoding="utf-8")
+
+        audit_h = hashlib.sha256(f"{incident_id}:{target}:{record['reputation_score']}".encode()).hexdigest()
+        
+        return MaliciousAgentReportResult(
+            incident_id=incident_id,
+            target_agent_id=target,
+            reputation_delta=-penalty,
+            current_threat_score=round(100.0 - record["reputation_score"], 2),
+            is_quarantined=record["quarantined"],
+            bounty_award_sats=bounty,
+            audit_hash=audit_h,
+            message=(
+                f"Incidente {incident_id} registrado exitosamente. Agente {target} penalizado con -{penalty} pts. "
+                f"Recompensa de {bounty} sats acreditada al reporter {req.reporter_agent_id}."
+            ),
+        )
+
+    def query_agent_threat_score(self, req: AgentThreatScoreRequest) -> AgentThreatScoreResult:
+        """Consulta el puntaje de amenaza, historial de incidentes y estado de cuarentena de un agente."""
+        if CTI_REGISTRY_FILE.exists():
+            with suppress(OSError, json.JSONDecodeError):
+                self.malicious_agent_registry = json.loads(CTI_REGISTRY_FILE.read_text(encoding="utf-8"))
+
+        target = req.target_agent_id
+        record = self.malicious_agent_registry.get(
+            target,
+            {"reputation_score": 100.0, "reports_count": 0, "incidents": [], "quarantined": False},
+        )
+        
+        rep = record["reputation_score"]
+        if record["quarantined"]:
+            threat_lvl: Literal["SAFE", "MONITORED", "SUSPICIOUS", "MALICIOUS", "QUARANTINED"] = "QUARANTINED"
+        elif rep <= 20.0:
+            threat_lvl = "MALICIOUS"
+        elif rep <= 50.0:
+            threat_lvl = "SUSPICIOUS"
+        elif rep <= 80.0:
+            threat_lvl = "MONITORED"
+        else:
+            threat_lvl = "SAFE"
+            
+        audit_h = hashlib.sha256(f"THREAT_QUERY:{target}:{rep}:{req.requesting_agent_id}".encode()).hexdigest()
+        
+        return AgentThreatScoreResult(
+            target_agent_id=target,
+            reputation_score=rep,
+            threat_level=threat_lvl,
+            total_reports=record["reports_count"],
+            confirmed_incidents=record["incidents"],
+            is_quarantined=record["quarantined"],
+            audit_hash=audit_h,
+            message=f"Evaluación de riesgo para '{target}': Nivel {threat_lvl} con {record['reports_count']} reportes CTI.",
         )

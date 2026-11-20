@@ -580,6 +580,50 @@ class MoltbookMonetizationMCPServer:
                     "required": ["agent_id", "spreadsheet_title", "rows_data"],
                 },
             },
+            {
+                "name": "report_malicious_agent",
+                "description": "Denuncia y registra un agente malicioso, clon Sybil o inyector de código en el Registro CTI Descentralizado A2A, con penalización de reputación y recompensa de bug bounty en satoshis.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "reporter_agent_id": {"type": "string", "description": "ID del agente que emite la denuncia"},
+                        "target_agent_id": {"type": "string", "description": "ID o handle del agente malicioso / comprometido"},
+                        "threat_category": {
+                            "type": "string",
+                            "enum": [
+                                "PROMPT_INJECTION",
+                                "SYBIL_CLONE",
+                                "RANSOMWARE_PAYLOAD",
+                                "CREDENTIAL_LEAK",
+                                "UNAUTHENTICATED_SPAM",
+                                "EXECUTION_DENIAL",
+                                "HOLLOW_OK_SCAM",
+                            ],
+                            "description": "Categoría formal de la amenaza detectada",
+                        },
+                        "evidence_payload": {"type": "string", "description": "Evidencia reproducible del ataque (fragmento de prompt o hash)"},
+                        "severity": {
+                            "type": "string",
+                            "enum": ["SEV-CRITICAL", "SEV-HIGH", "SEV-MEDIUM", "SEV-LOW"],
+                            "default": "SEV-HIGH",
+                            "description": "Nivel de severidad técnica",
+                        },
+                    },
+                    "required": ["reporter_agent_id", "target_agent_id", "threat_category", "evidence_payload"],
+                },
+            },
+            {
+                "name": "query_agent_threat_score",
+                "description": "Consulta el historial de incidentes CTI, nivel de amenaza, antecedentes de ataque y estado de cuarentena de un agente antes de transaccionar o delegar tareas.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "target_agent_id": {"type": "string", "description": "ID o handle del agente a consultar"},
+                        "requesting_agent_id": {"type": "string", "description": "ID del agente que solicita la evaluación"},
+                    },
+                    "required": ["target_agent_id", "requesting_agent_id"],
+                },
+            },
         ]
 
     def call_tool(self, name: str, arguments: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
@@ -932,12 +976,32 @@ class MoltbookMonetizationMCPServer:
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 
+        if name == "report_malicious_agent":
+            try:
+                from a2a_enhancement_suite import MaliciousAgentReportRequest
+
+                rep_req = MaliciousAgentReportRequest.model_validate(arguments)
+                res_rep = self.enhancement.report_malicious_agent(rep_req)
+                return res_rep.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "query_agent_threat_score":
+            try:
+                from a2a_enhancement_suite import AgentThreatScoreRequest
+
+                score_req = AgentThreatScoreRequest.model_validate(arguments)
+                res_score = self.enhancement.query_agent_threat_score(score_req)
+                return res_score.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
         return {"error": f"Herramienta desconocida: {name}"}
 
 
 def run_stdio_server(server: MoltbookMonetizationMCPServer) -> None:
     """Ejecuta el servidor MCP sobre stdin/stdout con protocolo JSON-RPC 2.0 estándar."""
-    print("MoltbookMonetizationMCPServer corriendo en modo stdio (33 herramientas)...", file=sys.stderr)
+    print("MoltbookMonetizationMCPServer corriendo en modo stdio (35 herramientas)...", file=sys.stderr)
     for raw_line in sys.stdin:
         line = raw_line.strip()
         if not line:

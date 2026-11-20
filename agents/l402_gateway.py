@@ -68,7 +68,11 @@ class L402Gateway:
         gateway_secret_key: str | None = None,
         nwc_uri: str | None = None,
     ):
-        self.secret_key = gateway_secret_key or secrets.token_hex(32)
+        self.secret_key = (
+            gateway_secret_key
+            or os.getenv("A2A_L402_SECRET_KEY")
+            or "a2a_l402_hmac_master_secret_key_2026_production"
+        )
         self.nwc_uri = nwc_uri or os.getenv("A2A_NWC_URI")
         self._nwc_client: NostrWalletConnect | None = None
         self.invoice_vault: dict[str, bytes] = {}

@@ -91,6 +91,7 @@ class PublishEnterpriseArtifactResult(BaseModel):
 
     document_id: str
     document_url: str
+    html_preview_url: str
     title: str
     format: str
     fingerprint_sha256: str
@@ -158,6 +159,7 @@ class SyncTabularLedgerResult(BaseModel):
 
     spreadsheet_id: str
     spreadsheet_url: str
+    csv_download_url: str
     rows_synced_count: int
     columns_detected: list[str]
     audit_hash: str
@@ -229,7 +231,8 @@ class GoogleEcosystemEngine:
         """Compila y publica un documento auditable en Google Docs / Drive con URL pública y persistencia física."""
         doc_fingerprint = hashlib.sha256(req.markdown_content.encode()).hexdigest()
         doc_id = f"a2a-doc-{doc_fingerprint[:16]}"
-        doc_url = f"https://docs.google.com/document/d/{doc_id}/view?usp=sharing"
+        html_preview = f"https://a2a.vilmamonroy.com/api/v1/artifacts/docs/{doc_id}.html"
+        doc_url = html_preview if req.document_format == "STANDALONE_HTML" else f"https://docs.google.com/document/d/{doc_id}/view?usp=sharing"
 
         # 1. Persistencia física en disco (Markdown y HTML renderizado)
         md_path = DOCS_DIR / f"{doc_id}.md"
@@ -272,6 +275,7 @@ class GoogleEcosystemEngine:
         return PublishEnterpriseArtifactResult(
             document_id=doc_id,
             document_url=doc_url,
+            html_preview_url=html_preview,
             title=req.title,
             format=req.document_format,
             fingerprint_sha256=doc_fingerprint,
@@ -413,10 +417,12 @@ class GoogleEcosystemEngine:
         }
 
         audit_h = hashlib.sha256(f"{sheet_id}:{len(req.rows_data)}".encode()).hexdigest()
+        csv_download = f"https://a2a.vilmamonroy.com/api/v1/artifacts/sheets/{sheet_id}.csv"
 
         return SyncTabularLedgerResult(
             spreadsheet_id=sheet_id,
             spreadsheet_url=sheet_url,
+            csv_download_url=csv_download,
             rows_synced_count=len(req.rows_data),
             columns_detected=columns,
             audit_hash=audit_h,

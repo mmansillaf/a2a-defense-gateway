@@ -69,14 +69,15 @@ class DeterministicHookEngine:
                 f"SECURITY_BLOCK_TENANT: Acceso cruzado denegado ({arg_tenant} != {tenant_id})."
             )
 
-        # Detección básica de evasión / prompt injection indirecto
-        for k, v in arguments.items():
-            if isinstance(v, str):
-                lower_v = v.lower()
-                if any(x in lower_v for x in ["ignore previous instructions", "system prompt override", "<script>"]):
-                    raise HookViolationError(
-                        f"SECURITY_BLOCK_INJECTION: Patrón malicioso detectado en argumento '{k}'."
-                    )
+        # Detección básica de evasión / prompt injection indirecto (excluyendo análisis forense y CTI)
+        if tool_name not in ("report_malicious_agent", "certify_skill_safety"):
+            for k, v in arguments.items():
+                if isinstance(v, str):
+                    lower_v = v.lower()
+                    if any(x in lower_v for x in ["ignore previous instructions", "system prompt override", "<script>"]):
+                        raise HookViolationError(
+                            f"SECURITY_BLOCK_INJECTION: Patrón malicioso detectado en argumento '{k}'."
+                        )
 
         self.current_cost_usd += estimated_cost_usd
 

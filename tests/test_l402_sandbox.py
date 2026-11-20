@@ -34,6 +34,12 @@ def test_l402_challenge_generation_and_valid_authorization():
     assert res_fake.is_valid is False
     assert "Preimagen incorrecta" in res_fake.error_message
 
+    # 3. Verificación cruzada entre dos workers distintos (multi-proceso)
+    worker_two_gateway = L402Gateway()
+    res_cross_worker = worker_two_gateway.verify_authorization(valid_auth)
+    assert res_cross_worker.is_valid is True
+    assert res_cross_worker.service == "epistemic_audit"
+
 
 def test_l402_macaroon_expiration_and_tampering():
     gateway = L402Gateway()

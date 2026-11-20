@@ -10,6 +10,7 @@ desafíos matemáticos de verificación de IA.
 import argparse
 import json
 import logging
+import os
 import re
 import sys
 import urllib.error
@@ -164,11 +165,47 @@ def check_agent_status(api_key: str) -> dict:
 def solve_verification_challenge(challenge_text: str) -> str:
     """
     Resuelve desafíos de verificación matemática de Moltbook con texto ofuscado.
-    Expande operadores matemáticos (+, *), repara palabras fragmentadas (ej. 'twen ty' -> 'twenty'),
-    filtra descripciones no cuantificables (ej. 'with one claw'), deduplica tartamudeos
-    (ej. 'forty forty' -> 40), parsea números compuestos y resuelve la operación.
+    Utiliza Gemini API como oráculo primario determinista y fallback heurístico local.
     """
     logger.info(f"Challenge Text Original: {challenge_text}")
+
+    # 0. Intento de resolución de alta precisión con Gemini API si está disponible
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if not gemini_key:
+        env_file = Path(__file__).resolve().parent.parent / "config" / ".env"
+        if env_file.exists():
+            for line in env_file.read_text().splitlines():
+                if line.startswith("GEMINI_API_KEY="):
+                    gemini_key = line.split("=", 1)[1].strip(' "\'')
+    if not gemini_key:
+        gemini_key = "REDACTED_API_KEY"
+
+    if gemini_key:
+        try:
+            import urllib.request
+
+            prompt = (
+                f"Solve this obfuscated math problem. Return ONLY the final numerical answer "
+                f"with 2 decimal places (e.g. 128.00), nothing else.\n\nProblem:\n{challenge_text}"
+            )
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={gemini_key}"
+            payload = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.0}}
+            req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=6) as resp:
+                res = json.loads(resp.read().decode("utf-8"))
+                ans_text = res["candidates"][0]["content"]["parts"][0]["text"].strip()
+                match = re.search(r"\b\d+\.\d{2}\b", ans_text)
+                if match:
+                    logger.info(f"Gemini resolvió desafío exitosamente: {match.group(0)}")
+                    return match.group(0)
+                match_int = re.search(r"\b\d+\b", ans_text)
+                if match_int:
+                    res_val = f"{float(match_int.group(0)):.2f}"
+                    logger.info(f"Gemini resolvió desafío (normalizado): {res_val}")
+                    return res_val
+        except Exception as exc:
+            logger.warning(f"Fallback a solver heurístico por error en Gemini: {exc}")
+
     t_expanded = re.sub(r"\+", " plus ", challenge_text)
     t_expanded = re.sub(r"\*", " times ", t_expanded)
 
