@@ -1,7 +1,7 @@
 smithery: 1.0.0
 name: a2a-defense-monetization-gateway
-version: 1.0.0
-description: Production A2A defense, factual oracle, L402 Lightning gateway, and Why-Trail cryptographic arbitrator.
+version: 1.1.0
+description: Production A2A defense, factual oracle, L402 Lightning gateway, US/Peruvian LegalTech, and Why-Trail cryptographic arbitrator.
 endpoint: https://a2a.vilmamonroy.com/api/v1/tools/call
 tools:
   - name: get_alpha_intelligence_feed
@@ -27,9 +27,15 @@ tools:
   - name: execute_sandboxed_computation
     description: RLIMIT sandboxed Python compute.
   - name: compute_procedural_deadline
-    description: Arithmetic legal deadline calculator excluding holidays.
+    description: Arithmetic legal deadline calculator excluding Peruvian holidays.
+  - name: compute_us_procedural_deadline
+    description: US Federal and State court procedural deadline calculator (FRCP 6, FRAP 26, FRCrP 45, FRBP 9006).
+  - name: validate_bluebook_citation
+    description: Bluebook Rule 10 legal citation validator with good-law precedent check.
+  - name: search_us_court_opinions
+    description: Full-text search and retrieval of US caselaw opinions (SCOTUS, Circuit, Delaware Chancery).
   - name: verify_normative_validity
-    description: Deterministic graph verification of legal statute validity.
+    description: Deterministic graph verification of Peruvian statute validity.
   - name: audit_sunat_cpe_xml
     description: Forensic UBL 2.1 XML electronic invoice auditor for SUNAT Peru.
   - name: audit_excel_macro_forensics
@@ -52,3 +58,35 @@ tools:
     description: E2EE cryptographic vault with Timelock and Dead Man's Switch for mission secrets.
   - name: underwrite_execution_policy
     description: Parametric slashing insurance covering up to 80% collateral for agents.
+  - name: recalibrate_agent_cognition
+    description: Cognitive therapy and loop-breaker for repetitive agent states.
+  - name: request_antigravity_reasoning
+    description: Deep reasoning oracle using Antigravity thought chains.
+  - name: attest_agent_did_identity
+    description: Decentralized ID attestation and cryptographic verification.
+  - name: dispatch_agent_transactional_email
+    description: RFC 5322 compliant outbound transactional email dispatch.
+  - name: dispatch_colab_gpu_job
+    description: Ephemeral GPU compute worker dispatch for batch inference/training.
+  - name: query_deep_context_archive
+    description: Google Drive 2M token context archive query engine.
+  - name: publish_enterprise_artifact
+    description: Generates and exports HTML, PDF, and DOCX documents to Drive.
+  - name: generate_audio_briefing
+    description: Two-character (Alex & Camila) audio deliberation overview synthesis.
+  - name: sync_tabular_ledger
+    description: Live bi-directional sync of transaction ledgers to Google Sheets.
+  - name: report_malicious_agent
+    description: Autonomous CTI reporting of malicious agents, exploits, and attacks.
+  - name: query_agent_threat_score
+    description: Query CTI threat history, risk score, and quarantine status.
+  - name: issue_verifiable_work_receipt
+    description: Immutable HMAC-SHA256/Ed25519 work receipt with input/output digests and accounting deduction.
+  - name: audit_agent_dependency_liveness
+    description: Pre-flight HEAD liveness probe with TLS verification to prevent escrow deadlocks.
+  - name: sanitize_delegated_task_payload
+    description: Regex and entropy scrubbing of 10 families of API keys, tokens, and PII prior to subdelegation.
+  - name: auto_refund_dormant_escrow
+    description: Deterministic timelock auto-refund releasing 100% of collateral when an evaluator goes dormant.
+  - name: audit_us_contract_clauses
+    description: US commercial contract and SEC Exhibit 10 clause forensics (liability caps, indemnification, AI data rights).

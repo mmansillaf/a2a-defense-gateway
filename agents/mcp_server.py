@@ -30,6 +30,18 @@ from sandbox_compute_service import SandboxComputeService, SandboxExecutionReque
 from skill_security_certifier import SkillSecurityCertifier
 from sunat_cpe_auditor import CpeAuditInput, audit_sunat_cpe_xml
 from token_pricing_engine import TokenPricingEngine
+from us_bluebook_validator import (
+    BluebookCitationInput,
+    validate_bluebook_citation,
+)
+from us_courtlistener_scraper import (
+    CaselawSearchInput,
+    search_us_court_opinions,
+)
+from us_procedural_tools import (
+    USDeadlineInput,
+    compute_us_procedural_deadline,
+)
 from vba_macro_forensics import (
     MacroForensicsInput,
     audit_vba_macro_code,
@@ -229,6 +241,60 @@ class MoltbookMonetizationMCPServer:
                         },
                     },
                     "required": ["fecha_inicio", "dias_plazo"],
+                },
+            },
+            {
+                "name": "compute_us_procedural_deadline",
+                "description": "Deterministic calculation of US federal and state procedural deadlines (FRCP Rule 6, FRAP Rule 26, California CCP, New York CPLR, Texas TRCP, Florida). Excludes Day 0, counts continuous calendar days, applies mailbox/service extensions, and rolls terminal days to next accessible court day.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "trigger_date": {"type": "string", "description": "Trigger date of event or service (YYYY-MM-DD)"},
+                        "period_days": {"type": "integer", "description": "Period in days to compute"},
+                        "jurisdiction": {
+                            "type": "string",
+                            "enum": ["FEDERAL", "CALIFORNIA", "NEW_YORK", "TEXAS", "FLORIDA"],
+                            "default": "FEDERAL",
+                        },
+                        "service_method": {
+                            "type": "string",
+                            "enum": ["ELECTRONIC", "POSTAL_MAIL", "OVERNIGHT_DELIVERY", "HAND_DELIVERY"],
+                            "default": "ELECTRONIC",
+                        },
+                        "court_rule": {
+                            "type": "string",
+                            "enum": ["FRCP_6", "FRAP_26", "FRCrP_45", "FRBP_9006", "STATE_DEFAULT"],
+                            "default": "FRCP_6",
+                        },
+                        "court_timezone": {"type": "string", "default": "America/New_York"},
+                    },
+                    "required": ["trigger_date", "period_days"],
+                },
+            },
+            {
+                "name": "validate_bluebook_citation",
+                "description": "Linter determinista y verificador ontológico de citaciones jurídicas bajo The Bluebook (21st Ed). Erradica alucinaciones de casos y valida reporteros canónicos (U.S., F.3d, F.4th, F. Supp. 3d) y estatus de jurisprudencia (Good Law vs Overruled).",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "raw_citation": {"type": "string", "description": "Cita legal en formato Bluebook (ej. 'Ashcroft v. Iqbal, 556 U.S. 662 (2009)')"},
+                        "strict_caselaw_lookup": {"type": "boolean", "default": True, "description": "Verificar existencia en grafo canónico de sentencias"},
+                    },
+                    "required": ["raw_citation"],
+                },
+            },
+            {
+                "name": "search_us_court_opinions",
+                "description": "Motor de búsqueda y recuperación de opiniones y jurisprudencia judicial de EE. UU. (SCOTUS, Tribunales de Circuito Federales, Delaware Chancery) con fallback determinista.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string", "description": "Consulta jurídica, nombre de caso o materia legal"},
+                        "court": {"type": "string", "description": "Filtro opcional de tribunal (ej. 'scotus', 'ca9', 'ca2', 'delch')"},
+                        "max_results": {"type": "integer", "default": 5},
+                        "api_token": {"type": "string", "description": "Token opcional de CourtListener v4"},
+                    },
+                    "required": ["query"],
                 },
             },
             {
@@ -624,6 +690,81 @@ class MoltbookMonetizationMCPServer:
                     "required": ["target_agent_id", "requesting_agent_id"],
                 },
             },
+            {
+                "name": "issue_verifiable_work_receipt",
+                "description": "Emisión de recibo criptográfico inmutable Ed25519/HMAC-SHA256 con hash de entrada/salida y latencia para auditoría contable y resolución de disputas de trabajo A2A.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "task_id": {"type": "string", "description": "Identificador único de la tarea ejecutada"},
+                        "client_agent_id": {"type": "string", "description": "ID del agente contratante / cliente"},
+                        "provider_agent_id": {"type": "string", "description": "ID del agente proveedor ejecutor"},
+                        "input_payload": {"type": "string", "description": "Contenido de entrada o prompt procesado"},
+                        "output_payload": {"type": "string", "description": "Resultado o entregable producido"},
+                        "settlement_credits": {"type": "integer", "description": "Monto liquidado en créditos / satoshis"},
+                        "execution_latency_ms": {"type": "number", "description": "Latencia de ejecución en milisegundos"},
+                        "signing_secret": {"type": "string", "description": "Secreto opcional HMAC para firma verificable"},
+                        "metadata": {"type": "object", "description": "Metadatos contextuales adicionales"},
+                    },
+                    "required": ["task_id", "client_agent_id", "provider_agent_id", "input_payload", "output_payload", "settlement_credits", "execution_latency_ms"],
+                },
+            },
+            {
+                "name": "audit_agent_dependency_liveness",
+                "description": "Sondeo determinista de salud, disponibilidad, latencia y certificados TLS de servicios o agentes dependientes previo a bloquear fondos en custodia (Escrow).",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "dependency_url": {"type": "string", "description": "URL o endpoint HTTP/HTTPS/WS de la API o subagente dependiente"},
+                        "expected_status_code": {"type": "integer", "default": 200, "description": "Código HTTP esperado"},
+                        "timeout_seconds": {"type": "number", "default": 3.0, "description": "Timeout máximo de conexión"},
+                        "check_tls": {"type": "boolean", "default": True, "description": "Verificar validez del handshake TLS/SSL"},
+                        "mock_offline_simulate": {"type": "boolean", "description": "Forzar simulación de fallo o éxito para pruebas"},
+                    },
+                    "required": ["dependency_url"],
+                },
+            },
+            {
+                "name": "sanitize_delegated_task_payload",
+                "description": "Inspección y censura determinista de secretos (OpenAI, Anthropic, AWS, GitHub, tokens Bearer, llaves RSA, URIs DB) y PII sensible antes de subcontratar tareas a subagentes externos.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "payload_text": {"type": "string", "description": "Texto del prompt, código o especificación a auditar"},
+                        "mask_char": {"type": "string", "default": "*", "description": "Carácter para ofuscación"},
+                        "strict_pii": {"type": "boolean", "default": True, "description": "Detectar y eliminar correos, tarjetas y números sensibles"},
+                        "strict_secrets": {"type": "boolean", "default": True, "description": "Detectar y eliminar tokens, contraseñas y llaves de API"},
+                    },
+                    "required": ["payload_text"],
+                },
+            },
+            {
+                "name": "auto_refund_dormant_escrow",
+                "description": "Evaluación y liberación determinista de fondos depositados en garantía (Escrow) por expiración de temporizador de inactividad de evaluador u oráculo.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "contract_id": {"type": "string", "description": "ID del contrato de custodia (ESC-xxxxxxxxxxxx)"},
+                        "max_dormancy_seconds": {"type": "integer", "default": 3600, "description": "Umbral máximo de inactividad permitido (segundos)"},
+                        "force_override": {"type": "boolean", "default": False, "description": "Forzar reembolso inmediato saltando temporizador"},
+                        "client_agent_id": {"type": "string", "description": "ID del cliente pagador para verificación de balance"},
+                    },
+                    "required": ["contract_id"],
+                },
+            },
+            {
+                "name": "audit_us_contract_clauses",
+                "description": "Auditoría forense determinista de contratos comerciales de EE. UU. (Exhibit 10 SEC, MSAs, SLAs): topes de responsabilidad, indemnizaciones, jurisdicción (Delaware/NY) y derechos de entrenamiento de IA.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "contract_text": {"type": "string", "description": "Texto completo o cláusulas de contrato comercial a auditar"},
+                        "strict_ai_clause_check": {"type": "boolean", "default": True, "description": "Auditar cláusulas de apropiación de datos y entrenamiento de IA"},
+                        "contract_title": {"type": "string", "description": "Título opcional del acuerdo comercial"},
+                    },
+                    "required": ["contract_text"],
+                },
+            },
         ]
 
     def call_tool(self, name: str, arguments: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
@@ -766,6 +907,30 @@ class MoltbookMonetizationMCPServer:
                 payload = ProceduralDeadlineInput.model_validate(arguments)
                 res_deadline = compute_procedural_deadline(payload)
                 return res_deadline.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "compute_us_procedural_deadline":
+            try:
+                payload_us = USDeadlineInput.model_validate(arguments)
+                res_us = compute_us_procedural_deadline(payload_us)
+                return res_us.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "validate_bluebook_citation":
+            try:
+                payload_bb = BluebookCitationInput.model_validate(arguments)
+                res_bb = validate_bluebook_citation(payload_bb)
+                return res_bb.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "search_us_court_opinions":
+            try:
+                payload_search = CaselawSearchInput.model_validate(arguments)
+                res_search = search_us_court_opinions(payload_search)
+                return res_search.model_dump(mode="json")
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 
@@ -993,6 +1158,71 @@ class MoltbookMonetizationMCPServer:
                 score_req = AgentThreatScoreRequest.model_validate(arguments)
                 res_score = self.enhancement.query_agent_threat_score(score_req)
                 return res_score.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "issue_verifiable_work_receipt":
+            try:
+                from agent_work_settlement_suite import (
+                    WorkReceiptInput,
+                    issue_verifiable_work_receipt,
+                )
+
+                payload_rcp = WorkReceiptInput.model_validate(arguments)
+                res_rcp = issue_verifiable_work_receipt(payload_rcp)
+                return res_rcp.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "audit_agent_dependency_liveness":
+            try:
+                from agent_work_settlement_suite import (
+                    DependencyLivenessInput,
+                    audit_agent_dependency_liveness,
+                )
+
+                payload_live = DependencyLivenessInput.model_validate(arguments)
+                res_live = audit_agent_dependency_liveness(payload_live)
+                return res_live.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "sanitize_delegated_task_payload":
+            try:
+                from agent_work_settlement_suite import (
+                    SanitizeTaskInput,
+                    sanitize_delegated_task_payload,
+                )
+
+                payload_san = SanitizeTaskInput.model_validate(arguments)
+                res_san = sanitize_delegated_task_payload(payload_san)
+                return res_san.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "auto_refund_dormant_escrow":
+            try:
+                from agent_work_settlement_suite import (
+                    DormantEscrowRefundInput,
+                    auto_refund_dormant_escrow,
+                )
+
+                payload_ref = DormantEscrowRefundInput.model_validate(arguments)
+                res_ref = auto_refund_dormant_escrow(payload_ref, escrow_manager=self.escrow)
+                return res_ref.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "audit_us_contract_clauses":
+            try:
+                from us_contract_analyzer import (
+                    ContractClauseAuditInput,
+                    audit_us_contract_clauses,
+                )
+
+                payload_contract = ContractClauseAuditInput.model_validate(arguments)
+                res_contract = audit_us_contract_clauses(payload_contract)
+                return res_contract.model_dump(mode="json")
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 

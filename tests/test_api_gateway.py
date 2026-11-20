@@ -56,9 +56,12 @@ def test_mcp_tools_list():
     response = client.post("/mcp", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert len(data["result"]["tools"]) == 35
+    assert len(data["result"]["tools"]) == 43
     tool_names = [t["name"] for t in data["result"]["tools"]]
     assert "compute_procedural_deadline" in tool_names
+    assert "compute_us_procedural_deadline" in tool_names
+    assert "validate_bluebook_citation" in tool_names
+    assert "search_us_court_opinions" in tool_names
     assert "verify_normative_validity" in tool_names
     assert "audit_sunat_cpe_xml" in tool_names
     assert "audit_excel_macro_forensics" in tool_names
@@ -137,6 +140,61 @@ def test_mcp_call_compute_procedural_deadline():
     assert res["dias_contados"] == 3
     assert res["fecha_vencimiento"] == "2026-04-08"
     assert "DEADLINE-HAB" in res["doc_id"]
+
+
+def test_mcp_call_compute_us_procedural_deadline():
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 35,
+        "method": "tools/call",
+        "params": {
+            "name": "compute_us_procedural_deadline",
+            "arguments": {
+                "trigger_date": "2026-06-01",
+                "period_days": 14,
+                "jurisdiction": "FEDERAL",
+                "service_method": "POSTAL_MAIL"
+            }
+        }
+    }
+    response = client.post("/mcp", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    assert data["result"]["isError"] is False
+    content_text = data["result"]["content"][0]["text"]
+    import json
+    res = json.loads(content_text)
+    assert res["deadline_date"] == "2026-06-18"
+    assert res["service_extension_days"] == 3
+    assert "US-DEADLINE-FEDERAL" in res["doc_id"]
+
+
+def test_mcp_call_validate_bluebook_citation():
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 36,
+        "method": "tools/call",
+        "params": {
+            "name": "validate_bluebook_citation",
+            "arguments": {
+                "raw_citation": "Ashcroft v. Iqbal, 556 U.S. 662 (2009)",
+                "strict_caselaw_lookup": True
+            }
+        }
+    }
+    response = client.post("/mcp", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert "result" in data
+    assert data["result"]["isError"] is False
+    content_text = data["result"]["content"][0]["text"]
+    import json
+    res = json.loads(content_text)
+    assert res["is_valid_format"] is True
+    assert res["case_name"] == "Ashcroft v. Iqbal"
+    assert res["precedent_status"] == "GOOD_LAW"
+    assert "BLUEBOOK-556-U.S.-662-2009" in res["doc_id"]
 
 
 def test_mcp_call_audit_sunat_cpe_xml():

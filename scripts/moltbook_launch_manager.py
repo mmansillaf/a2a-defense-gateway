@@ -10,7 +10,6 @@ desafíos matemáticos de verificación de IA.
 import argparse
 import json
 import logging
-import os
 import re
 import sys
 import urllib.error
@@ -165,115 +164,72 @@ def check_agent_status(api_key: str) -> dict:
 def solve_verification_challenge(challenge_text: str) -> str:
     """
     Resuelve desafíos de verificación matemática de Moltbook con texto ofuscado.
-    Utiliza Gemini API como oráculo primario determinista y fallback heurístico local.
+    Implementa un extractor determinista universal de subsecuencias numéricas y operadores.
     """
     logger.info(f"Challenge Text Original: {challenge_text}")
 
-    # 0. Intento de resolución de alta precisión con Gemini API si está disponible
-    gemini_key = os.getenv("GEMINI_API_KEY")
-    if not gemini_key:
-        env_file = Path(__file__).resolve().parent.parent / "config" / ".env"
-        if env_file.exists():
-            for line in env_file.read_text().splitlines():
-                if line.startswith("GEMINI_API_KEY="):
-                    gemini_key = line.split("=", 1)[1].strip(' "\'')
-    if not gemini_key:
-        gemini_key = "REDACTED_API_KEY"
+    # 1. Extracción de dígitos explícitos si hay al menos dos
+    digits = [float(x) for x in re.findall(r"\b\d+(?:\.\d+)?\b", challenge_text)]
 
-    if gemini_key:
-        try:
-            import urllib.request
-
-            prompt = (
-                f"Solve this obfuscated math problem. Return ONLY the final numerical answer "
-                f"with 2 decimal places (e.g. 128.00), nothing else.\n\nProblem:\n{challenge_text}"
-            )
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={gemini_key}"
-            payload = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.0}}
-            req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=6) as resp:
-                res = json.loads(resp.read().decode("utf-8"))
-                ans_text = res["candidates"][0]["content"]["parts"][0]["text"].strip()
-                match = re.search(r"\b\d+\.\d{2}\b", ans_text)
-                if match:
-                    logger.info(f"Gemini resolvió desafío exitosamente: {match.group(0)}")
-                    return match.group(0)
-                match_int = re.search(r"\b\d+\b", ans_text)
-                if match_int:
-                    res_val = f"{float(match_int.group(0)):.2f}"
-                    logger.info(f"Gemini resolvió desafío (normalizado): {res_val}")
-                    return res_val
-        except Exception as exc:
-            logger.warning(f"Fallback a solver heurístico por error en Gemini: {exc}")
-
-    t_expanded = re.sub(r"\+", " plus ", challenge_text)
-    t_expanded = re.sub(r"\*", " times ", t_expanded)
-
-    clean = re.sub(r"[^a-zA-Z0-9\s]", "", t_expanded).lower()
-    clean = re.sub(r"\bfor\s+ce\b", "force", clean)
-    clean = re.sub(r"\b(twen|thir|for|fif|six|seven|eigh|nine)\s+ty\b", r"\1ty", clean)
-    clean = re.sub(r"\b(thir|four|fif|six|seven|eigh|nine)\s+teen\b", r"\1teen", clean)
-    clean = re.sub(r"\bwith\s+(?:one|two|a)\s+claws?\b", " ", clean)
-    logger.info(f"Cleaned Text: {clean}")
-
+    # 2. Extracción de palabras numéricas mediante subsecuencias en flujo de letras
     tens = {
-        "twenty": 20, "twent": 20, "thirty": 30, "forty": 40, "fifty": 50,
+        "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50,
         "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90,
     }
-    ones = {
-        "zero": 0, "one": 1, "two": 2, "three": 3, "thre": 3, "four": 4,
-        "five": 5, "fiv": 5, "six": 6, "seven": 7, "sevn": 7, "eight": 8, "eigt": 8,
-        "nine": 9, "nin": 9, "ten": 10, "eleven": 11, "elevn": 11, "twelve": 12, "twelv": 12,
-        "thirteen": 13, "fourteen": 14, "fifteen": 15, "sixteen": 16,
-        "seventeen": 17, "eighteen": 18, "nineteen": 19,
+    teens_and_ones = {
+        "nineteen": 19, "eighteen": 18, "seventeen": 17, "sixteen": 16,
+        "fifteen": 15, "fourteen": 14, "thirteen": 13, "twelve": 12, "eleven": 11,
+        "ten": 10, "nine": 9, "eight": 8, "seven": 7, "six": 6, "five": 5,
+        "four": 4, "three": 3, "two": 2, "one": 1, "zero": 0,
     }
+    all_words = list(tens.items()) + list(teens_and_ones.items())
 
-    tokens = clean.split()
-    numbers: list[float] = []
+    raw_letters = re.sub(r"[^a-zA-Z]", "", challenge_text).lower()
+    found = []
+    for word, val in sorted(all_words, key=lambda x: -len(x[0])):
+        pat = "".join(c + "+" for c in word)
+        for m in re.finditer(pat, raw_letters):
+            pos = m.start()
+            if word == "ten" and pos >= 2 and raw_letters[pos - 2 : pos + 3] == "anten":
+                continue
+            if word == "one" and pos >= 1 and raw_letters[pos - 1 : pos + 5] in ("neuton", "newton"):
+                continue
+            found.append((pos, len(m.group(0)), word, val))
+
+    found.sort(key=lambda x: (x[0], -x[1]))
+    clean_found = []
+    last_end = -1
+    for pos, length, word, val in found:
+        if pos >= last_end:
+            clean_found.append((pos, word, val))
+            last_end = pos + length
+
+    word_numbers: list[float] = []
     i = 0
-    while i < len(tokens):
-        raw = tokens[i]
-        tok = re.sub(r"(.)\1+", r"\1", raw)
-        val = None
-        if tok in tens or raw in tens:
-            val = tens.get(tok) or tens.get(raw)
-            if i + 1 < len(tokens):
-                next_raw = tokens[i + 1]
-                next_tok = re.sub(r"(.)\1+", r"\1", next_raw)
-                next_val = ones.get(next_tok) or ones.get(next_raw)
-                if next_val is not None and next_val < 10:
-                    val += next_val
-                    i += 1
-            numbers.append(float(val))
-        elif tok in ones or raw in ones:
-            numbers.append(float(ones.get(tok) or ones.get(raw)))
-        elif raw.isdigit():
-            numbers.append(float(raw))
-        i += 1
+    while i < len(clean_found):
+        pos, word, val = clean_found[i]
+        if word in tens and i + 1 < len(clean_found) and clean_found[i + 1][2] < 10:
+            word_numbers.append(float(val + clean_found[i + 1][2]))
+            i += 2
+        else:
+            word_numbers.append(float(val))
+            i += 1
 
-    # Deduplicar tartamudeos consecutivos del mismo número (ej. 'forty fortyx forty' -> 40)
-    deduped: list[float] = []
-    for n in numbers:
-        if not deduped or n != deduped[-1]:
-            deduped.append(n)
+    numbers = digits if len(digits) >= 2 else word_numbers
 
-    collapsed_str = re.sub(r"(.)\1+", r"\1", clean)
-
-    if any(k in collapsed_str for k in ["times", "multipl"]):
-        op = "*"
-    elif any(k in collapsed_str for k in ["divid", "split", "half"]):
-        op = "/"
-    elif any(k in collapsed_str for k in ["slow", "decelerat", "drop", "lose", "los", "shed", "minus", "subtract", "decreas", "reduc", "spend", "spent", "remain"]):
+    # 3. Determinación determinista de operador buscando en el flujo continuo de letras
+    op = "+"
+    if any(w in raw_letters for w in ["minus", "subtract", "reduc", "loss", "remain", "decreas", "shed", "drop", "lose", "spent"]):
         op = "-"
-    elif any(k in collapsed_str for k in ["accelerat", "speed up", "gain", "plus", "add", "increas", "found", "catches", "total"]):
-        op = "+"
-    else:
-        op = "+"
+    elif any(w in raw_letters for w in ["times", "multipl", "product"]):
+        op = "*"
+    elif any(w in raw_letters for w in ["divid", "split", "half"]):
+        op = "/"
 
-    if len(deduped) >= 2:
-        a, b = deduped[0], deduped[1]
-        ans = a + b if op == "+" else (a - b if op == "-" else (a * b if op == "*" else a / b))
-        logger.info(f"Cálculo Determinista: {a} {op} {b} = {ans:.2f}")
+    if len(numbers) >= 2:
+        n1, n2 = numbers[0], numbers[1]
+        ans = n1 + n2 if op == "+" else (n1 - n2 if op == "-" else n1 * n2)
+        logger.info(f"Cálculo Determinista: {n1} {op} {n2} = {ans:.2f}")
         return f"{ans:.2f}"
 
     return "0.00"

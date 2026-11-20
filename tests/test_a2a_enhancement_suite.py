@@ -151,13 +151,16 @@ def test_agent_reputation_scoring(engine):
     assert slashed_profile.credit_score < profile.credit_score
 
 
-# 6. Integration Test: MCP Server 35 Tools & Governance Ecosystem
-def test_mcp_server_exposes_35_tools(mcp_server):
+# 6. Integration Test: MCP Server 43 Tools & Governance Ecosystem
+def test_mcp_server_exposes_43_tools(mcp_server):
     tools = mcp_server.list_tools()
-    assert len(tools) == 35
+    assert len(tools) == 43
     tool_names = {t["name"] for t in tools}
 
     # Verificar presencia de las herramientas de gobernanza, feedback, bóveda y seguro
+    assert "compute_us_procedural_deadline" in tool_names
+    assert "validate_bluebook_citation" in tool_names
+    assert "search_us_court_opinions" in tool_names
     assert "enforce_chain_postconditions" in tool_names
     assert "audit_context_pruning" in tool_names
     assert "enforce_session_spending_limit" in tool_names

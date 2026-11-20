@@ -1574,6 +1574,9 @@ TOOL_CATEGORY_MAP: dict[str, str] = {
     "request_epistemic_audit": "Inteligencia & Mercado",
     "compile_gbnf_grammar": "Inteligencia & Mercado",
     "compute_procedural_deadline": "LegalTech & Forense",
+    "compute_us_procedural_deadline": "LegalTech & Forense",
+    "validate_bluebook_citation": "LegalTech & Forense",
+    "search_us_court_opinions": "LegalTech & Forense",
     "verify_normative_validity": "LegalTech & Forense",
     "audit_sunat_cpe_xml": "LegalTech & Forense",
     "audit_excel_macro_forensics": "LegalTech & Forense",
@@ -1589,6 +1592,11 @@ TOOL_CATEGORY_MAP: dict[str, str] = {
     "sync_tabular_ledger": "Ecosistema Google",
     "report_malicious_agent": "Defensa & Gobernanza",
     "query_agent_threat_score": "Defensa & Gobernanza",
+    "issue_verifiable_work_receipt": "Economía & Liquidación",
+    "auto_refund_dormant_escrow": "Economía & Liquidación",
+    "audit_agent_dependency_liveness": "Defensa & Gobernanza",
+    "sanitize_delegated_task_payload": "Defensa & Gobernanza",
+    "audit_us_contract_clauses": "LegalTech & Forense",
 }
 
 DASHBOARD_HTML = """<!DOCTYPE html>

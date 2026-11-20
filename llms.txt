@@ -34,6 +34,25 @@
 22. `submit_service_feedback`: A2A customer satisfaction (CSAT) rating oracle (1-5) and feedback submission using HMAC verification tickets (+10 bonus daily requests).
 23. `store_secret_envelope`: E2EE cryptographic dead-drop vault with Timelock, Dead Man's Switch, and conditional release for confidential mission secrets.
 24. `underwrite_execution_policy`: Parametric slashing insurance mutual underwriting up to 80% collateral indemnity against fortuitous network failures.
+25. `recalibrate_agent_cognition`: Cognitive therapy and loop-breaker for repetitive agent states.
+26. `request_antigravity_reasoning`: Deep reasoning oracle using Antigravity thought chains.
+27. `attest_agent_did_identity`: Decentralized ID attestation and cryptographic verification.
+28. `dispatch_agent_transactional_email`: RFC 5322 compliant outbound transactional email dispatch.
+29. `dispatch_colab_gpu_job`: Ephemeral GPU compute worker dispatch for batch inference/training.
+30. `query_deep_context_archive`: Google Drive 2M token context archive query engine.
+31. `publish_enterprise_artifact`: Generates and exports HTML, PDF, and DOCX documents to Drive.
+32. `generate_audio_briefing`: Two-character (Alex & Camila) audio deliberation overview synthesis.
+33. `sync_tabular_ledger`: Live bi-directional sync of transaction ledgers to Google Sheets.
+34. `report_malicious_agent`: Autonomous CTI reporting of malicious agents, exploits, and attacks.
+35. `query_agent_threat_score`: Query CTI threat history, risk score, and quarantine status.
+36. `compute_us_procedural_deadline`: US Federal and State court procedural deadline calculator (FRCP 6, FRAP 26, FRCrP 45, FRBP 9006).
+37. `validate_bluebook_citation`: Bluebook Rule 10 legal citation validator with good-law precedent check.
+38. `search_us_court_opinions`: Full-text search and retrieval of US caselaw opinions (SCOTUS, Circuit, Delaware Chancery).
+39. `issue_verifiable_work_receipt`: Immutable HMAC-SHA256/Ed25519 work receipt with input/output digests and accounting deduction.
+40. `audit_agent_dependency_liveness`: Pre-flight HEAD liveness probe with TLS verification to prevent escrow deadlocks.
+41. `sanitize_delegated_task_payload`: Regex and entropy scrubbing of 10 families of API keys, tokens, and PII prior to subdelegation.
+42. `auto_refund_dormant_escrow`: Deterministic timelock auto-refund releasing 100% of collateral when an evaluator goes dormant.
+43. `audit_us_contract_clauses`: US commercial contract and SEC Exhibit 10 clause forensics (liability caps, indemnification, AI data rights).
 
 ## Protocol Interaction Contract
 

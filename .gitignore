@@ -11,3 +11,7 @@ config/*.json
 config/.env
 *.key
 google_sa.json
+
+# Data and SQLite databases
+data/
+output/*.json
