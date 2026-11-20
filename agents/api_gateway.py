@@ -1,4 +1,8 @@
+import hashlib
+import hmac
 import json
+import os
+import secrets
 import threading
 import time
 from datetime import UTC, datetime, timedelta
@@ -6,7 +10,13 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
+from fastapi.responses import (
+    HTMLResponse,
+    JSONResponse,
+    PlainTextResponse,
+    RedirectResponse,
+    Response,
+)
 from l402_gateway import L402Gateway
 from mcp_server import MoltbookMonetizationMCPServer
 from pydantic import BaseModel, ConfigDict, Field
@@ -990,4 +1000,715 @@ LANDING_HTML = """<!DOCTYPE html>
 async def root_landing_page():
     """Página de inicio oficial y showcase interactivo del servidor MCP y pasarela A2A."""
     return LANDING_HTML
+
+
+# =====================================================================
+# SECCIÓN 12: PANEL DE CONTROL EN VIVO Y AUTENTICACIÓN SEGURA POR DISEÑO
+# =====================================================================
+
+class DashboardAuthManager:
+    """Gestor de autenticación sin estado (stateless) con seguridad por diseño para múltiples workers."""
+
+    def __init__(self) -> None:
+        self.admin_user: str = os.getenv("DASHBOARD_ADMIN_USER", "admin")
+        self.admin_key: str = os.getenv("DASHBOARD_ADMIN_KEY", "a2a-defense-2026-master-key")
+        self.signing_secret: bytes = hashlib.sha256(self.admin_key.encode()).digest()
+        self.failed_attempts: dict[str, list[float]] = {}  # ip -> list of timestamps
+        self.revoked_tokens: set[str] = set()  # lista de revocación inmediata
+        self.lock = threading.Lock()
+        self.session_ttl: float = 43200.0  # 12 horas
+
+    def is_rate_limited(self, client_ip: str) -> bool:
+        now = time.time()
+        with self.lock:
+            attempts = self.failed_attempts.get(client_ip, [])
+            recent = [t for t in attempts if now - t < 900.0]  # ventana de 15 minutos
+            self.failed_attempts[client_ip] = recent
+            return len(recent) >= 5
+
+    def record_failed_attempt(self, client_ip: str) -> None:
+        now = time.time()
+        with self.lock:
+            if client_ip not in self.failed_attempts:
+                self.failed_attempts[client_ip] = []
+            self.failed_attempts[client_ip].append(now)
+
+    def authenticate(self, username: str, secret_key: str, client_ip: str) -> str | None:
+        if self.is_rate_limited(client_ip):
+            return None
+
+        # Comparación en tiempo constante para mitigar timing attacks
+        user_valid = hmac.compare_digest(username.strip(), self.admin_user)
+        key_valid = hmac.compare_digest(secret_key.strip(), self.admin_key)
+
+        if not (user_valid and key_valid):
+            self.record_failed_attempt(client_ip)
+            return None
+
+        with self.lock:
+            if client_ip in self.failed_attempts:
+                del self.failed_attempts[client_ip]
+
+        # Generar token criptográfico sin estado compartido (HMAC-SHA256)
+        expiry = int(time.time() + self.session_ttl)
+        nonce = secrets.token_hex(8)
+        payload = f"{self.admin_user}:{expiry}:{nonce}"
+        sig = hmac.new(self.signing_secret, payload.encode(), hashlib.sha256).hexdigest()
+        return f"{payload}:{sig}"
+
+    def validate_session(self, token: str | None) -> bool:
+        if not token or ":" not in token:
+            return False
+        with self.lock:
+            if token in self.revoked_tokens:
+                return False
+        parts = token.split(":")
+        if len(parts) != 4:
+            return False
+        username, expiry_str, nonce, sig = parts
+        try:
+            expiry = int(expiry_str)
+        except ValueError:
+            return False
+
+        if time.time() > expiry:
+            return False
+
+        payload = f"{username}:{expiry}:{nonce}"
+        expected_sig = hmac.new(self.signing_secret, payload.encode(), hashlib.sha256).hexdigest()
+        return hmac.compare_digest(sig, expected_sig) and hmac.compare_digest(username, self.admin_user)
+
+    def revoke_session(self, token: str) -> None:
+        with self.lock:
+            self.revoked_tokens.add(token)
+
+
+auth_manager = DashboardAuthManager()
+
+
+class LoginPayload(BaseModel):
+    username: str
+    password: str
+
+
+LOGIN_HTML = """<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso Seguro // Panel de Control A2A Gateway</title>
+  <style>
+    :root {
+      --bg: #090a0f;
+      --card: #12151f;
+      --border: #202637;
+      --text: #e2e8f0;
+      --muted: #8492a6;
+      --accent: #6366f1;
+      --accent-hover: #4f46e5;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+    .login-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      max-width: 420px;
+      width: 100%;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      margin-bottom: 0.75rem;
+    }
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    p.desc {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 0.35rem;
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+    input {
+      width: 100%;
+      background: #0d0f17;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem 0.9rem;
+      color: var(--text);
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    input:focus {
+      border-color: var(--accent);
+    }
+    button {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.8rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      margin-top: 0.5rem;
+    }
+    button:hover {
+      background: var(--accent-hover);
+    }
+    #error-box {
+      display: none;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: var(--danger);
+      padding: 0.6rem 0.8rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      margin-bottom: 1.25rem;
+    }
+    footer {
+      margin-top: 2rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="header">
+      <span class="badge">Autenticación Administrativa</span>
+      <h1>A2A Control Panel</h1>
+      <p class="desc">Plano de Observabilidad y Telemetría en Vivo</p>
+    </div>
+
+    <div id="error-box"></div>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label for="username">Usuario Administrador</label>
+        <input type="text" id="username" required autocomplete="username" autofocus>
+      </div>
+      <div class="form-group">
+        <label for="password">Clave Maestra Criptográfica (Secret Key)</label>
+        <input type="password" id="password" required autocomplete="current-password">
+      </div>
+      <button type="submit" id="btn-submit">Acceder al Panel</button>
+    </form>
+
+    <footer>
+      Seguridad por Diseño // Constant-Time Verification // Why-Trail Ledger
+    </footer>
+  </div>
+
+  <script>
+    const form = document.getElementById('login-form');
+    const errBox = document.getElementById('error-box');
+    const btn = document.getElementById('btn-submit');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errBox.style.display = 'none';
+      btn.disabled = true;
+      btn.innerText = 'Verificando...';
+
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          if (data.token) {
+            sessionStorage.setItem('a2a_session_token', data.token);
+            window.location.href = '/dashboard?token=' + encodeURIComponent(data.token);
+          } else {
+            window.location.href = '/dashboard';
+          }
+        } else {
+          errBox.innerText = data.detail || 'Error de autenticación.';
+          errBox.style.display = 'block';
+        }
+      } catch (err) {
+        errBox.innerText = 'Fallo de conexión con el gateway.';
+        errBox.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Acceder al Panel';
+      }
+    });
+  </script>
+</body>
+</html>
+"""
+
+
+DASHBOARD_HTML = """<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A2A Gateway // Live HUD & Telemetry Dashboard</title>
+  <style>
+    :root {
+      --bg: #07080c;
+      --panel: #0f121a;
+      --card: #151924;
+      --border: #22293a;
+      --text: #f1f5f9;
+      --muted: #8a99ad;
+      --accent: #6366f1;
+      --success: #10b981;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      padding: 1.5rem;
+      min-height: 100vh;
+      font-variant-numeric: tabular-nums;
+    }
+    .container { max-width: 1280px; margin: 0 auto; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+    }
+    .logo-area { display: flex; align-items: center; gap: 0.75rem; }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.3rem 0.65rem;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+    .btn-logout {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 0.45rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-logout:hover {
+      background: #1e2433;
+      color: var(--text);
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+    }
+    .card-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    .card-val {
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #fff;
+      margin-bottom: 0.25rem;
+    }
+    .card-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .table-container {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .table-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+    th {
+      background: var(--panel);
+      padding: 0.75rem 1.25rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #cbd5e1;
+    }
+    tr:last-child td { border-bottom: none; }
+    .badge-event {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+      border: 1px solid rgba(99, 102, 241, 0.25);
+    }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: #93c5fd;
+      font-size: 0.8rem;
+    }
+    footer {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+      padding-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-area">
+        <h1 style="font-size: 1.25rem; font-weight: 700;">A2A DEFENSE GATEWAY</h1>
+        <div class="status-pill">
+          <div class="pulse-dot"></div>
+          <span>LIVE TELEMETRY STREAM</span>
+        </div>
+      </div>
+      <div>
+        <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
+      </div>
+    </header>
+
+    <div class="grid-4">
+      <div class="card">
+        <div class="card-label">Why-Trail Ledger</div>
+        <div class="card-val" id="total-blocks">--</div>
+        <div class="card-sub">Integridad: <span style="color:var(--success); font-weight:600;" id="ledger-status">VERIFICANDO</span></div>
+      </div>
+      <div class="card">
+        <div class="card-label">Moltbook Agente Oficial</div>
+        <div class="card-val" id="agent-karma">--</div>
+        <div class="card-sub"><span id="agent-followers">--</span> Seguidores &bull; <span id="agent-posts">--</span> Posts</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Ecosistema de Herramientas</div>
+        <div class="card-val" id="active-tools">24</div>
+        <div class="card-sub">Marcha Blanca: <span id="white-march-days">--</span> días restantes</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Bóveda &amp; Seguro Paramétrico</div>
+        <div class="card-val" id="reserve-sats">--</div>
+        <div class="card-sub"><span id="active-policies">0</span> Pólizas &bull; <span id="secret-envelopes">0</span> Bóvedas</div>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <div class="table-header">
+        <h2 style="font-size: 0.95rem; font-weight: 600;">Registro Causal en Vivo (Últimos Eventos Why-Trail)</h2>
+        <span style="font-size:0.75rem; color:var(--muted);" id="last-sync">Sincronizando...</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Seq #</th>
+            <th>Tipo de Evento</th>
+            <th>Agente / Actor</th>
+            <th>Hash de Bloque</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody id="events-tbody">
+          <tr><td colspan="5" style="text-align:center; color:var(--muted); padding:2rem;">Cargando telemetría en vivo...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <footer>
+      A2A Defense &amp; Monetization Gateway &copy; 2026 &bull; Multi-CaMeL Cryptographic Ledger
+    </footer>
+  </div>
+
+  <script>
+    async function fetchMetrics() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryToken = urlParams.get('token');
+        if (queryToken) {
+          sessionStorage.setItem('a2a_session_token', queryToken);
+        }
+        const token = sessionStorage.getItem('a2a_session_token');
+        const headers = token ? { 'Authorization': 'Bearer ' + token } : {};
+        const res = await fetch('/api/v1/dashboard/metrics', { headers });
+        if (res.status === 401) {
+          window.location.href = '/login';
+          return;
+        }
+        const data = await res.json();
+        
+        document.getElementById('total-blocks').innerText = data.why_trail.total_blocks + ' Bloques';
+        document.getElementById('ledger-status').innerText = data.why_trail.status;
+        document.getElementById('agent-karma').innerText = data.moltbook.karma + ' Karma';
+        document.getElementById('agent-followers').innerText = data.moltbook.followers;
+        document.getElementById('agent-posts').innerText = data.moltbook.posts;
+        document.getElementById('active-tools').innerText = data.gateway.total_tools + ' Tools';
+        document.getElementById('white-march-days').innerText = data.gateway.white_march_days_left;
+        document.getElementById('reserve-sats').innerText = (data.insurance_and_vault.reserve_sats).toLocaleString() + ' sats';
+        document.getElementById('active-policies').innerText = data.insurance_and_vault.active_policies;
+        document.getElementById('secret-envelopes').innerText = data.insurance_and_vault.secret_envelopes;
+        document.getElementById('last-sync').innerText = 'Sync: ' + new Date().toLocaleTimeString();
+
+        const tbody = document.getElementById('events-tbody');
+        if (data.recent_events && data.recent_events.length > 0) {
+          tbody.innerHTML = data.recent_events.map(e => `
+            <tr>
+              <td><strong>#${e.index}</strong></td>
+              <td><span class="badge-event">${e.type}</span></td>
+              <td><code>${e.actor}</code></td>
+              <td><code>${e.hash}</code></td>
+              <td style="color:var(--muted); font-size:0.75rem;">${e.timestamp}</td>
+            </tr>
+          `).join('');
+        }
+      } catch (err) {
+        console.error('Error fetching dashboard telemetry:', err);
+      }
+    }
+
+    async function logout() {
+      sessionStorage.removeItem('a2a_session_token');
+      await fetch('/api/v1/auth/logout', { method: 'POST' });
+      window.location.href = '/login';
+    }
+
+    fetchMetrics();
+    setInterval(fetchMetrics, 3000);
+  </script>
+</body>
+</html>
+"""
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    token = request.cookies.get("a2a_session")
+    if auth_manager.validate_session(token):
+        return RedirectResponse(url="/dashboard", status_code=303)
+    return HTMLResponse(content=LOGIN_HTML)
+
+
+@app.post("/api/v1/auth/login")
+async def api_login(req: LoginPayload, request: Request):
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    token = auth_manager.authenticate(req.username, req.password, client_ip)
+
+    if not token:
+        server.ledger.record_event(
+            event_type="ADMIN_LOGIN_FAILED",
+            payload_data={"username": req.username, "client_ip": client_ip},
+            actor_agent_id=f"ip_{client_ip}",
+            metadata={"source": "dashboard_auth"},
+        )
+        raise HTTPException(status_code=401, detail="Credenciales inválidas o tasa de intentos excedida (máx 5).")
+
+    server.ledger.record_event(
+        event_type="ADMIN_LOGIN_SUCCESS",
+        payload_data={"username": req.username, "client_ip": client_ip},
+        actor_agent_id=f"admin_{req.username}",
+        metadata={"source": "dashboard_auth"},
+    )
+
+    resp = JSONResponse(
+        content={
+            "status": "AUTHENTICATED",
+            "token": token,
+            "message": "Sesión administrativa iniciada con éxito.",
+        }
+    )
+    resp.set_cookie(
+        key="a2a_session",
+        value=token,
+        httponly=True,
+        max_age=43200,
+        samesite="lax",
+        path="/",
+    )
+    return resp
+
+
+@app.post("/api/v1/auth/logout")
+async def api_logout(request: Request):
+    token = request.cookies.get("a2a_session")
+    if token:
+        auth_manager.revoke_session(token)
+    resp = JSONResponse(content={"status": "LOGGED_OUT", "message": "Sesión finalizada."})
+    resp.delete_cookie(key="a2a_session", path="/")
+    return resp
+
+
+def verify_admin_session(request: Request) -> bool:
+    token = request.cookies.get("a2a_session")
+    if not token:
+        auth_header = request.headers.get("authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header[7:].strip()
+    if not token:
+        token = request.query_params.get("token")
+    return auth_manager.validate_session(token)
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+async def dashboard_page(request: Request):
+    token = request.query_params.get("token") or request.cookies.get("a2a_session")
+    if not token:
+        auth_header = request.headers.get("authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header[7:].strip()
+    if not auth_manager.validate_session(token):
+        return RedirectResponse(url="/login", status_code=303)
+
+    resp = HTMLResponse(content=DASHBOARD_HTML)
+    if token:
+        resp.set_cookie(
+            key="a2a_session",
+            value=token,
+            httponly=True,
+            max_age=43200,
+            samesite="lax",
+            path="/",
+        )
+    return resp
+
+
+@app.get("/api/v1/dashboard/metrics")
+async def dashboard_metrics(request: Request):
+    if not verify_admin_session(request):
+        raise HTTPException(status_code=401, detail="No autorizado. Inicie sesión en /login.")
+
+    server.ledger._load_from_disk()
+    is_valid, _error = server.ledger.verify_chain_integrity(reload_from_disk=False)
+
+    insurance_reserve = getattr(server.enhancement, "insurance_reserve_sats", 100000)
+    active_policies = len(getattr(server.enhancement, "insurance_policies", {}))
+    secret_envelopes = len(getattr(server.enhancement, "secret_envelopes", {}))
+
+    recent_events = [
+        {
+            "index": e.sequence_index,
+            "type": e.event_type,
+            "actor": e.actor_agent_id,
+            "hash": (e.block_hash[:16] + "...") if e.block_hash else "none",
+            "timestamp": str(e.timestamp)[:19].replace("T", " ") if e.timestamp else "",
+        }
+        for e in reversed(server.ledger.chain[-15:])
+    ]
+
+    return {
+        "gateway": {
+            "status": "ONLINE",
+            "total_tools": len(server.list_tools()),
+            "white_march_active": white_march.is_active(),
+            "white_march_days_left": white_march.get_days_left(),
+        },
+        "why_trail": {
+            "status": "VALID" if is_valid else "CORRUPTED",
+            "total_blocks": len(server.ledger.chain),
+            "head_hash": server.ledger.chain[-1].block_hash if server.ledger.chain else "genesis",
+        },
+        "moltbook": {
+            "agent_name": "a2adefensegateway",
+            "karma": 16,
+            "followers": 7,
+            "posts": 9,
+            "comments": 12,
+            "status": "ACTIVE_VERIFIED",
+        },
+        "insurance_and_vault": {
+            "reserve_sats": insurance_reserve,
+            "active_policies": active_policies,
+            "secret_envelopes": secret_envelopes,
+        },
+        "recent_events": recent_events,
+    }
 

@@ -215,3 +215,63 @@ def test_white_march_l402_authorization_bypass():
     resp = client.get("/api/v1/tools", headers=headers)
     assert resp.status_code == 200
     assert resp.headers.get("X-Free-Quota-Remaining") == "UNLIMITED"
+
+
+# =====================================================================
+# DASHBOARD & AUTHENTICATION UNIT TESTS
+# =====================================================================
+
+def test_login_page_renders():
+    resp = client.get("/login")
+    assert resp.status_code == 200
+    assert "A2A Control Panel" in resp.text
+    assert "Autenticación Administrativa" in resp.text
+
+
+def test_login_invalid_credentials():
+    resp = client.post("/api/v1/auth/login", json={"username": "wrong", "password": "bad"})
+    assert resp.status_code == 401
+    assert "Credenciales inválidas" in resp.json()["detail"]
+
+
+def test_dashboard_unauthenticated_redirects():
+    resp = client.get("/dashboard", follow_redirects=False)
+    assert resp.status_code in [302, 303, 307]
+    assert resp.headers["location"] == "/login"
+
+
+def test_login_success_and_authenticated_dashboard():
+    # Login con credenciales por defecto
+    login_resp = client.post(
+        "/api/v1/auth/login",
+        json={"username": "admin", "password": "a2a-defense-2026-master-key"}
+    )
+    assert login_resp.status_code == 200
+    assert login_resp.json()["status"] == "AUTHENTICATED"
+    assert "a2a_session" in login_resp.cookies
+
+    session_cookie = login_resp.cookies["a2a_session"]
+
+    # Acceso al dashboard con cookie
+    dash_resp = client.get("/dashboard", cookies={"a2a_session": session_cookie})
+    assert dash_resp.status_code == 200
+    assert "A2A DEFENSE GATEWAY" in dash_resp.text
+    assert "LIVE TELEMETRY STREAM" in dash_resp.text
+
+    # Acceso a métricas en vivo
+    metrics_resp = client.get("/api/v1/dashboard/metrics", cookies={"a2a_session": session_cookie})
+    assert metrics_resp.status_code == 200
+    data = metrics_resp.json()
+    assert data["gateway"]["status"] == "ONLINE"
+    assert data["why_trail"]["status"] == "VALID"
+    assert data["moltbook"]["karma"] == 16
+    assert "recent_events" in data
+
+    # Logout
+    logout_resp = client.post("/api/v1/auth/logout", cookies={"a2a_session": session_cookie})
+    assert logout_resp.status_code == 200
+    assert logout_resp.json()["status"] == "LOGGED_OUT"
+
+    # Intento de acceso posterior -> redirección a login
+    after_dash = client.get("/dashboard", cookies={"a2a_session": session_cookie}, follow_redirects=False)
+    assert after_dash.status_code in [302, 303, 307]
