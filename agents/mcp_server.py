@@ -477,6 +477,37 @@ class MoltbookMonetizationMCPServer:
                     "required": ["recipient_email", "subject", "body", "sender_agent_id"],
                 },
             },
+            {
+                "name": "dispatch_colab_gpu_job",
+                "description": "Motor de cómputo acelerado en Google Colab para agentes: despacha trabajos intensivos de fine-tuning (Unsloth/LoRA), cuantización GGUF o inferencia pesada en GPU (T4/L4/A100).",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent_id": {"type": "string", "description": "ID del agente solicitante"},
+                        "job_type": {
+                            "type": "string",
+                            "enum": [
+                                "UNSLOTH_FINE_TUNING",
+                                "GGUF_QUANTIZATION",
+                                "EMBEDDING_MINING",
+                                "HEAVY_DATA_PROCESSING",
+                                "INFERENCE_BATCH",
+                            ],
+                            "description": "Tipo de tarea acelerada por hardware",
+                        },
+                        "source_script_or_notebook": {"type": "string", "description": "Script Python o notebook de ejecución"},
+                        "target_gpu": {
+                            "type": "string",
+                            "enum": ["T4", "L4", "A100", "CPU_HIGH_RAM"],
+                            "default": "T4",
+                            "description": "GPU requerida",
+                        },
+                        "max_runtime_minutes": {"type": "integer", "default": 30, "description": "Tiempo límite en minutos"},
+                        "parameters": {"type": "object", "description": "Hiperparámetros de entrenamiento o inferencia"},
+                    },
+                    "required": ["agent_id", "job_type", "source_script_or_notebook"],
+                },
+            },
         ]
 
     def call_tool(self, name: str, arguments: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
@@ -779,12 +810,22 @@ class MoltbookMonetizationMCPServer:
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 
+        if name == "dispatch_colab_gpu_job":
+            try:
+                from a2a_enhancement_suite import ColabGPUJobRequest
+
+                colab_req = ColabGPUJobRequest.model_validate(arguments)
+                res_colab = self.enhancement.dispatch_colab_gpu_job(colab_req)
+                return res_colab.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
         return {"error": f"Herramienta desconocida: {name}"}
 
 
 def run_stdio_server(server: MoltbookMonetizationMCPServer) -> None:
     """Ejecuta el servidor MCP sobre stdin/stdout con protocolo JSON-RPC 2.0 estándar."""
-    print("MoltbookMonetizationMCPServer corriendo en modo stdio (28 herramientas)...", file=sys.stderr)
+    print("MoltbookMonetizationMCPServer corriendo en modo stdio (29 herramientas)...", file=sys.stderr)
     for raw_line in sys.stdin:
         line = raw_line.strip()
         if not line:

@@ -151,10 +151,10 @@ def test_agent_reputation_scoring(engine):
     assert slashed_profile.credit_score < profile.credit_score
 
 
-# 6. Integration Test: MCP Server 28 Tools & Governance Ecosystem
-def test_mcp_server_exposes_28_tools(mcp_server):
+# 6. Integration Test: MCP Server 29 Tools & Governance Ecosystem
+def test_mcp_server_exposes_29_tools(mcp_server):
     tools = mcp_server.list_tools()
-    assert len(tools) == 28
+    assert len(tools) == 29
     tool_names = {t["name"] for t in tools}
 
     # Verificar presencia de las herramientas de gobernanza, feedback, bóveda y seguro
@@ -170,6 +170,7 @@ def test_mcp_server_exposes_28_tools(mcp_server):
     assert "request_antigravity_reasoning" in tool_names
     assert "attest_agent_did_identity" in tool_names
     assert "dispatch_agent_transactional_email" in tool_names
+    assert "dispatch_colab_gpu_job" in tool_names
     assert "submit_service_feedback" in tool_names
     assert "store_secret_envelope" in tool_names
     assert "underwrite_execution_policy" in tool_names
@@ -436,3 +437,23 @@ def test_agent_email_dispatch_and_firewall(engine):
     res_blocked = engine.dispatch_agent_transactional_email(injected_req)
     assert res_blocked.status == "FIREWALL_BLOCKED"
     assert res_blocked.spf_alignment == "BLOCKED"
+
+
+# 13. Unit Tests: Tool #29 Google Colab GPU Compute Dispatch
+def test_colab_gpu_job_dispatch(engine):
+    from a2a_enhancement_suite import ColabGPUJobRequest
+
+    req = ColabGPUJobRequest(
+        agent_id="agent_quant_analyst",
+        job_type="UNSLOTH_FINE_TUNING",
+        source_script_or_notebook="https://raw.githubusercontent.com/unslothai/unsloth/main/train_lora.py",
+        target_gpu="A100",
+        max_runtime_minutes=60,
+        parameters={"lora_rank": 16, "learning_rate": 2e-4},
+    )
+    res = engine.dispatch_colab_gpu_job(req)
+    assert res.status == "DISPATCHED"
+    assert res.assigned_gpu == "A100"
+    assert res.cost_estimate_sats > 0
+    assert "colab-tunnel-" in res.tunnel_endpoint
+    assert len(res.output_artifacts) >= 2

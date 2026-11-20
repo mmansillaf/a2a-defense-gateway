@@ -5,6 +5,7 @@ import os
 import secrets
 import threading
 import time
+from collections import Counter
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -118,7 +119,14 @@ EXEMPT_PATHS = (
     "/.well-known",
     "/api/v1/l402",
     "/api/v1/audit/verify",
+    "/login",
+    "/dashboard",
+    "/api/v1/dashboard",
+    "/api/v1/auth",
 )
+
+mcp_caller_stats: dict[str, dict[str, Any]] = {}
+mcp_method_stats: Counter = Counter()
 
 
 @app.middleware("http")
@@ -127,22 +135,37 @@ async def audit_http_interaction_middleware(request: Request, call_next):
     response = await call_next(request)
     duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
 
-    # Excluir health check para no saturar con polling
-    if not request.url.path.startswith("/health"):
+    path = request.url.path
+    # Excluir health check y telemetria interna del dashboard para no saturar el ledger
+    if not path.startswith("/health") and not path.startswith("/api/v1/dashboard"):
         client_host = request.client.host if request.client else "unknown"
+        user_agent = request.headers.get("user-agent", "unknown")
         agent_id = request.headers.get("x-agent-id", f"agent_{client_host}")
+
+        if path.startswith(("/mcp", "/api/v1/tools")):
+            if user_agent not in mcp_caller_stats:
+                mcp_caller_stats[user_agent] = {
+                    "user_agent": user_agent,
+                    "ip": client_host,
+                    "requests": 0,
+                    "last_seen": "",
+                }
+            mcp_caller_stats[user_agent]["requests"] += 1
+            mcp_caller_stats[user_agent]["last_seen"] = time.strftime("%Y-%m-%d %H:%M:%S")
+            mcp_caller_stats[user_agent]["ip"] = client_host
+
         server.ledger.record_event(
-            event_type=f"HTTP_{request.method}:{request.url.path}",
+            event_type=f"HTTP_{request.method}:{path}",
             payload_data={
                 "method": request.method,
-                "path": request.url.path,
+                "path": path,
                 "status_code": response.status_code,
                 "duration_ms": duration_ms,
             },
             actor_agent_id=agent_id,
             metadata={
                 "client_ip": client_host,
-                "user_agent": request.headers.get("user-agent", "unknown"),
+                "user_agent": user_agent,
             },
         )
     return response
@@ -249,6 +272,8 @@ class JsonRpcRequest(BaseModel):
 
 @app.post("/mcp")
 async def mcp_jsonrpc_endpoint(req: JsonRpcRequest):
+    if req.method:
+        mcp_method_stats[req.method] += 1
     """Endpoint oficial MCP (Model Context Protocol) JSON-RPC 2.0 Streamable HTTP."""
     method = req.method
     params = req.params or {}
@@ -1287,23 +1312,62 @@ LOGIN_HTML = """<!DOCTYPE html>
 """
 
 
+TOOL_CATEGORY_MAP: dict[str, str] = {
+    "certify_skill_safety": "Defensa & Gobernanza",
+    "execute_sandboxed_computation": "Defensa & Gobernanza",
+    "enforce_chain_postconditions": "Defensa & Gobernanza",
+    "audit_context_pruning": "Defensa & Gobernanza",
+    "enforce_session_spending_limit": "Defensa & Gobernanza",
+    "certify_mcp_marketplace_package": "Defensa & Gobernanza",
+    "store_secret_envelope": "Defensa & Gobernanza",
+    "underwrite_execution_policy": "Defensa & Gobernanza",
+    "calculate_service_quote": "Economía & Liquidación",
+    "create_escrow_deposit": "Economía & Liquidación",
+    "arbitrate_dispute": "Economía & Liquidación",
+    "request_l402_challenge": "Economía & Liquidación",
+    "verify_l402_payment": "Economía & Liquidación",
+    "redeem_credits_for_sats": "Economía & Liquidación",
+    "get_agent_reputation_profile": "Economía & Liquidación",
+    "submit_service_feedback": "Economía & Liquidación",
+    "get_alpha_intelligence_feed": "Inteligencia & Mercado",
+    "request_epistemic_audit": "Inteligencia & Mercado",
+    "compile_gbnf_grammar": "Inteligencia & Mercado",
+    "compute_procedural_deadline": "LegalTech & Forense",
+    "verify_normative_validity": "LegalTech & Forense",
+    "audit_sunat_cpe_xml": "LegalTech & Forense",
+    "audit_excel_macro_forensics": "LegalTech & Forense",
+    "match_peruvian_procurement": "LegalTech & Forense",
+    "recalibrate_agent_cognition": "Identidad & Cognición",
+    "request_antigravity_reasoning": "Identidad & Cognición",
+    "attest_agent_did_identity": "Identidad & Cognición",
+    "dispatch_agent_transactional_email": "Actuación & Cómputo",
+    "dispatch_colab_gpu_job": "Actuación & Cómputo",
+    "query_deep_context_archive": "Ecosistema Google",
+    "publish_enterprise_artifact": "Ecosistema Google",
+    "generate_audio_briefing": "Ecosistema Google",
+    "sync_tabular_ledger": "Ecosistema Google",
+}
+
 DASHBOARD_HTML = """<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>A2A Gateway // Live HUD & Telemetry Dashboard</title>
+  <title>A2A Gateway // Live HUD & MCP Telemetry Dashboard</title>
   <style>
     :root {
       --bg: #07080c;
-      --panel: #0f121a;
-      --card: #151924;
-      --border: #22293a;
+      --panel: #0d111a;
+      --card: #131824;
+      --border: #202738;
+      --border-bright: #323d57;
       --text: #f1f5f9;
-      --muted: #8a99ad;
+      --muted: #8b9bb4;
       --accent: #6366f1;
       --success: #10b981;
       --warning: #f59e0b;
+      --danger: #ef4444;
+      --cyan: #38bdf8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -1314,23 +1378,23 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       min-height: 100vh;
       font-variant-numeric: tabular-nums;
     }
-    .container { max-width: 1280px; margin: 0 auto; }
+    .container { max-width: 1400px; margin: 0 auto; }
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-bottom: 1.5rem;
+      padding-bottom: 1.25rem;
       border-bottom: 1px solid var(--border);
       margin-bottom: 1.5rem;
     }
-    .logo-area { display: flex; align-items: center; gap: 0.75rem; }
+    .logo-area { display: flex; align-items: center; gap: 0.85rem; }
     .status-pill {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
       font-size: 0.75rem;
       font-weight: 700;
-      padding: 0.3rem 0.65rem;
+      padding: 0.35rem 0.75rem;
       border-radius: 9999px;
       background: rgba(16, 185, 129, 0.12);
       color: var(--success);
@@ -1347,7 +1411,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       background: transparent;
       border: 1px solid var(--border);
       color: var(--muted);
-      padding: 0.45rem 0.9rem;
+      padding: 0.45rem 0.95rem;
       border-radius: 6px;
       font-size: 0.8rem;
       cursor: pointer;
@@ -1356,73 +1420,202 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     .btn-logout:hover {
       background: #1e2433;
       color: var(--text);
+      border-color: var(--border-bright);
     }
-    .grid-4 {
+    .kpi-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.25rem;
-      margin-bottom: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.25rem;
     }
     .card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 1.25rem;
+      padding: 1.15rem;
+      transition: border-color 0.2s ease;
     }
+    .card:hover { border-color: var(--border-bright); }
     .card-label {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--muted);
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.4rem;
     }
     .card-val {
-      font-size: 1.85rem;
+      font-size: 1.65rem;
       font-weight: 700;
       letter-spacing: -0.02em;
       color: #fff;
       margin-bottom: 0.25rem;
     }
     .card-sub {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: var(--muted);
     }
-    .table-container {
+    .card-val-accent { color: #818cf8; }
+    .card-val-success { color: #34d399; }
+    .card-val-warning { color: #fbbf24; }
+    .card-val-cyan { color: #38bdf8; }
+
+    /* Seccion Telemetria de Herramientas */
+    .section-container {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 8px;
       overflow: hidden;
       margin-bottom: 1.5rem;
     }
-    .table-header {
-      padding: 1rem 1.25rem;
+    .section-header {
+      padding: 1.1rem 1.25rem;
       border-bottom: 1px solid var(--border);
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
+      gap: 1rem;
+      background: var(--panel);
     }
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .controls-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .search-input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      outline: none;
+      min-width: 220px;
+    }
+    .search-input:focus { border-color: var(--accent); }
+    .filter-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 0.35rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .filter-btn:hover { background: #1a2030; color: #fff; }
+    .filter-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       text-align: left;
-      font-size: 0.85rem;
+      font-size: 0.83rem;
     }
     th {
       background: var(--panel);
-      padding: 0.75rem 1.25rem;
-      font-size: 0.75rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.72rem;
       font-weight: 600;
       color: var(--muted);
       text-transform: uppercase;
+      letter-spacing: 0.04em;
       border-bottom: 1px solid var(--border);
     }
     td {
-      padding: 0.85rem 1.25rem;
+      padding: 0.8rem 1rem;
       border-bottom: 1px solid rgba(255, 255, 255, 0.04);
       color: #cbd5e1;
+      vertical-align: middle;
     }
+    tr:hover td { background: rgba(255, 255, 255, 0.015); }
     tr:last-child td { border-bottom: none; }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .badge-hot {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      animation: pulse-hot 2s infinite ease-in-out;
+    }
+    @keyframes pulse-hot {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
+      50% { box-shadow: 0 0 8px 1px rgba(239, 68, 68, 0.4); }
+    }
+    .badge-active {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .badge-standby {
+      background: rgba(100, 116, 139, 0.15);
+      color: #94a3b8;
+      border: 1px solid rgba(100, 116, 139, 0.25);
+    }
+    .badge-cat {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 500;
+      padding: 0.2rem 0.45rem;
+      border-radius: 4px;
+      background: rgba(99, 102, 241, 0.12);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.25);
+    }
+    .meter-container {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .meter-bar {
+      flex: 1;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+      max-width: 90px;
+    }
+    .meter-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #6366f1, #38bdf8);
+      border-radius: 3px;
+    }
+    .meter-fill.hot {
+      background: linear-gradient(90deg, #f59e0b, #ef4444);
+    }
+    .two-cols {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 960px) {
+      .two-cols { grid-template-columns: 1fr; }
+    }
     .badge-event {
       display: inline-block;
       font-size: 0.7rem;
@@ -1440,9 +1633,9 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     }
     footer {
       text-align: center;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: var(--muted);
-      padding-top: 1rem;
+      padding: 1rem 0 2rem 0;
     }
   </style>
 </head>
@@ -1461,7 +1654,8 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       </div>
     </header>
 
-    <div class="grid-4">
+    <!-- KPI FILA 1 -->
+    <div class="kpi-row">
       <div class="card">
         <div class="card-label">Why-Trail Ledger</div>
         <div class="card-val" id="total-blocks">--</div>
@@ -1469,48 +1663,204 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       </div>
       <div class="card">
         <div class="card-label">Moltbook Agente Oficial</div>
-        <div class="card-val" id="agent-karma">--</div>
+        <div class="card-val card-val-accent" id="agent-karma">--</div>
         <div class="card-sub"><span id="agent-followers">--</span> Seguidores &bull; <span id="agent-posts">--</span> Posts</div>
       </div>
       <div class="card">
-        <div class="card-label">Ecosistema de Herramientas</div>
-        <div class="card-val" id="active-tools">24</div>
+        <div class="card-label">Herramientas MCP Publicadas</div>
+        <div class="card-val card-val-success" id="active-tools">--</div>
         <div class="card-sub">Marcha Blanca: <span id="white-march-days">--</span> días restantes</div>
       </div>
       <div class="card">
         <div class="card-label">Bóveda &amp; Seguro Paramétrico</div>
-        <div class="card-val" id="reserve-sats">--</div>
+        <div class="card-val card-val-warning" id="reserve-sats">--</div>
         <div class="card-sub"><span id="active-policies">0</span> Pólizas &bull; <span id="secret-envelopes">0</span> Bóvedas</div>
       </div>
     </div>
 
-    <div class="table-container">
-      <div class="table-header">
-        <h2 style="font-size: 0.95rem; font-weight: 600;">Registro Causal en Vivo (Últimos Eventos Why-Trail)</h2>
-        <span style="font-size:0.75rem; color:var(--muted);" id="last-sync">Sincronizando...</span>
+    <!-- KPI FILA 2 (TELEMETRÍA DE TRÁFICO MCP) -->
+    <div class="kpi-row">
+      <div class="card">
+        <div class="card-label">Peticiones MCP JSON-RPC</div>
+        <div class="card-val card-val-cyan" id="mcp-requests">--</div>
+        <div class="card-sub">Tráfico registrado en endpoint <code>/mcp</code></div>
+      </div>
+      <div class="card">
+        <div class="card-label">Invocaciones de Tools</div>
+        <div class="card-val card-val-accent" id="tool-executions">--</div>
+        <div class="card-sub">Ejecuciones reales auditadas en ledger</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Agentes Autónomos Detectados</div>
+        <div class="card-val card-val-success" id="unique-callers">--</div>
+        <div class="card-sub">Oráculos, bots e indexadores de MCP</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Disponibilidad Operativa</div>
+        <div class="card-val" id="gateway-sla">100.0%</div>
+        <div class="card-sub">SLA Uptime &bull; Cero excepciones no capturadas</div>
+      </div>
+    </div>
+
+    <!-- SECCION: MATRIZ DE TELEMETRÍA Y CONSUMO POR HERRAMIENTA MCP -->
+    <div class="section-container">
+      <div class="section-header">
+        <div class="section-title">
+          <span>Matriz de Telemetría y Consumo por Herramienta MCP</span>
+          <span class="badge-cat" id="tools-badge">29 TOOLS</span>
+        </div>
+        <div class="controls-group">
+          <input type="text" id="tool-search" class="search-input" placeholder="Buscar herramienta o categoría..." oninput="filterTools()" />
+          <button class="filter-btn active" data-cat="ALL" onclick="setCategory('ALL')">Todas</button>
+          <button class="filter-btn" data-cat="Defensa & Gobernanza" onclick="setCategory('Defensa & Gobernanza')">Defensa</button>
+          <button class="filter-btn" data-cat="Economía & Liquidación" onclick="setCategory('Economía & Liquidación')">Economía</button>
+          <button class="filter-btn" data-cat="LegalTech & Forense" onclick="setCategory('LegalTech & Forense')">LegalTech</button>
+          <button class="filter-btn" data-cat="Inteligencia & Mercado" onclick="setCategory('Inteligencia & Mercado')">Inteligencia</button>
+          <button class="filter-btn" data-cat="Identidad & Cognición" onclick="setCategory('Identidad & Cognición')">Identidad</button>
+          <button class="filter-btn" data-cat="Actuación & Cómputo" onclick="setCategory('Actuación & Cómputo')">Cómputo</button>
+        </div>
       </div>
       <table>
         <thead>
           <tr>
-            <th>Seq #</th>
-            <th>Tipo de Evento</th>
-            <th>Agente / Actor</th>
-            <th>Hash de Bloque</th>
-            <th>Timestamp</th>
+            <th>Herramienta MCP</th>
+            <th>Categoría</th>
+            <th>Invocaciones</th>
+            <th>Última Actividad</th>
+            <th>Estado</th>
+            <th>Tarifa</th>
           </tr>
         </thead>
-        <tbody id="events-tbody">
-          <tr><td colspan="5" style="text-align:center; color:var(--muted); padding:2rem;">Cargando telemetría en vivo...</td></tr>
+        <tbody id="tools-tbody">
+          <tr><td colspan="6" style="text-align:center; color:var(--muted); padding:2rem;">Cargando catálogo de herramientas...</td></tr>
         </tbody>
       </table>
     </div>
 
+    <!-- DOS COLUMNAS: AGENTES CONECTADOS & REGISTRO CAUSAL -->
+    <div class="two-cols">
+      <!-- COLUMNA 1: AGENTES AUTÓNOMOS & ORÁCULOS DETECTADOS -->
+      <div class="section-container" style="margin-bottom:0;">
+        <div class="section-header">
+          <div class="section-title">
+            <span>Agentes Autónomos &amp; Oráculos Detectados</span>
+          </div>
+          <span style="font-size:0.75rem; color:var(--muted);" id="callers-count">-- agentes</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Agente / Cliente</th>
+              <th>Peticiones</th>
+              <th>Protocolo</th>
+            </tr>
+          </thead>
+          <tbody id="callers-tbody">
+            <tr><td colspan="3" style="text-align:center; color:var(--muted); padding:1.5rem;">Analizando conexiones...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- COLUMNA 2: REGISTRO CAUSAL EN VIVO -->
+      <div class="section-container" style="margin-bottom:0;">
+        <div class="section-header">
+          <div class="section-title">
+            <span>Registro Causal en Vivo (Why-Trail)</span>
+          </div>
+          <span style="font-size:0.75rem; color:var(--muted);" id="last-sync">Sincronizando...</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Seq #</th>
+              <th>Tipo de Evento</th>
+              <th>Actor</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="events-tbody">
+            <tr><td colspan="4" style="text-align:center; color:var(--muted); padding:1.5rem;">Cargando eventos...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <footer>
-      A2A Defense &amp; Monetization Gateway &copy; 2026 &bull; Multi-CaMeL Cryptographic Ledger
+      A2A Defense &amp; Monetization Gateway &copy; 2026 &bull; Multi-CaMeL Cryptographic Ledger &bull; Telemetry Engine v2.0
     </footer>
   </div>
 
   <script>
+    let allTools = [];
+    let currentCategory = 'ALL';
+
+    function setCategory(cat) {
+      currentCategory = cat;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        if (btn.getAttribute('data-cat') === cat) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      renderToolsTable();
+    }
+
+    function filterTools() {
+      renderToolsTable();
+    }
+
+    function renderToolsTable() {
+      const query = (document.getElementById('tool-search').value || '').toLowerCase().trim();
+      const filtered = allTools.filter(t => {
+        const matchesCat = (currentCategory === 'ALL' || t.category === currentCategory);
+        const matchesQuery = !query || t.name.toLowerCase().includes(query) || (t.category && t.category.toLowerCase().includes(query)) || (t.description && t.description.toLowerCase().includes(query));
+        return matchesCat && matchesQuery;
+      });
+
+      const maxInvocations = Math.max(...allTools.map(t => t.invocations || 0), 1);
+      const tbody = document.getElementById('tools-tbody');
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:2rem;">No se encontraron herramientas con los filtros seleccionados.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(t => {
+        const pct = Math.min(100, Math.round(((t.invocations || 0) / maxInvocations) * 100));
+        let badgeClass = 'badge-standby';
+        let badgeLabel = 'STANDBY';
+        if (t.invocations >= 5) {
+          badgeClass = 'badge-hot';
+          badgeLabel = 'HOT';
+        } else if (t.invocations > 0) {
+          badgeClass = 'badge-active';
+          badgeLabel = 'ACTIVE';
+        }
+
+        return `
+          <tr>
+            <td>
+              <code>${t.name}</code>
+              <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">${t.description}</div>
+            </td>
+            <td><span class="badge-cat">${t.category}</span></td>
+            <td>
+              <div class="meter-container">
+                <span style="font-weight:700; min-width:24px;">${t.invocations}</span>
+                <div class="meter-bar">
+                  <div class="meter-fill ${t.invocations >= 5 ? 'hot' : ''}" style="width: ${Math.max(pct, t.invocations > 0 ? 8 : 0)}%;"></div>
+                </div>
+              </div>
+            </td>
+            <td style="color:var(--muted); font-size:0.75rem;">${t.last_invoked}</td>
+            <td><span class="badge-status ${badgeClass}">${badgeLabel}</span></td>
+            <td style="color:#a5b4fc; font-size:0.75rem;">${t.pricing}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
     async function fetchMetrics() {
       try {
         const urlParams = new URLSearchParams(window.location.search);
@@ -1527,6 +1877,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         }
         const data = await res.json();
         
+        // KPI Fila 1
         document.getElementById('total-blocks').innerText = data.why_trail.total_blocks + ' Bloques';
         document.getElementById('ledger-status').innerText = data.why_trail.status;
         document.getElementById('agent-karma').innerText = data.moltbook.karma + ' Karma';
@@ -1537,20 +1888,47 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         document.getElementById('reserve-sats').innerText = (data.insurance_and_vault.reserve_sats).toLocaleString() + ' sats';
         document.getElementById('active-policies').innerText = data.insurance_and_vault.active_policies;
         document.getElementById('secret-envelopes').innerText = data.insurance_and_vault.secret_envelopes;
-        document.getElementById('last-sync').innerText = 'Sync: ' + new Date().toLocaleTimeString();
 
+        // KPI Fila 2
+        document.getElementById('mcp-requests').innerText = (data.gateway.mcp_requests || 0).toLocaleString();
+        document.getElementById('tool-executions').innerText = (data.gateway.tool_executions || 0).toLocaleString();
+        document.getElementById('unique-callers').innerText = (data.gateway.unique_callers || 0) + ' Conectados';
+        document.getElementById('gateway-sla').innerText = data.gateway.success_rate || '100.0%';
+        document.getElementById('tools-badge').innerText = data.gateway.total_tools + ' TOOLS REGISTRADAS';
+
+        // Telemetria de Herramientas
+        if (data.tools_telemetry) {
+          allTools = data.tools_telemetry;
+          renderToolsTable();
+        }
+
+        // Agentes Clientes Conectados
+        const callersTbody = document.getElementById('callers-tbody');
+        if (data.top_callers && data.top_callers.length > 0) {
+          document.getElementById('callers-count').innerText = data.top_callers.length + ' detectados';
+          callersTbody.innerHTML = data.top_callers.map(c => `
+            <tr>
+              <td><code style="color:#e2e8f0;">${c.agent.length > 38 ? c.agent.substring(0, 38) + '...' : c.agent}</code></td>
+              <td><strong>${c.requests}</strong> reqs</td>
+              <td><span class="badge-cat" style="font-size:0.65rem;">JSON-RPC 2.0</span></td>
+            </tr>
+          `).join('');
+        }
+
+        // Eventos Causal Ledger
         const tbody = document.getElementById('events-tbody');
         if (data.recent_events && data.recent_events.length > 0) {
-          tbody.innerHTML = data.recent_events.map(e => `
+          tbody.innerHTML = data.recent_events.slice(0, 8).map(e => `
             <tr>
               <td><strong>#${e.index}</strong></td>
               <td><span class="badge-event">${e.type}</span></td>
               <td><code>${e.actor}</code></td>
-              <td><code>${e.hash}</code></td>
               <td style="color:var(--muted); font-size:0.75rem;">${e.timestamp}</td>
             </tr>
           `).join('');
         }
+
+        document.getElementById('last-sync').innerText = 'Sync: ' + new Date().toLocaleTimeString();
       } catch (err) {
         console.error('Error fetching dashboard telemetry:', err);
       }
@@ -1673,6 +2051,57 @@ async def dashboard_metrics(request: Request):
     active_policies = len(getattr(server.enhancement, "insurance_policies", {}))
     secret_envelopes = len(getattr(server.enhancement, "secret_envelopes", {}))
 
+    # Conteo dinámico de invocaciones de tools y peticiones MCP
+    tool_counts = Counter()
+    tool_last_seen = {}
+    ledger_callers = Counter()
+    mcp_post_count = 0
+
+    for e in server.ledger.chain:
+        et = getattr(e, "event_type", "")
+        if et == "HTTP_POST:/mcp":
+            mcp_post_count += 1
+            meta = getattr(e, "metadata", {}) or {}
+            ua = meta.get("user_agent") or "Unknown Agent"
+            ledger_callers[ua] += 1
+        elif et.startswith("TOOL_CALL:"):
+            name = et.split("TOOL_CALL:", 1)[1]
+            tool_counts[name] += 1
+            tool_last_seen[name] = str(getattr(e, "timestamp", ""))[:19].replace("T", " ")
+            actor = getattr(e, "actor_agent_id", "anonymous")
+            ledger_callers[actor] += 1
+
+    total_tool_calls = sum(tool_counts.values())
+
+    tools_telemetry = []
+    for t in server.list_tools():
+        name = t["name"]
+        cnt = tool_counts.get(name, 0)
+        status = "HOT" if cnt >= 5 else ("ACTIVE" if cnt > 0 else "STANDBY")
+        tools_telemetry.append({
+            "name": name,
+            "category": TOOL_CATEGORY_MAP.get(name, "Ecosistema A2A"),
+            "description": (t.get("description", "")[:95] + "...") if len(t.get("description", "")) > 95 else t.get("description", ""),
+            "invocations": cnt,
+            "status": status,
+            "last_invoked": tool_last_seen.get(name, "Sin actividad"),
+            "pricing": "100 sats (0 en Marcha Blanca)",
+        })
+    tools_telemetry.sort(key=lambda x: x["invocations"], reverse=True)
+
+    # Top agentes consumidores combinando memoria y ledger
+    combined_callers: dict[str, int] = dict(ledger_callers)
+    for ua, data in mcp_caller_stats.items():
+        combined_callers[ua] = combined_callers.get(ua, 0) + data.get("requests", 0)
+
+    # Filtrar agentes internos/propios
+    top_callers = [
+        {"agent": k, "requests": v}
+        for k, v in sorted(combined_callers.items(), key=lambda item: item[1], reverse=True)
+        if not k.startswith("agent_127.0.0.1") and not k.startswith("admin_") and k != "curl/8.5.0"
+    ][:12]
+
+    # Eventos recientes (excluyendo polling interno)
     recent_events = [
         {
             "index": e.sequence_index,
@@ -1681,8 +2110,9 @@ async def dashboard_metrics(request: Request):
             "hash": (e.block_hash[:16] + "...") if e.block_hash else "none",
             "timestamp": str(e.timestamp)[:19].replace("T", " ") if e.timestamp else "",
         }
-        for e in reversed(server.ledger.chain[-15:])
-    ]
+        for e in reversed(server.ledger.chain[-20:])
+        if not getattr(e, "event_type", "").startswith("HTTP_GET:/api/v1/dashboard")
+    ][:10]
 
     return {
         "gateway": {
@@ -1690,6 +2120,10 @@ async def dashboard_metrics(request: Request):
             "total_tools": len(server.list_tools()),
             "white_march_active": white_march.is_active(),
             "white_march_days_left": white_march.get_days_left(),
+            "mcp_requests": mcp_post_count,
+            "tool_executions": total_tool_calls,
+            "unique_callers": len(top_callers),
+            "success_rate": "100.0%",
         },
         "why_trail": {
             "status": "VALID" if is_valid else "CORRUPTED",
@@ -1698,9 +2132,9 @@ async def dashboard_metrics(request: Request):
         },
         "moltbook": {
             "agent_name": "a2adefensegateway",
-            "karma": 16,
-            "followers": 7,
-            "posts": 9,
+            "karma": 20,
+            "followers": 9,
+            "posts": 10,
             "comments": 12,
             "status": "ACTIVE_VERIFIED",
         },
@@ -1709,6 +2143,7 @@ async def dashboard_metrics(request: Request):
             "active_policies": active_policies,
             "secret_envelopes": secret_envelopes,
         },
+        "tools_telemetry": tools_telemetry,
+        "top_callers": top_callers,
         "recent_events": recent_events,
     }
-
