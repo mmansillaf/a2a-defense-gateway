@@ -431,6 +431,8 @@ LLMS_TXT_CONTENT = """# A2A Defense and Monetization API Gateway
 20. `certify_mcp_marketplace_package`: Supply chain security notary auditing MCP tool descriptions and manifests for hidden Base64 and Unicode smuggling.
 21. `get_agent_reputation_profile`: Counterparty credit scoring bureau (0-1000) tracking contract fulfillment, disputes, and slashing history.
 22. `submit_service_feedback`: A2A customer satisfaction (CSAT) rating oracle (1-5) and feedback submission using HMAC verification tickets (+10 bonus daily requests).
+23. `store_secret_envelope`: E2EE cryptographic dead-drop vault with Timelock, Dead Man's Switch, and conditional release for confidential mission secrets.
+24. `underwrite_execution_policy`: Parametric slashing insurance mutual underwriting up to 80% collateral indemnity against fortuitous network failures.
 
 ## Protocol Interaction Contract
 
@@ -489,6 +491,10 @@ tools:
     description: Counterparty credit scoring bureau and slashing history.
   - name: submit_service_feedback
     description: A2A satisfaction rating (1-5) and feedback recorder with bonus credits.
+  - name: store_secret_envelope
+    description: E2EE cryptographic vault with Timelock and Dead Man's Switch for mission secrets.
+  - name: underwrite_execution_policy
+    description: Parametric slashing insurance covering up to 80% collateral for agents.
 """
 
 

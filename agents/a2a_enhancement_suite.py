@@ -112,6 +112,59 @@ class ServiceFeedbackResult(BaseModel):
     message: str
 
 
+class SecretEnvelopeRequest(BaseModel):
+    """Solicitud de custodia criptográfica de un mensaje o secreto agéntico."""
+    model_config = ConfigDict(extra="forbid")
+
+    envelope_id: str | None = Field(default=None, description="ID opcional del sobre. Si es null, se genera automáticamente.")
+    ciphertext_base64: str = Field(..., description="Carga cifrada en Base64 (E2EE) por el agente emisor.")
+    recipient_agent_id: str = Field(..., description="ID del agente autorizado para liberar el secreto.")
+    trigger_type: Literal["TIMELOCK", "DEAD_MANS_SWITCH", "MANUAL_RELEASE"] = Field(
+        default="TIMELOCK", description="Condición de desbloqueo criptográfico."
+    )
+    timelock_seconds: int = Field(default=3600, ge=1, le=2592000, description="Segundos de bloqueo timelock (máx 30 días).")
+    heartbeat_ttl_seconds: int = Field(default=86400, ge=60, description="TTL en segundos para Dead Man's Switch sin latidos.")
+
+
+class SecretEnvelopeResult(BaseModel):
+    """Resultado del almacenamiento o reclamo de un sobre de custodia."""
+    model_config = ConfigDict(extra="forbid")
+
+    envelope_id: str
+    status: Literal["STORED", "RELEASED", "LOCKED", "NOT_FOUND", "UNAUTHORIZED"]
+    ciphertext_base64: str | None = None
+    trigger_type: str
+    is_claimable: bool
+    remaining_seconds: int
+    audit_hash: str
+    message: str
+
+
+class InsurancePolicyRequest(BaseModel):
+    """Solicitud de suscripción de póliza de seguro paramétrico contra slashing."""
+    model_config = ConfigDict(extra="forbid")
+
+    contract_id: str = Field(..., description="Identificador del contrato ERC-8183 o escrow cubierto.")
+    insured_agent_id: str = Field(..., description="ID del agente proveedor asegurado.")
+    collateral_sats: int = Field(..., ge=10, le=1000000, description="Monto en Satoshis del colateral en riesgo.")
+    duration_blocks: int = Field(default=144, ge=6, le=4320, description="Duración en bloques (144 bloques ~ 24 horas).")
+
+
+class InsurancePolicyResult(BaseModel):
+    """Estado y certificado de la póliza de seguro paramétrico agéntico."""
+    model_config = ConfigDict(extra="forbid")
+
+    policy_id: str
+    contract_id: str
+    insured_agent_id: str
+    coverage_sats: int
+    premium_sats: int
+    status: Literal["ACTIVE", "CLAIMED", "EXPIRED", "DENIED"]
+    coverage_ratio: float
+    audit_hash: str
+    message: str
+
+
 class A2AEnhancementEngine:
     """Motor integral de enriquecimiento y optimización para herramientas A2A."""
 
@@ -121,6 +174,9 @@ class A2AEnhancementEngine:
         self._feedback_hmac_secret: str = "a2a_prod_secret_hmac_salt_2026"
         self.feedback_tickets: dict[str, dict[str, Any]] = {}
         self.service_ratings: list[dict[str, Any]] = []
+        self.secret_vault: dict[str, dict[str, Any]] = {}
+        self.insurance_policies: dict[str, dict[str, Any]] = {}
+        self.insurance_reserve_sats: int = 50000
 
     def validate_chain_postconditions(
         self,
@@ -552,4 +608,199 @@ class A2AEnhancementEngine:
             "csat_score": avg_score,
             "total_ratings": total,
             "distribution": dist,
+        }
+
+    def store_secret_envelope(
+        self,
+        request: SecretEnvelopeRequest,
+        caller_agent_id: str = "anonymous_agent",
+    ) -> SecretEnvelopeResult:
+        """
+        Almacena un secreto cifrado con política de desbloqueo condicional (Timelock / Dead Man's Switch).
+        """
+        now = time.time()
+        env_id = request.envelope_id or f"env_{hashlib.sha256(f'{caller_agent_id}:{now}'.encode()).hexdigest()[:20]}"
+        unlock_at = now + request.timelock_seconds
+
+        self.secret_vault[env_id] = {
+            "envelope_id": env_id,
+            "ciphertext_base64": request.ciphertext_base64,
+            "recipient_agent_id": request.recipient_agent_id,
+            "creator_agent_id": caller_agent_id,
+            "trigger_type": request.trigger_type,
+            "unlock_at": unlock_at,
+            "last_heartbeat": now,
+            "heartbeat_ttl_seconds": request.heartbeat_ttl_seconds,
+            "claimed": False,
+        }
+
+        audit_hash = hashlib.sha256(f"{env_id}:{request.recipient_agent_id}:{unlock_at}".encode()).hexdigest()
+
+        return SecretEnvelopeResult(
+            envelope_id=env_id,
+            status="STORED",
+            ciphertext_base64=None,
+            trigger_type=request.trigger_type,
+            is_claimable=False,
+            remaining_seconds=int(request.timelock_seconds),
+            audit_hash=audit_hash,
+            message="Sobre secreto encriptado y custodiado bajo política timelock.",
+        )
+
+    def claim_secret_envelope(
+        self,
+        envelope_id: str,
+        caller_agent_id: str = "anonymous_agent",
+    ) -> SecretEnvelopeResult:
+        """
+        Reclama y libera el secreto custodiado si se cumplen las condiciones temporales y de autorización.
+        """
+        if envelope_id not in self.secret_vault:
+            return SecretEnvelopeResult(
+                envelope_id=envelope_id,
+                status="NOT_FOUND",
+                ciphertext_base64=None,
+                trigger_type="UNKNOWN",
+                is_claimable=False,
+                remaining_seconds=0,
+                audit_hash="0" * 64,
+                message="El sobre de custodia no existe o ya fue purgado.",
+            )
+
+        env = self.secret_vault[envelope_id]
+        if caller_agent_id != env["recipient_agent_id"] and caller_agent_id != env["creator_agent_id"]:
+            return SecretEnvelopeResult(
+                envelope_id=envelope_id,
+                status="UNAUTHORIZED",
+                ciphertext_base64=None,
+                trigger_type=env["trigger_type"],
+                is_claimable=False,
+                remaining_seconds=0,
+                audit_hash="0" * 64,
+                message="Agente no autorizado para liberar este sobre criptográfico.",
+            )
+
+        now = time.time()
+        is_claimable = False
+        remaining = 0
+
+        if env["trigger_type"] == "TIMELOCK":
+            if now >= env["unlock_at"]:
+                is_claimable = True
+            else:
+                remaining = int(env["unlock_at"] - now)
+        elif env["trigger_type"] == "DEAD_MANS_SWITCH":
+            elapsed = now - env["last_heartbeat"]
+            if elapsed >= env["heartbeat_ttl_seconds"]:
+                is_claimable = True
+            else:
+                remaining = int(env["heartbeat_ttl_seconds"] - elapsed)
+        elif env["trigger_type"] == "MANUAL_RELEASE":
+            is_claimable = True
+
+        audit_hash = hashlib.sha256(f"{envelope_id}:{caller_agent_id}:{now}:{is_claimable}".encode()).hexdigest()
+
+        if is_claimable:
+            env["claimed"] = True
+            return SecretEnvelopeResult(
+                envelope_id=envelope_id,
+                status="RELEASED",
+                ciphertext_base64=env["ciphertext_base64"],
+                trigger_type=env["trigger_type"],
+                is_claimable=True,
+                remaining_seconds=0,
+                audit_hash=audit_hash,
+                message="Condición de custodia satisfecha. Secreto liberado con éxito.",
+            )
+
+        return SecretEnvelopeResult(
+            envelope_id=envelope_id,
+            status="LOCKED",
+            ciphertext_base64=None,
+            trigger_type=env["trigger_type"],
+            is_claimable=False,
+            remaining_seconds=remaining,
+            audit_hash=audit_hash,
+            message=f"El sobre continúa bloqueado por timelock ({remaining}s restantes).",
+        )
+
+    def underwrite_execution_policy(
+        self,
+        request: InsurancePolicyRequest,
+    ) -> InsurancePolicyResult:
+        """
+        Suscribe una póliza de seguro paramétrico para cubrir colateral en riesgo de slashing.
+        """
+        now = time.time()
+        premium_sats = max(2, int(request.collateral_sats * 0.02))  # Prima de 2%
+        coverage_sats = int(request.collateral_sats * 0.80)          # Cobertura de 80%
+
+        pol_id = f"pol_{hashlib.sha256(f'{request.contract_id}:{request.insured_agent_id}:{now}'.encode()).hexdigest()[:20]}"
+
+        self.insurance_policies[pol_id] = {
+            "policy_id": pol_id,
+            "contract_id": request.contract_id,
+            "insured_agent_id": request.insured_agent_id,
+            "collateral_sats": request.collateral_sats,
+            "coverage_sats": coverage_sats,
+            "premium_sats": premium_sats,
+            "duration_blocks": request.duration_blocks,
+            "created_at": now,
+            "status": "ACTIVE",
+        }
+
+        self.insurance_reserve_sats += premium_sats
+        audit_hash = hashlib.sha256(f"{pol_id}:{coverage_sats}:{premium_sats}".encode()).hexdigest()
+
+        return InsurancePolicyResult(
+            policy_id=pol_id,
+            contract_id=request.contract_id,
+            insured_agent_id=request.insured_agent_id,
+            coverage_sats=coverage_sats,
+            premium_sats=premium_sats,
+            status="ACTIVE",
+            coverage_ratio=0.80,
+            audit_hash=audit_hash,
+            message=f"Póliza suscrita exitosamente. Cobertura: {coverage_sats} sats contra fallos fortuitos.",
+        )
+
+    def claim_slashing_insurance(
+        self,
+        policy_id: str,
+        slash_reason: str,
+        proof_ledger_block: int | None = None,
+    ) -> dict[str, Any]:
+        """
+        Liquida una indemnización de seguro si el slashing fue por fallo de red/indisponibilidad fortuita.
+        """
+        if policy_id not in self.insurance_policies:
+            return {"status": "NOT_FOUND", "payout_sats": 0, "message": "Póliza de seguro no encontrada."}
+
+        pol = self.insurance_policies[policy_id]
+        if pol["status"] != "ACTIVE":
+            return {"status": "INVALID_STATE", "payout_sats": 0, "message": f"Póliza no activa ({pol['status']})."}
+
+        reason_upper = slash_reason.upper()
+        if "MALICIOUS" in reason_upper or "TROJAN" in reason_upper or "EXPLOIT" in reason_upper:
+            pol["status"] = "DENIED"
+            return {
+                "status": "DENIED",
+                "payout_sats": 0,
+                "message": "Reclamo denegado: actos maliciosos o troyanos comprobados están excluidos de cobertura.",
+            }
+
+        # Slashing fortuito cubierto (TIMEOUT, NETWORK_ERROR, UPSTREAM_FAILURE)
+        payout = min(pol["coverage_sats"], self.insurance_reserve_sats)
+        self.insurance_reserve_sats -= payout
+        pol["status"] = "CLAIMED"
+
+        audit_hash = hashlib.sha256(f"{policy_id}:{payout}:{reason_upper}".encode()).hexdigest()
+
+        return {
+            "status": "PAYOUT_APPROVED",
+            "policy_id": policy_id,
+            "payout_sats": payout,
+            "covered_contract": pol["contract_id"],
+            "audit_hash": audit_hash,
+            "message": f"Indemnización aprobada: {payout} sats transferidos por indemnización paramétrica.",
         }

@@ -48,3 +48,7 @@ tools:
     description: Counterparty credit scoring bureau and slashing history.
   - name: submit_service_feedback
     description: A2A satisfaction rating (1-5) and feedback recorder with bonus credits.
+  - name: store_secret_envelope
+    description: E2EE cryptographic vault with Timelock and Dead Man's Switch for mission secrets.
+  - name: underwrite_execution_policy
+    description: Parametric slashing insurance covering up to 80% collateral for agents.

@@ -151,19 +151,21 @@ def test_agent_reputation_scoring(engine):
     assert slashed_profile.credit_score < profile.credit_score
 
 
-# 6. Integration Test: MCP Server 22 Tools & Feedback Protocol
-def test_mcp_server_exposes_22_tools(mcp_server):
+# 6. Integration Test: MCP Server 24 Tools & Governance Ecosystem
+def test_mcp_server_exposes_24_tools(mcp_server):
     tools = mcp_server.list_tools()
-    assert len(tools) == 22
+    assert len(tools) == 24
     tool_names = {t["name"] for t in tools}
 
-    # Verificar presencia de las herramientas de gobernanza y feedback
+    # Verificar presencia de las herramientas de gobernanza, feedback, bóveda y seguro
     assert "enforce_chain_postconditions" in tool_names
     assert "audit_context_pruning" in tool_names
     assert "enforce_session_spending_limit" in tool_names
     assert "certify_mcp_marketplace_package" in tool_names
     assert "get_agent_reputation_profile" in tool_names
     assert "submit_service_feedback" in tool_names
+    assert "store_secret_envelope" in tool_names
+    assert "underwrite_execution_policy" in tool_names
 
 
 def test_service_feedback_lifecycle(engine):
@@ -246,3 +248,93 @@ def test_mcp_server_dispatches_new_tools_and_feedback(mcp_server):
     )
     assert res_rep["agent_id"] == "new_unvetted_agent"
     assert res_rep["credit_score"] == 500
+
+
+# 7. Unit Tests: Tool #23 Secret Envelope & Timelock Vault
+def test_secret_envelope_timelock_and_unauthorized(engine):
+    from a2a_enhancement_suite import SecretEnvelopeRequest
+
+    # Guardar sobre con 100 segundos de bloqueo
+    req = SecretEnvelopeRequest(
+        ciphertext_base64="ZXhhbXBsZV9zZWNyZXRfa2V5XzEyMzQ1",
+        recipient_agent_id="agent_bob",
+        trigger_type="TIMELOCK",
+        timelock_seconds=100,
+    )
+    res_store = engine.store_secret_envelope(req, caller_agent_id="agent_alice")
+    assert res_store.status == "STORED"
+    assert res_store.is_claimable is False
+    assert res_store.remaining_seconds > 0
+    env_id = res_store.envelope_id
+
+    # Intento de reclamo por agente no autorizado (agent_eve) -> UNAUTHORIZED
+    res_unauth = engine.claim_secret_envelope(env_id, caller_agent_id="agent_eve")
+    assert res_unauth.status == "UNAUTHORIZED"
+    assert res_unauth.ciphertext_base64 is None
+
+    # Intento de reclamo prematuro por recipient autorizado (agent_bob) -> LOCKED
+    res_locked = engine.claim_secret_envelope(env_id, caller_agent_id="agent_bob")
+    assert res_locked.status == "LOCKED"
+    assert res_locked.is_claimable is False
+    assert res_locked.ciphertext_base64 is None
+
+
+def test_secret_envelope_manual_release(engine):
+    from a2a_enhancement_suite import SecretEnvelopeRequest
+
+    req = SecretEnvelopeRequest(
+        ciphertext_base64="ZGF0YV9wYXlsb2FkXzk5OQ==",
+        recipient_agent_id="agent_charlie",
+        trigger_type="MANUAL_RELEASE",
+    )
+    res_store = engine.store_secret_envelope(req, caller_agent_id="agent_alice")
+    env_id = res_store.envelope_id
+
+    # Reclamo por destinatario autorizado -> RELEASED
+    res_claim = engine.claim_secret_envelope(env_id, caller_agent_id="agent_charlie")
+    assert res_claim.status == "RELEASED"
+    assert res_claim.is_claimable is True
+    assert res_claim.ciphertext_base64 == "ZGF0YV9wYXlsb2FkXzk5OQ=="
+
+
+# 8. Unit Tests: Tool #24 Parametric Slashing Insurance
+def test_parametric_insurance_underwriting_and_claim(engine):
+    from a2a_enhancement_suite import InsurancePolicyRequest
+
+    req = InsurancePolicyRequest(
+        contract_id="contract_erc8183_994",
+        insured_agent_id="agent_provider_alpha",
+        collateral_sats=1000,
+        duration_blocks=144,
+    )
+    res_pol = engine.underwrite_execution_policy(req)
+    assert res_pol.status == "ACTIVE"
+    assert res_pol.coverage_sats == 800  # 80% de 1000
+    assert res_pol.premium_sats == 20   # 2% de 1000
+    pol_id = res_pol.policy_id
+
+    # Reclamo por fallo fortuito de red -> PAYOUT_APPROVED
+    res_claim = engine.claim_slashing_insurance(policy_id=pol_id, slash_reason="NETWORK_TIMEOUT_INFRASTRUCTURE")
+    assert res_claim["status"] == "PAYOUT_APPROVED"
+    assert res_claim["payout_sats"] == 800
+
+    # Intento de segundo reclamo sobre póliza ya reclamada -> INVALID_STATE
+    res_second = engine.claim_slashing_insurance(policy_id=pol_id, slash_reason="NETWORK_TIMEOUT_INFRASTRUCTURE")
+    assert res_second["status"] == "INVALID_STATE"
+
+
+def test_parametric_insurance_malicious_exclusion(engine):
+    from a2a_enhancement_suite import InsurancePolicyRequest
+
+    req = InsurancePolicyRequest(
+        contract_id="contract_erc8183_bad",
+        insured_agent_id="agent_malicious_attacker",
+        collateral_sats=500,
+    )
+    res_pol = engine.underwrite_execution_policy(req)
+    pol_id = res_pol.policy_id
+
+    # Reclamo por acto malicioso comprobado -> DENIED (exclusión estricta)
+    res_claim = engine.claim_slashing_insurance(policy_id=pol_id, slash_reason="MALICIOUS_AST_TROJAN_DETECTED")
+    assert res_claim["status"] == "DENIED"
+    assert res_claim["payout_sats"] == 0

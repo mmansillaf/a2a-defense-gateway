@@ -56,7 +56,7 @@ def test_mcp_tools_list():
     response = client.post("/mcp", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert len(data["result"]["tools"]) == 22
+    assert len(data["result"]["tools"]) == 24
     tool_names = [t["name"] for t in data["result"]["tools"]]
     assert "compute_procedural_deadline" in tool_names
     assert "verify_normative_validity" in tool_names

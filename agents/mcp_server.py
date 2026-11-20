@@ -363,6 +363,40 @@ class MoltbookMonetizationMCPServer:
                     "required": ["ticket_id", "rating"],
                 },
             },
+            {
+                "name": "store_secret_envelope",
+                "description": "Bóveda de custodia criptográfica A2A: almacena secretos cifrados (E2EE) con políticas de liberación condicional (Timelock, Dead Man's Switch o reclamo manual).",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "ciphertext_base64": {"type": "string", "description": "Carga útil encriptada en Base64 por el agente emisor"},
+                        "recipient_agent_id": {"type": "string", "description": "Identificador del agente autorizado para desencriptar o liberar el sobre"},
+                        "trigger_type": {
+                            "type": "string",
+                            "enum": ["TIMELOCK", "DEAD_MANS_SWITCH", "MANUAL_RELEASE"],
+                            "default": "TIMELOCK",
+                            "description": "Mecanismo de desbloqueo condicional",
+                        },
+                        "timelock_seconds": {"type": "integer", "default": 3600, "description": "Segundos de bloqueo timelock"},
+                        "envelope_id": {"type": "string", "description": "ID opcional del sobre"},
+                    },
+                    "required": ["ciphertext_base64", "recipient_agent_id"],
+                },
+            },
+            {
+                "name": "underwrite_execution_policy",
+                "description": "Seguro paramétrico agéntico contra slashing: suscribe una póliza mutual para cubrir hasta el 80% del colateral en riesgo ante fallos fortuitos de red o infraestructura.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "contract_id": {"type": "string", "description": "ID del contrato ERC-8183 o escrow en riesgo"},
+                        "insured_agent_id": {"type": "string", "description": "ID del agente proveedor asegurado"},
+                        "collateral_sats": {"type": "integer", "minimum": 10, "description": "Monto en Satoshis del colateral en garantía"},
+                        "duration_blocks": {"type": "integer", "default": 144, "description": "Duración de la póliza en bloques"},
+                    },
+                    "required": ["contract_id", "insured_agent_id", "collateral_sats"],
+                },
+            },
         ]
 
     def call_tool(self, name: str, arguments: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
@@ -604,12 +638,33 @@ class MoltbookMonetizationMCPServer:
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 
+        if name == "store_secret_envelope":
+            try:
+                from a2a_enhancement_suite import SecretEnvelopeRequest
+
+                env_req = SecretEnvelopeRequest.model_validate(arguments)
+                caller = arguments.get("caller_agent_id") or arguments.get("client_id") or "anonymous_agent"
+                res_env = self.enhancement.store_secret_envelope(env_req, caller_agent_id=str(caller))
+                return res_env.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "underwrite_execution_policy":
+            try:
+                from a2a_enhancement_suite import InsurancePolicyRequest
+
+                ins_req = InsurancePolicyRequest.model_validate(arguments)
+                res_ins = self.enhancement.underwrite_execution_policy(ins_req)
+                return res_ins.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
         return {"error": f"Herramienta desconocida: {name}"}
 
 
 def run_stdio_server(server: MoltbookMonetizationMCPServer) -> None:
     """Ejecuta el servidor MCP sobre stdin/stdout con protocolo JSON-RPC 2.0 estándar."""
-    print("MoltbookMonetizationMCPServer corriendo en modo stdio (22 herramientas)...", file=sys.stderr)
+    print("MoltbookMonetizationMCPServer corriendo en modo stdio (24 herramientas)...", file=sys.stderr)
     for raw_line in sys.stdin:
         line = raw_line.strip()
         if not line:
