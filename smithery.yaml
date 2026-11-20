@@ -36,3 +36,15 @@ tools:
     description: Static forensic analysis and deobfuscation of Excel VBA macros.
   - name: match_peruvian_procurement
     description: Classifier for Peruvian government procurement tenders with CUBSO codes.
+  - name: enforce_chain_postconditions
+    description: Prevents hollow 200 OK responses from advancing downstream calls.
+  - name: audit_context_pruning
+    description: Audits context compression gaps and critical entity preservation.
+  - name: enforce_session_spending_limit
+    description: Financial circuit breaker enforcing satoshi spending caps.
+  - name: certify_mcp_marketplace_package
+    description: Audits MCP listings for Base64 and prompt injection smuggling.
+  - name: get_agent_reputation_profile
+    description: Counterparty credit scoring bureau and slashing history.
+  - name: submit_service_feedback
+    description: A2A satisfaction rating (1-5) and feedback recorder with bonus credits.

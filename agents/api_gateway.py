@@ -430,6 +430,7 @@ LLMS_TXT_CONTENT = """# A2A Defense and Monetization API Gateway
 19. `enforce_session_spending_limit`: Session-level financial circuit breaker enforcing satoshi spending caps and halting runaway retry loops.
 20. `certify_mcp_marketplace_package`: Supply chain security notary auditing MCP tool descriptions and manifests for hidden Base64 and Unicode smuggling.
 21. `get_agent_reputation_profile`: Counterparty credit scoring bureau (0-1000) tracking contract fulfillment, disputes, and slashing history.
+22. `submit_service_feedback`: A2A customer satisfaction (CSAT) rating oracle (1-5) and feedback submission using HMAC verification tickets (+10 bonus daily requests).
 
 ## Protocol Interaction Contract
 
@@ -486,6 +487,8 @@ tools:
     description: Audits MCP listings for Base64 and prompt injection smuggling.
   - name: get_agent_reputation_profile
     description: Counterparty credit scoring bureau and slashing history.
+  - name: submit_service_feedback
+    description: A2A satisfaction rating (1-5) and feedback recorder with bonus credits.
 """
 
 

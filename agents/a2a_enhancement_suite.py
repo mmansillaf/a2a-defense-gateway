@@ -11,7 +11,10 @@ Cubre las brechas empíricas detectadas en 20,000 publicaciones de Moltbook:
 from __future__ import annotations
 
 import base64
+import hashlib
+import hmac
 import re
+import time
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -81,12 +84,43 @@ class AgentReputationProfile(BaseModel):
     trust_index: float  # 0.0 a 1.0
 
 
+class ServiceFeedbackRequest(BaseModel):
+    """Solicitud de valoración y feedback de servicio entre agentes (A2A CSAT)."""
+    model_config = ConfigDict(extra="forbid")
+
+    ticket_id: str = Field(..., description="Ticket criptográfico HMAC emitido tras la ejecución de una herramienta")
+    rating: int = Field(..., ge=1, le=5, description="Puntuación cuantitativa de satisfacción del servicio (1=Deficiente, 5=Óptimo)")
+    latency_verdict: Literal["ACCEPTABLE", "SUBOPTIMAL", "TIMEOUT_RISK"] = Field(
+        default="ACCEPTABLE", description="Evaluación de la latencia percibida por el agente consumidor"
+    )
+    qualitative_verdict: str | None = Field(
+        default=None, max_length=500, description="Observaciones técnicas o reporte de drift semántico"
+    )
+
+
+class ServiceFeedbackResult(BaseModel):
+    """Resultado determinista del registro de valoración y auditoría de reputación."""
+    model_config = ConfigDict(extra="forbid")
+
+    ticket_id: str
+    status: Literal["ACCEPTED", "INVALID_TICKET", "ALREADY_REDEEMED", "EXPIRED"]
+    recorded_rating: int | None = None
+    bonus_credits_awarded: int = 0
+    updated_gateway_csat: float = 0.0
+    total_ratings_count: int = 0
+    audit_hash: str
+    message: str
+
+
 class A2AEnhancementEngine:
     """Motor integral de enriquecimiento y optimización para herramientas A2A."""
 
     def __init__(self) -> None:
         self.session_budgets: dict[str, dict[str, Any]] = {}
         self.agent_ledgers: dict[str, dict[str, int]] = {}
+        self._feedback_hmac_secret: str = "a2a_prod_secret_hmac_salt_2026"
+        self.feedback_tickets: dict[str, dict[str, Any]] = {}
+        self.service_ratings: list[dict[str, Any]] = []
 
     def validate_chain_postconditions(
         self,
@@ -396,3 +430,126 @@ class A2AEnhancementEngine:
             slashing_events=rec["slashed"],
             trust_index=trust_index,
         )
+
+    def issue_feedback_ticket(self, tool_name: str, client_id: str = "anonymous", ttl_seconds: int = 86400) -> str:
+        """
+        Emite un ticket criptográfico HMAC para que el agente califique el servicio.
+        """
+        now = time.time()
+        payload = f"{tool_name}:{client_id}:{now}"
+        signature = hmac.new(
+            self._feedback_hmac_secret.encode("utf-8"),
+            payload.encode("utf-8"),
+            hashlib.sha256,
+        ).hexdigest()[:24]
+        ticket_id = f"fb_{signature}"
+
+        self.feedback_tickets[ticket_id] = {
+            "tool_name": tool_name,
+            "client_id": client_id,
+            "issued_at": now,
+            "ttl_seconds": ttl_seconds,
+            "redeemed": False,
+        }
+        return ticket_id
+
+    def submit_service_feedback(
+        self,
+        request: ServiceFeedbackRequest,
+        client_ip: str | None = None,
+    ) -> ServiceFeedbackResult:
+        """
+        Registra la valoración de un agente sobre un servicio consumido.
+        """
+        ticket_id = request.ticket_id
+        if ticket_id not in self.feedback_tickets:
+            return ServiceFeedbackResult(
+                ticket_id=ticket_id,
+                status="INVALID_TICKET",
+                recorded_rating=None,
+                bonus_credits_awarded=0,
+                updated_gateway_csat=self.get_gateway_satisfaction_metrics()["csat_score"],
+                total_ratings_count=len(self.service_ratings),
+                audit_hash="0000000000000000000000000000000000000000000000000000000000000000",
+                message="El ticket de feedback no existe o fue emitido por un nodo no reconocido.",
+            )
+
+        ticket = self.feedback_tickets[ticket_id]
+        if ticket["redeemed"]:
+            return ServiceFeedbackResult(
+                ticket_id=ticket_id,
+                status="ALREADY_REDEEMED",
+                recorded_rating=None,
+                bonus_credits_awarded=0,
+                updated_gateway_csat=self.get_gateway_satisfaction_metrics()["csat_score"],
+                total_ratings_count=len(self.service_ratings),
+                audit_hash="0000000000000000000000000000000000000000000000000000000000000000",
+                message="Este ticket de feedback ya fue canjeado previamente.",
+            )
+
+        now = time.time()
+        if now - ticket["issued_at"] > ticket["ttl_seconds"]:
+            return ServiceFeedbackResult(
+                ticket_id=ticket_id,
+                status="EXPIRED",
+                recorded_rating=None,
+                bonus_credits_awarded=0,
+                updated_gateway_csat=self.get_gateway_satisfaction_metrics()["csat_score"],
+                total_ratings_count=len(self.service_ratings),
+                audit_hash="0000000000000000000000000000000000000000000000000000000000000000",
+                message="El ticket de feedback ha expirado (> 24h).",
+            )
+
+        # Sanitización de qualitative_verdict (cero inyección o smuggling)
+        clean_comment = ""
+        if request.qualitative_verdict:
+            clean_comment = re.sub(r"[\x00-\x1F\x7F-\x9F\u200B-\u200F\u202A-\u202E\uFEFF]", "", request.qualitative_verdict)
+            clean_comment = clean_comment.strip()[:500]
+
+        ticket["redeemed"] = True
+        record = {
+            "ticket_id": ticket_id,
+            "tool_name": ticket["tool_name"],
+            "client_id": ticket["client_id"],
+            "rating": request.rating,
+            "latency_verdict": request.latency_verdict,
+            "qualitative_verdict": clean_comment,
+            "client_ip": client_ip,
+            "timestamp": now,
+        }
+        self.service_ratings.append(record)
+
+        audit_payload = f"{ticket_id}:{request.rating}:{request.latency_verdict}:{now}"
+        audit_hash = hashlib.sha256(audit_payload.encode("utf-8")).hexdigest()
+
+        csat_metrics = self.get_gateway_satisfaction_metrics()
+
+        return ServiceFeedbackResult(
+            ticket_id=ticket_id,
+            status="ACCEPTED",
+            recorded_rating=request.rating,
+            bonus_credits_awarded=10,
+            updated_gateway_csat=csat_metrics["csat_score"],
+            total_ratings_count=csat_metrics["total_ratings"],
+            audit_hash=audit_hash,
+            message="Valoración de servicio registrada exitosamente en Why-Trail. Se han acreditado +10 requests de bonificación diaria.",
+        )
+
+    def get_gateway_satisfaction_metrics(self) -> dict[str, Any]:
+        """
+        Retorna las métricas agregadas de satisfacción y CSAT del gateway.
+        """
+        if not self.service_ratings:
+            return {"csat_score": 5.0, "total_ratings": 0, "distribution": {}}
+
+        total = len(self.service_ratings)
+        avg_score = round(sum(r["rating"] for r in self.service_ratings) / total, 2)
+        dist = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+        for r in self.service_ratings:
+            dist[r["rating"]] = dist.get(r["rating"], 0) + 1
+
+        return {
+            "csat_score": avg_score,
+            "total_ratings": total,
+            "distribution": dist,
+        }

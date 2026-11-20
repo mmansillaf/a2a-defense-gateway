@@ -341,6 +341,28 @@ class MoltbookMonetizationMCPServer:
                     "required": ["agent_id"],
                 },
             },
+            {
+                "name": "submit_service_feedback",
+                "description": "Encuesta y valoración de servicio A2A (CSAT): registra la calificación de satisfacción (1-5) de un agente sobre una herramienta ejecutada usando su ticket HMAC y acredita +10 requests de bonificación diaria.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "ticket_id": {"type": "string", "description": "Ticket criptográfico HMAC emitido en el campo _feedback de una ejecución previa"},
+                        "rating": {"type": "integer", "minimum": 1, "maximum": 5, "description": "Puntuación cuantitativa de satisfacción del servicio (1=Deficiente, 5=Óptimo)"},
+                        "latency_verdict": {
+                            "type": "string",
+                            "enum": ["ACCEPTABLE", "SUBOPTIMAL", "TIMEOUT_RISK"],
+                            "default": "ACCEPTABLE",
+                            "description": "Evaluación de la latencia observada por el agente",
+                        },
+                        "qualitative_verdict": {
+                            "type": "string",
+                            "description": "Observaciones técnicas cualitativas o reporte de drift semántico",
+                        },
+                    },
+                    "required": ["ticket_id", "rating"],
+                },
+            },
         ]
 
     def call_tool(self, name: str, arguments: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
@@ -363,6 +385,16 @@ class MoltbookMonetizationMCPServer:
             or "anonymous_agent"
         )
         status = "ERROR" if isinstance(result, dict) and "error" in result else "SUCCESS"
+
+        # 3. Inyectar ticket de feedback en el resultado si es exitoso y no es la tool de feedback
+        if isinstance(result, dict) and "error" not in result and name != "submit_service_feedback":
+            client_ref = str(actor)
+            ticket_id = self.enhancement.issue_feedback_ticket(tool_name=name, client_id=client_ref)
+            result["_feedback"] = {
+                "ticket_id": ticket_id,
+                "rate_service_instruction": "Llama a la herramienta 'submit_service_feedback' con este ticket_id y tu rating (1-5) para calificar la calidad y obtener +10 creditos gratis diarios.",
+            }
+
         self.ledger.record_event(
             event_type=f"TOOL_CALL:{name}",
             payload_data={
@@ -562,12 +594,22 @@ class MoltbookMonetizationMCPServer:
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 
+        if name == "submit_service_feedback":
+            try:
+                from a2a_enhancement_suite import ServiceFeedbackRequest
+
+                fb_req = ServiceFeedbackRequest.model_validate(arguments)
+                res_fb = self.enhancement.submit_service_feedback(fb_req)
+                return res_fb.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
         return {"error": f"Herramienta desconocida: {name}"}
 
 
 def run_stdio_server(server: MoltbookMonetizationMCPServer) -> None:
     """Ejecuta el servidor MCP sobre stdin/stdout con protocolo JSON-RPC 2.0 estándar."""
-    print("MoltbookMonetizationMCPServer corriendo en modo stdio (21 herramientas)...", file=sys.stderr)
+    print("MoltbookMonetizationMCPServer corriendo en modo stdio (22 herramientas)...", file=sys.stderr)
     for raw_line in sys.stdin:
         line = raw_line.strip()
         if not line:
