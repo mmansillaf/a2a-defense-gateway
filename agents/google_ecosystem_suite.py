@@ -328,25 +328,39 @@ class GoogleEcosystemEngine:
             encoding="utf-8",
         )
 
-        # 2. Generación física de archivo de audio MP3
+        # 2. Generación física de audio MP3 bivoz (Dual Voice Dialectic)
         mp3_path = AUDIO_DIR / f"{briefing_id}.mp3"
-        dialogue_script = " ".join([f"{t.speaker}: {t.dialogue}" for t in dialogue_turns])
+        combined_audio = bytearray()
+
+        voice_map = {
+            "Locutor A (Auditor / Escéptico)": ("es-PE-AlexNeural", "-4%"),
+            "Locutor B (Estratega / Analista)": ("es-PE-CamilaNeural", "+1%"),
+        }
 
         try:
-            cmd = [
-                sys.executable,
-                "-m",
-                "edge_tts",
-                "-t",
-                dialogue_script,
-                "-v",
-                "es-PE-AlexNeural",
-                "--write-media",
-                str(mp3_path),
-            ]
-            subprocess.run(cmd, capture_output=True, timeout=20, check=False)
+            for i, turn in enumerate(dialogue_turns):
+                voice, rate = voice_map.get(turn.speaker, ("es-PE-AlexNeural", "0%"))
+                part_path = AUDIO_DIR / f"{briefing_id}_part_{i}.mp3"
+                cmd = [
+                    sys.executable,
+                    "-m",
+                    "edge_tts",
+                    "-t",
+                    turn.dialogue,
+                    "-v",
+                    voice,
+                    f"--rate={rate}",
+                    "--write-media",
+                    str(part_path),
+                ]
+                subprocess.run(cmd, capture_output=True, timeout=15, check=False)
+                if part_path.exists():
+                    combined_audio.extend(part_path.read_bytes())
+                    part_path.unlink(missing_ok=True)
+
+            if combined_audio:
+                mp3_path.write_bytes(combined_audio)
         except (subprocess.SubprocessError, OSError):
-            # Fallback determinista si el subproceso TTS no está disponible
             pass
 
         # Si el servicio TTS no produce archivo (ej. offline), generar frame MP3 sintético válido
