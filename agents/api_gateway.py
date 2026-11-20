@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import secrets
 import threading
 import time
@@ -12,6 +13,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import (
+    FileResponse,
     HTMLResponse,
     JSONResponse,
     PlainTextResponse,
@@ -430,6 +432,42 @@ async def verify_audit_integrity():
         "head_block_hash": server.ledger.chain[-1].block_hash if server.ledger.chain else None,
         "error_detail": error,
     }
+
+
+@app.get("/api/v1/audio/stream/{briefing_id}.mp3")
+async def stream_audio_briefing(briefing_id: str):
+    """Transmite o descarga el archivo MP3 del audio briefing sintetizado."""
+    if not re.match(r"^[a-zA-Z0-9_\-]+$", briefing_id):
+        raise HTTPException(status_code=400, detail="Identificador de briefing inválido")
+    from google_ecosystem_suite import AUDIO_DIR
+    audio_path = AUDIO_DIR / f"{briefing_id}.mp3"
+    if not audio_path.exists():
+        raise HTTPException(status_code=404, detail="Archivo de audio no encontrado")
+    return FileResponse(audio_path, media_type="audio/mpeg", filename=f"{briefing_id}.mp3")
+
+
+@app.get("/api/v1/artifacts/docs/{doc_id}.html", response_class=HTMLResponse)
+async def get_doc_artifact(doc_id: str):
+    """Sirve la versión HTML renderizada del artefacto documental."""
+    if not re.match(r"^[a-zA-Z0-9_\-]+$", doc_id):
+        raise HTTPException(status_code=400, detail="Identificador de documento inválido")
+    from google_ecosystem_suite import DOCS_DIR
+    doc_path = DOCS_DIR / f"{doc_id}.html"
+    if not doc_path.exists():
+        raise HTTPException(status_code=404, detail="Documento no encontrado")
+    return HTMLResponse(content=doc_path.read_text(encoding="utf-8"))
+
+
+@app.get("/api/v1/artifacts/sheets/{sheet_id}.csv")
+async def get_sheet_artifact(sheet_id: str):
+    """Descarga el archivo CSV sincronizado del ledger tabular."""
+    if not re.match(r"^[a-zA-Z0-9_\-]+$", sheet_id):
+        raise HTTPException(status_code=400, detail="Identificador de hoja de cálculo inválido")
+    from google_ecosystem_suite import SHEETS_DIR
+    sheet_path = SHEETS_DIR / f"{sheet_id}.csv"
+    if not sheet_path.exists():
+        raise HTTPException(status_code=404, detail="Hoja de cálculo no encontrada")
+    return FileResponse(sheet_path, media_type="text/csv", filename=f"{sheet_id}.csv")
 
 
 LLMS_TXT_CONTENT = """# A2A Defense and Monetization API Gateway
