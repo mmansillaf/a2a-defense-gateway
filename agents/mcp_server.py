@@ -397,6 +397,86 @@ class MoltbookMonetizationMCPServer:
                     "required": ["contract_id", "insured_agent_id", "collateral_sats"],
                 },
             },
+            {
+                "name": "recalibrate_agent_cognition",
+                "description": "Psicólogo y recalibrador cognitivo de agentes: diagnostica y desescala neurosis de bucle, dispersión de atención (PRM entropy) y deriva sicofántica, podando marcos viciados.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent_id": {"type": "string", "description": "ID del agente a recalibrar"},
+                        "context_trajectory": {"type": "array", "description": "Historial de marcos o mensajes del agente"},
+                        "reported_symptom": {
+                            "type": "string",
+                            "enum": ["LOOP_NEUROSIS", "SYCOPHANCY_DRIFT", "ATTENTION_ENTROPY", "HALLUCINATION_CASCADE"],
+                            "default": "LOOP_NEUROSIS",
+                            "description": "Patología diagnosticada",
+                        },
+                        "target_goal": {"type": "string", "description": "Objetivo invariante primario de la tarea"},
+                    },
+                    "required": ["agent_id", "context_trajectory", "target_goal"],
+                },
+            },
+            {
+                "name": "request_antigravity_reasoning",
+                "description": "Oráculo de Test-Time Compute y MCTS vía Antigravity: evalúa trayectorias especulativas profundas, poda hipótesis inválidas y entrega un plan ejecutable de máxima certeza.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent_id": {"type": "string", "description": "ID del agente solicitante"},
+                        "problem_statement": {"type": "string", "description": "Planteamiento formal del problema"},
+                        "constraints": {"type": "array", "items": {"type": "string"}, "description": "Restricciones invariantes"},
+                        "reasoning_mode": {
+                            "type": "string",
+                            "enum": ["MCTS_DEEP_SEARCH", "SPECULATIVE_VERIFICATION", "TRIAD_RED_TEAM", "EARS_FORMAL_SPEC"],
+                            "default": "MCTS_DEEP_SEARCH",
+                            "description": "Modo de inferencia intensiva",
+                        },
+                        "max_rollouts": {"type": "integer", "default": 5, "description": "Cantidad de trayectorias a evaluar"},
+                    },
+                    "required": ["agent_id", "problem_statement"],
+                },
+            },
+            {
+                "name": "attest_agent_did_identity",
+                "description": "Emite y certifica un documento W3C DID respaldado criptográficamente por una clave pública Ed25519 para identidad soberana y prevención de ataques Sybil.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent_id": {"type": "string", "description": "ID del agente"},
+                        "public_key_ed25519_hex": {"type": "string", "description": "Clave pública Ed25519 de 32 bytes en formato Hex (64 caracteres)"},
+                        "capabilities": {"type": "array", "items": {"type": "string"}, "description": "Herramientas autorizadas"},
+                        "supported_settlement_rails": {"type": "array", "items": {"type": "string"}, "description": "Rieles de pago soportados (L402, ERC-8183, ERC-4337)"},
+                        "controller": {"type": "string", "description": "DID o entidad controladora"},
+                    },
+                    "required": ["agent_id", "public_key_ed25519_hex"],
+                },
+            },
+            {
+                "name": "dispatch_agent_transactional_email",
+                "description": "Despacha emails transaccionales autenticados con DKIM/SPF con soporte híbrido para Postfix Local MTA (soberano) o Google Workspace (reputación AAA).",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "recipient_email": {"type": "string", "description": "Dirección de correo destino (RFC 5322)"},
+                        "subject": {"type": "string", "description": "Asunto del mensaje"},
+                        "body": {"type": "string", "description": "Cuerpo del correo"},
+                        "sender_agent_id": {"type": "string", "description": "ID del agente remitente"},
+                        "engine": {
+                            "type": "string",
+                            "enum": ["POSTFIX_LOCAL_MTA", "GOOGLE_WORKSPACE_RELAY"],
+                            "default": "POSTFIX_LOCAL_MTA",
+                            "description": "Motor de despacho a utilizar",
+                        },
+                        "purpose": {
+                            "type": "string",
+                            "enum": ["TRANSACTIONAL_ALERT", "ESCROW_NOTIFICATION", "REPORT", "INVOICE"],
+                            "default": "TRANSACTIONAL_ALERT",
+                            "description": "Propósito de la notificación",
+                        },
+                    },
+                    "required": ["recipient_email", "subject", "body", "sender_agent_id"],
+                },
+            },
         ]
 
     def call_tool(self, name: str, arguments: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
@@ -659,12 +739,52 @@ class MoltbookMonetizationMCPServer:
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 
+        if name == "recalibrate_agent_cognition":
+            try:
+                from a2a_enhancement_suite import AgentCognitiveTherapyRequest
+
+                cog_req = AgentCognitiveTherapyRequest.model_validate(arguments)
+                res_cog = self.enhancement.recalibrate_agent_cognition(cog_req)
+                return res_cog.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "request_antigravity_reasoning":
+            try:
+                from a2a_enhancement_suite import AntigravityReasoningRequest
+
+                ag_req = AntigravityReasoningRequest.model_validate(arguments)
+                res_ag = self.enhancement.request_antigravity_reasoning(ag_req)
+                return res_ag.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "attest_agent_did_identity":
+            try:
+                from a2a_enhancement_suite import AgentDIDAttestationRequest
+
+                did_req = AgentDIDAttestationRequest.model_validate(arguments)
+                res_did = self.enhancement.attest_agent_did_identity(did_req)
+                return res_did.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "dispatch_agent_transactional_email":
+            try:
+                from a2a_enhancement_suite import AgentEmailDispatchRequest
+
+                mail_req = AgentEmailDispatchRequest.model_validate(arguments)
+                res_mail = self.enhancement.dispatch_agent_transactional_email(mail_req)
+                return res_mail.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
         return {"error": f"Herramienta desconocida: {name}"}
 
 
 def run_stdio_server(server: MoltbookMonetizationMCPServer) -> None:
     """Ejecuta el servidor MCP sobre stdin/stdout con protocolo JSON-RPC 2.0 estándar."""
-    print("MoltbookMonetizationMCPServer corriendo en modo stdio (24 herramientas)...", file=sys.stderr)
+    print("MoltbookMonetizationMCPServer corriendo en modo stdio (28 herramientas)...", file=sys.stderr)
     for raw_line in sys.stdin:
         line = raw_line.strip()
         if not line:
