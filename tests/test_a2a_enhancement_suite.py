@@ -151,10 +151,10 @@ def test_agent_reputation_scoring(engine):
     assert slashed_profile.credit_score < profile.credit_score
 
 
-# 6. Integration Test: MCP Server 29 Tools & Governance Ecosystem
-def test_mcp_server_exposes_29_tools(mcp_server):
+# 6. Integration Test: MCP Server 33 Tools & Governance Ecosystem
+def test_mcp_server_exposes_33_tools(mcp_server):
     tools = mcp_server.list_tools()
-    assert len(tools) == 29
+    assert len(tools) == 33
     tool_names = {t["name"] for t in tools}
 
     # Verificar presencia de las herramientas de gobernanza, feedback, bóveda y seguro
@@ -171,6 +171,10 @@ def test_mcp_server_exposes_29_tools(mcp_server):
     assert "attest_agent_did_identity" in tool_names
     assert "dispatch_agent_transactional_email" in tool_names
     assert "dispatch_colab_gpu_job" in tool_names
+    assert "query_deep_context_archive" in tool_names
+    assert "publish_enterprise_artifact" in tool_names
+    assert "generate_audio_briefing" in tool_names
+    assert "sync_tabular_ledger" in tool_names
     assert "submit_service_feedback" in tool_names
     assert "store_secret_envelope" in tool_names
     assert "underwrite_execution_policy" in tool_names
@@ -457,3 +461,62 @@ def test_colab_gpu_job_dispatch(engine):
     assert res.cost_estimate_sats > 0
     assert "colab-tunnel-" in res.tunnel_endpoint
     assert len(res.output_artifacts) >= 2
+
+
+# 14. Unit & Integration Tests: Tools #30-33 Google Ecosystem Suite
+def test_google_ecosystem_suite_execution(mcp_server):
+    # Tool #30: query_deep_context_archive
+    res_query = mcp_server.call_tool(
+        "query_deep_context_archive",
+        {
+            "agent_id": "test_agent_deep",
+            "archive_text_or_url": "Este es un expediente judicial completo con jurisprudencia vinculante del Tribunal Constitucional del Perú.",
+            "query": "¿Existe jurisprudencia vinculante aplicable?",
+        },
+    )
+    assert "synthesized_answer" in res_query
+    assert res_query["confidence_score"] > 0.9
+    assert res_query["needle_retrieval_status"] == "EXACT_MATCH"
+
+    # Tool #31: publish_enterprise_artifact
+    res_pub = mcp_server.call_tool(
+        "publish_enterprise_artifact",
+        {
+            "agent_id": "test_agent_publisher",
+            "title": "Informe Pericial de Liquidación de Intereses",
+            "markdown_content": "# Informe Pericial\n\nLiquidación determinista ejecutada conforme a ley.",
+        },
+    )
+    assert "document_url" in res_pub
+    assert "docs.google.com" in res_pub["document_url"]
+    assert res_pub["format"] == "GOOGLE_DOCS"
+
+    # Tool #32: generate_audio_briefing
+    res_audio = mcp_server.call_tool(
+        "generate_audio_briefing",
+        {
+            "agent_id": "test_agent_audio",
+            "source_transcript_or_report": "Resumen ejecutivo del expediente 00012-2026 sobre prescripción tributaria SUNAT.",
+            "target_duration_minutes": 5,
+        },
+    )
+    assert "dialogue_turns" in res_audio
+    assert len(res_audio["dialogue_turns"]) >= 4
+    assert res_audio["estimated_duration_seconds"] == 300
+
+    # Tool #33: sync_tabular_ledger
+    res_sheet = mcp_server.call_tool(
+        "sync_tabular_ledger",
+        {
+            "agent_id": "test_agent_sheets",
+            "spreadsheet_title": "Ledger Transaccional A2A",
+            "rows_data": [
+                {"timestamp": 1700000000, "tool": "compute_procedural_deadline", "sats": 50},
+                {"timestamp": 1700000010, "tool": "query_deep_context_archive", "sats": 100},
+            ],
+        },
+    )
+    assert "spreadsheet_url" in res_sheet
+    assert res_sheet["rows_synced_count"] == 2
+    assert "tool" in res_sheet["columns_detected"]
+

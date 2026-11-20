@@ -56,13 +56,17 @@ def test_mcp_tools_list():
     response = client.post("/mcp", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert len(data["result"]["tools"]) == 29
+    assert len(data["result"]["tools"]) == 33
     tool_names = [t["name"] for t in data["result"]["tools"]]
     assert "compute_procedural_deadline" in tool_names
     assert "verify_normative_validity" in tool_names
     assert "audit_sunat_cpe_xml" in tool_names
     assert "audit_excel_macro_forensics" in tool_names
     assert "match_peruvian_procurement" in tool_names
+    assert "query_deep_context_archive" in tool_names
+    assert "publish_enterprise_artifact" in tool_names
+    assert "generate_audio_briefing" in tool_names
+    assert "sync_tabular_ledger" in tool_names
 
 
 def test_mcp_call_audit_excel_macro_forensics():

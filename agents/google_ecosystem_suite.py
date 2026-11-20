@@ -16,7 +16,6 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 # =====================================================================
 # 1. GEMINI PRO DEEP CONTEXT ARCHIVE & AUDIT
 # =====================================================================
@@ -291,7 +290,7 @@ class GoogleEcosystemEngine:
         sheet_id = f"a2a-sheet-{sheet_fingerprint[:16]}"
         sheet_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/edit?usp=sharing"
 
-        columns = sorted(list({k for row in req.rows_data for k in row.keys()}))
+        columns = sorted({k for row in req.rows_data for k in row})
 
         self.published_sheets[sheet_id] = {
             "title": req.spreadsheet_title,

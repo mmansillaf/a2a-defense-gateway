@@ -1707,7 +1707,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       <div class="section-header">
         <div class="section-title">
           <span>Matriz de Telemetría y Consumo por Herramienta MCP</span>
-          <span class="badge-cat" id="tools-badge">29 TOOLS</span>
+          <span class="badge-cat" id="tools-badge">33 TOOLS</span>
         </div>
         <div class="controls-group">
           <input type="text" id="tool-search" class="search-input" placeholder="Buscar herramienta o categoría..." oninput="filterTools()" />

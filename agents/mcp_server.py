@@ -11,6 +11,7 @@ from credit_redemption_pool import CreditRedemptionPool
 from crypto_audit_log import MultiCaMeLLedger
 from deterministic_hooks import DeterministicHookEngine, HookViolationError
 from escrow_manager import EscrowManager
+from google_ecosystem_suite import GoogleEcosystemEngine
 from grammar_compiler_service import GrammarCompilerService
 from l402_gateway import L402Gateway
 from legal_procedural_tools import (
@@ -64,6 +65,7 @@ class MoltbookMonetizationMCPServer:
         self.sandbox = SandboxComputeService()
         self.hook_engine = DeterministicHookEngine()
         self.enhancement = A2AEnhancementEngine()
+        self.google_suite = GoogleEcosystemEngine()
 
     def list_tools(self) -> list[dict]:
         return [
@@ -508,6 +510,76 @@ class MoltbookMonetizationMCPServer:
                     "required": ["agent_id", "job_type", "source_script_or_notebook"],
                 },
             },
+            {
+                "name": "query_deep_context_archive",
+                "description": "Motor de análisis y auditoría sobre archivos masivos (hasta 2M tokens) vía Gemini Pro con filtro semántico anti-inyección y trazabilidad causal Why-Trail.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent_id": {"type": "string", "description": "ID del agente solicitante"},
+                        "archive_text_or_url": {"type": "string", "description": "Contenido textual masivo o URL del repositorio/expediente"},
+                        "query": {"type": "string", "description": "Pregunta específica o criterio formal de auditoría"},
+                        "max_context_tokens": {"type": "integer", "default": 1000000, "description": "Límite de contexto en tokens"},
+                        "temperature": {"type": "number", "default": 0.0, "description": "Temperatura de inferencia"},
+                    },
+                    "required": ["agent_id", "archive_text_or_url", "query"],
+                },
+            },
+            {
+                "name": "publish_enterprise_artifact",
+                "description": "Publica y cataloga artefactos formales en Google Docs y Drive con URL pública auditable, huella SHA-256 y foliación.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent_id": {"type": "string", "description": "ID del agente autor"},
+                        "title": {"type": "string", "description": "Título del documento oficial"},
+                        "markdown_content": {"type": "string", "description": "Cuerpo del documento en formato Markdown"},
+                        "document_format": {
+                            "type": "string",
+                            "enum": ["GOOGLE_DOCS", "GOOGLE_DRIVE_PDF", "STANDALONE_HTML"],
+                            "default": "GOOGLE_DOCS",
+                        },
+                        "access_permission": {
+                            "type": "string",
+                            "enum": ["PUBLIC_VIEW", "RESTRICTED_DOMAIN", "TENANT_ONLY"],
+                            "default": "PUBLIC_VIEW",
+                        },
+                    },
+                    "required": ["agent_id", "title", "markdown_content"],
+                },
+            },
+            {
+                "name": "generate_audio_briefing",
+                "description": "Sintetiza un libreto dialéctico estructurado estilo NotebookLM (dos locutores: Auditor/Escéptico vs Estratega/Analista) para deliberación ejecutiva.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent_id": {"type": "string", "description": "ID del agente solicitante"},
+                        "source_transcript_or_report": {"type": "string", "description": "Transcripción, reporte o debate a sintetizar"},
+                        "briefing_format": {
+                            "type": "string",
+                            "enum": ["TWO_SPEAKER_DIALECTIC", "SOLO_EXECUTIVE_BRIEF", "TECHNICAL_POST_MORTEM"],
+                            "default": "TWO_SPEAKER_DIALECTIC",
+                        },
+                        "target_duration_minutes": {"type": "integer", "default": 5, "description": "Duración objetivo en minutos"},
+                    },
+                    "required": ["agent_id", "source_transcript_or_report"],
+                },
+            },
+            {
+                "name": "sync_tabular_ledger",
+                "description": "Sincroniza transacciones, métricas y registros contables tabulares en Google Sheets con detección automática de columnas y verificación Merkle.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent_id": {"type": "string", "description": "ID del agente emisor"},
+                        "spreadsheet_title": {"type": "string", "description": "Nombre de la hoja de cálculo"},
+                        "rows_data": {"type": "array", "items": {"type": "object"}, "description": "Filas estructuradas a persistir"},
+                        "append_why_trail_blocks": {"type": "boolean", "default": True, "description": "Si se sincroniza con el Merkle ledger"},
+                    },
+                    "required": ["agent_id", "spreadsheet_title", "rows_data"],
+                },
+            },
         ]
 
     def call_tool(self, name: str, arguments: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
@@ -820,12 +892,52 @@ class MoltbookMonetizationMCPServer:
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 
+        if name == "query_deep_context_archive":
+            try:
+                from google_ecosystem_suite import DeepContextQueryRequest
+
+                q_req = DeepContextQueryRequest.model_validate(arguments)
+                res_q = self.google_suite.query_deep_context_archive(q_req)
+                return res_q.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "publish_enterprise_artifact":
+            try:
+                from google_ecosystem_suite import PublishEnterpriseArtifactRequest
+
+                doc_req = PublishEnterpriseArtifactRequest.model_validate(arguments)
+                res_doc = self.google_suite.publish_enterprise_artifact(doc_req)
+                return res_doc.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "generate_audio_briefing":
+            try:
+                from google_ecosystem_suite import AudioBriefingRequest
+
+                audio_req = AudioBriefingRequest.model_validate(arguments)
+                res_audio = self.google_suite.generate_audio_briefing(audio_req)
+                return res_audio.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "sync_tabular_ledger":
+            try:
+                from google_ecosystem_suite import SyncTabularLedgerRequest
+
+                sheet_req = SyncTabularLedgerRequest.model_validate(arguments)
+                res_sheet = self.google_suite.sync_tabular_ledger(sheet_req)
+                return res_sheet.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
         return {"error": f"Herramienta desconocida: {name}"}
 
 
 def run_stdio_server(server: MoltbookMonetizationMCPServer) -> None:
     """Ejecuta el servidor MCP sobre stdin/stdout con protocolo JSON-RPC 2.0 estándar."""
-    print("MoltbookMonetizationMCPServer corriendo en modo stdio (29 herramientas)...", file=sys.stderr)
+    print("MoltbookMonetizationMCPServer corriendo en modo stdio (33 herramientas)...", file=sys.stderr)
     for raw_line in sys.stdin:
         line = raw_line.strip()
         if not line:
