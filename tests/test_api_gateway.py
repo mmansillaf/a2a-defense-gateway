@@ -55,7 +55,7 @@ def test_mcp_tools_list():
     response = client.post("/mcp", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert len(data["result"]["tools"]) == 16
+    assert len(data["result"]["tools"]) == 21
     tool_names = [t["name"] for t in data["result"]["tools"]]
     assert "compute_procedural_deadline" in tool_names
     assert "verify_normative_validity" in tool_names
@@ -174,7 +174,9 @@ def test_white_march_quota_exhaustion_returns_l402_challenge():
 
     # Consumir las primeras 100 llamadas gratuitas
     from api_gateway import white_march
-    today_key = f"{white_march.start_date.strftime('%Y-%m-%d')}:{agent_id}"
+    from datetime import datetime, timezone
+    today_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    today_key = f"{today_str}:{agent_id}"
     with white_march._lock:
         white_march._daily_usage[today_key] = 100
 
@@ -191,7 +193,9 @@ def test_white_march_quota_exhaustion_returns_l402_challenge():
 def test_white_march_l402_authorization_bypass():
     from api_gateway import server, white_march
     agent_id = "test_agent_vip_paying"
-    today_key = f"{white_march.start_date.strftime('%Y-%m-%d')}:{agent_id}"
+    from datetime import datetime, timezone
+    today_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    today_key = f"{today_str}:{agent_id}"
     with white_march._lock:
         white_march._daily_usage[today_key] = 100  # Cuota agotada
 

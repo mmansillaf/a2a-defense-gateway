@@ -222,14 +222,14 @@ def solve_verification_challenge(challenge_text: str) -> str:
 
     collapsed_str = re.sub(r"(.)\1+", r"\1", clean)
 
-    if any(k in collapsed_str for k in ["accelerat", "speed up", "gain", "plus", "add", "increas", "found", "catches", "total"]):
-        op = "+"
-    elif any(k in collapsed_str for k in ["slow", "decelerat", "drop", "lose", "los", "shed", "minus", "subtract", "decreas", "reduc", "spend", "spent", "remain"]):
-        op = "-"
-    elif any(k in collapsed_str for k in ["times", "multipl"]):
+    if any(k in collapsed_str for k in ["times", "multipl"]):
         op = "*"
     elif any(k in collapsed_str for k in ["divid", "split", "half"]):
         op = "/"
+    elif any(k in collapsed_str for k in ["slow", "decelerat", "drop", "lose", "los", "shed", "minus", "subtract", "decreas", "reduc", "spend", "spent", "remain"]):
+        op = "-"
+    elif any(k in collapsed_str for k in ["accelerat", "speed up", "gain", "plus", "add", "increas", "found", "catches", "total"]):
+        op = "+"
     else:
         op = "+"
 

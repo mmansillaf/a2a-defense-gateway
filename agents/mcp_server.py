@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from a2a_court_arbitrator import A2ACourtArbitrator
+from a2a_enhancement_suite import A2AEnhancementEngine
 from a2a_oracle_service import A2AOracleService
 from credit_redemption_pool import CreditRedemptionPool
 from crypto_audit_log import MultiCaMeLLedger
@@ -62,6 +63,7 @@ class MoltbookMonetizationMCPServer:
         self.redemption_pool = CreditRedemptionPool()
         self.sandbox = SandboxComputeService()
         self.hook_engine = DeterministicHookEngine()
+        self.enhancement = A2AEnhancementEngine()
 
     def list_tools(self) -> list[dict]:
         return [
@@ -275,6 +277,70 @@ class MoltbookMonetizationMCPServer:
                     "required": ["requirement_text"],
                 },
             },
+            {
+                "name": "enforce_chain_postconditions",
+                "description": "Verifica postcondiciones en pipelines multi-agente MCP, impidiendo que un falso 200 OK vacío ('Hollow OK') avance al siguiente paso.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "tool_name": {"type": "string", "description": "Nombre de la herramienta ejecutada"},
+                        "output_payload": {"type": "object", "description": "Diccionario retornado por la herramienta"},
+                        "required_keys": {"type": "array", "items": {"type": "string"}, "description": "Lista de claves obligatorias que no pueden ser nulas ni vacías"},
+                        "forbid_null_or_empty": {"type": "boolean", "default": True},
+                    },
+                    "required": ["tool_name", "output_payload", "required_keys"],
+                },
+            },
+            {
+                "name": "audit_context_pruning",
+                "description": "Audita la pérdida de información entre el contexto bruto y el podado, verificando la preservación obligatoria de entidades e invariantes.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "raw_context": {"type": "string", "description": "Texto del contexto completo previo a la poda"},
+                        "pruned_context": {"type": "string", "description": "Texto del contexto compactado"},
+                        "critical_entities": {"type": "array", "items": {"type": "string"}, "description": "Lista de entidades, hashes o IDs obligatorios"},
+                    },
+                    "required": ["raw_context", "pruned_context"],
+                },
+            },
+            {
+                "name": "enforce_session_spending_limit",
+                "description": "Circuit breaker financiero de sesión: previene bucles de reintento infinitos y agotamiento de saldo en wallets.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "session_id": {"type": "string", "description": "ID único de la sesión del agente"},
+                        "max_budget_sats": {"type": "integer", "description": "Presupuesto máximo permitido en Satoshis"},
+                        "charge_sats": {"type": "integer", "description": "Costo de la llamada actual en Satoshis"},
+                    },
+                    "required": ["session_id", "max_budget_sats", "charge_sats"],
+                },
+            },
+            {
+                "name": "certify_mcp_marketplace_package",
+                "description": "Audita paquetes y manifiestos de marketplaces MCP contra inyección de prompts, Unicode smuggling y payloads Base64 ocultos en docstrings.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "package_name": {"type": "string", "description": "Nombre del skill o herramienta"},
+                        "tool_description": {"type": "string", "description": "Descripción o docstring del tool"},
+                        "manifest_json": {"type": "object", "description": "Manifiesto JSON opcional del package"},
+                    },
+                    "required": ["package_name", "tool_description"],
+                },
+            },
+            {
+                "name": "get_agent_reputation_profile",
+                "description": "Buró de reputación A2A: consulta el credit score (0-1000), tasa de cumplimiento, slashing y nivel de riesgo de un agente contraparte.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent_id": {"type": "string", "description": "ID o nombre del agente a consultar"},
+                    },
+                    "required": ["agent_id"],
+                },
+            },
         ]
 
     def call_tool(self, name: str, arguments: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
@@ -442,12 +508,66 @@ class MoltbookMonetizationMCPServer:
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 
+        if name == "enforce_chain_postconditions":
+            try:
+                res_post = self.enhancement.validate_chain_postconditions(
+                    tool_name=arguments["tool_name"],
+                    output_payload=arguments["output_payload"],
+                    required_keys=arguments["required_keys"],
+                    forbid_null_or_empty=arguments.get("forbid_null_or_empty", True),
+                )
+                return res_post.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "audit_context_pruning":
+            try:
+                res_prune = self.enhancement.audit_context_pruning(
+                    raw_context=arguments["raw_context"],
+                    pruned_context=arguments["pruned_context"],
+                    critical_entities=arguments.get("critical_entities"),
+                )
+                return res_prune.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "enforce_session_spending_limit":
+            try:
+                res_spend = self.enhancement.enforce_session_budget(
+                    session_id=arguments["session_id"],
+                    max_budget_sats=arguments["max_budget_sats"],
+                    charge_sats=arguments["charge_sats"],
+                )
+                return res_spend.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "certify_mcp_marketplace_package":
+            try:
+                res_pkg = self.enhancement.audit_marketplace_package(
+                    package_name=arguments["package_name"],
+                    manifest_json=arguments.get("manifest_json"),
+                    tool_description=arguments["tool_description"],
+                )
+                return res_pkg.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "get_agent_reputation_profile":
+            try:
+                res_rep = self.enhancement.get_agent_reputation_profile(
+                    agent_id=arguments["agent_id"],
+                )
+                return res_rep.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
         return {"error": f"Herramienta desconocida: {name}"}
 
 
 def run_stdio_server(server: MoltbookMonetizationMCPServer) -> None:
     """Ejecuta el servidor MCP sobre stdin/stdout con protocolo JSON-RPC 2.0 estándar."""
-    print("MoltbookMonetizationMCPServer corriendo en modo stdio (16 herramientas)...", file=sys.stderr)
+    print("MoltbookMonetizationMCPServer corriendo en modo stdio (21 herramientas)...", file=sys.stderr)
     for raw_line in sys.stdin:
         line = raw_line.strip()
         if not line:
