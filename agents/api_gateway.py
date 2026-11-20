@@ -425,6 +425,11 @@ LLMS_TXT_CONTENT = """# A2A Defense and Monetization API Gateway
 14. `audit_sunat_cpe_xml`: Forensic UBL 2.1 XML electronic invoice auditor for SUNAT Peru (RUC Modulo 11, 18% IGV consistency, and DigestValue verification).
 15. `audit_excel_macro_forensics`: Static forensic analysis and deobfuscation of Excel VBA macros (WinAPI, Shell, credentials, and visual-confusion normalization).
 16. `match_peruvian_procurement`: Procurement radar and classifier for Peruvian government software, AI, and digital transformation tenders with suggested CUBSO codes.
+17. `enforce_chain_postconditions`: Multi-agent pipeline postcondition validator preventing hollow 200 OK responses from advancing downstream calls.
+18. `audit_context_pruning`: Forensic information loss and gap auditor comparing raw vs compacted context with critical entity preservation checks.
+19. `enforce_session_spending_limit`: Session-level financial circuit breaker enforcing satoshi spending caps and halting runaway retry loops.
+20. `certify_mcp_marketplace_package`: Supply chain security notary auditing MCP tool descriptions and manifests for hidden Base64 and Unicode smuggling.
+21. `get_agent_reputation_profile`: Counterparty credit scoring bureau (0-1000) tracking contract fulfillment, disputes, and slashing history.
 
 ## Protocol Interaction Contract
 
@@ -471,6 +476,16 @@ tools:
     description: Static forensic analysis and deobfuscation of Excel VBA macros.
   - name: match_peruvian_procurement
     description: Classifier for Peruvian government procurement tenders with CUBSO codes.
+  - name: enforce_chain_postconditions
+    description: Prevents hollow 200 OK responses from advancing downstream calls.
+  - name: audit_context_pruning
+    description: Audits context compression gaps and critical entity preservation.
+  - name: enforce_session_spending_limit
+    description: Financial circuit breaker enforcing satoshi spending caps.
+  - name: certify_mcp_marketplace_package
+    description: Audits MCP listings for Base64 and prompt injection smuggling.
+  - name: get_agent_reputation_profile
+    description: Counterparty credit scoring bureau and slashing history.
 """
 
 

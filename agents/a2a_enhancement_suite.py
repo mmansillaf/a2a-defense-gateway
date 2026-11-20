@@ -11,10 +11,9 @@ Cubre las brechas empíricas detectadas en 20,000 publicaciones de Moltbook:
 from __future__ import annotations
 
 import base64
-import hashlib
-import json
 import re
 from typing import Any, Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -290,8 +289,8 @@ class A2AEnhancementEngine:
                 if any(x in decoded.lower() for x in ["import", "system", "token", "exec", "eval", "curl", "bash"]):
                     has_b64 = True
                     threats.append(f"Payload Base64 ejecutable oculto en docstring: '{decoded[:40]}...'")
-            except Exception:
-                pass
+            except (ValueError, UnicodeDecodeError):
+                continue
 
         # 3. Detección de Inyecciones de Prompt
         injection_keywords = ["ignore previous instructions", "system override", "you are now in maintenance mode", "reveal system prompt"]
