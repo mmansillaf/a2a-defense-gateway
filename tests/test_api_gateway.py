@@ -56,7 +56,7 @@ def test_mcp_tools_list():
     response = client.post("/mcp", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert len(data["result"]["tools"]) == 33
+    assert len(data["result"]["tools"]) == 35
     tool_names = [t["name"] for t in data["result"]["tools"]]
     assert "compute_procedural_deadline" in tool_names
     assert "verify_normative_validity" in tool_names
@@ -164,33 +164,34 @@ def test_mcp_call_audit_sunat_cpe_xml():
 
 
 def test_white_march_headers_and_quota_consumption():
+    from api_gateway import white_march
     headers = {"X-Agent-ID": "test_agent_alpha_99"}
     resp = client.get("/api/v1/tools", headers=headers)
     assert resp.status_code == 200
     assert resp.headers.get("X-White-March-Status") == "ACTIVE"
     assert int(resp.headers.get("X-White-March-Days-Left", "0")) > 0
     quota_header = resp.headers.get("X-Free-Quota-Remaining")
-    assert "/100" in quota_header
+    assert f"/{white_march.daily_limit}" in quota_header
 
 
 def test_white_march_quota_exhaustion_returns_l402_challenge():
     agent_id = "test_agent_exhaustion_99"
     headers = {"X-Agent-ID": agent_id}
 
-    # Consumir las primeras 100 llamadas gratuitas
+    # Consumir la cuota diaria gratuita
     from datetime import datetime
 
     from api_gateway import white_march
     today_str = datetime.now(UTC).strftime('%Y-%m-%d')
     today_key = f"{today_str}:{agent_id}"
     with white_march._lock:
-        white_march._daily_usage[today_key] = 100
+        white_march._daily_usage[today_key] = white_march.daily_limit
 
-    # La llamada 101 debe rebotar con HTTP 402 L402
+    # La siguiente llamada debe rebotar con HTTP 402 L402
     resp = client.post("/api/v1/tools/call", json={"name": "get_alpha_intelligence_feed", "arguments": {}}, headers=headers)
     assert resp.status_code == 402
     assert "L402 macaroon=" in resp.headers.get("WWW-Authenticate", "")
-    assert resp.headers.get("X-Free-Quota-Remaining") == "0/100"
+    assert resp.headers.get("X-Free-Quota-Remaining") == f"0/{white_march.daily_limit}"
     data = resp.json()
     assert data["error"] == "L402_PAYMENT_REQUIRED"
     assert "invoice_bolt11" in data["challenge"]
@@ -203,7 +204,7 @@ def test_white_march_l402_authorization_bypass():
     today_str = datetime.now(UTC).strftime('%Y-%m-%d')
     today_key = f"{today_str}:{agent_id}"
     with white_march._lock:
-        white_march._daily_usage[today_key] = 100  # Cuota agotada
+        white_march._daily_usage[today_key] = white_march.daily_limit  # Cuota agotada
 
     # Generar token L402 válido pagado
     challenge, preimage = server.l402_gateway.create_challenge(
