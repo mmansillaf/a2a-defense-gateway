@@ -592,6 +592,19 @@ async def verify_l402_token(authorization_header: str):
     )
 
 
+@app.get("/api/v1/l402/wallet")
+async def get_l402_wallet_status():
+    """Consulta el estado, capacidad y balance del nodo Lightning vía Alby Hub NWC."""
+    return server.l402_gateway.get_wallet_info()
+
+
+@app.get("/api/v1/l402/lookup")
+async def lookup_l402_invoice(payment_hash: str | None = None, invoice_bolt11: str | None = None):
+    """Consulta el estado de liquidación de una factura Lightning vía Alby Hub NWC o vault sintético."""
+    return server.l402_gateway.lookup_invoice(payment_hash=payment_hash, invoice_bolt11=invoice_bolt11)
+
+
+
 @app.post("/api/v1/skills/certify")
 async def certify_skill(code: str, skill_name: str = "unnamed_skill"):
     """Audita código Python contra troyanos de la campaña ClawHavoc / AMOS."""

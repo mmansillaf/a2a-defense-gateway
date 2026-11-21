@@ -14,7 +14,12 @@ from pydantic import BaseModel, ConfigDict
 logger = logging.getLogger("a2a.l402")
 
 try:
-    from nostr_sdk import MakeInvoiceRequest, NostrWalletConnect, NostrWalletConnectUri
+    from nostr_sdk import (
+        LookupInvoiceRequest,
+        MakeInvoiceRequest,
+        NostrWalletConnect,
+        NostrWalletConnectUri,
+    )
     NOSTR_SDK_AVAILABLE = True
 except ImportError:
     NOSTR_SDK_AVAILABLE = False
@@ -217,3 +222,86 @@ class L402Gateway:
             client_id=caveats["client_id"],
             error_message=None,
         )
+
+    def get_wallet_info(self) -> dict:
+        """Consulta el estado, capacidad y balance del nodo Lightning vía Alby Hub NWC."""
+        if not self._nwc_client:
+            return {
+                "connected": False,
+                "backend": "synthetic_vault",
+                "reason": "NWC no configurado o nostr_sdk no disponible." if not NOSTR_SDK_AVAILABLE else "A2A_NWC_URI no provisto.",
+            }
+
+        try:
+            async def _query():
+                info_res = await self._nwc_client.get_info()
+                balance_res = await self._nwc_client.get_balance()
+                return info_res, balance_res
+
+            info, balance = _run_async(_query())
+            methods_list = [str(m) for m in info.methods] if getattr(info, "methods", None) else []
+            return {
+                "connected": True,
+                "backend": "alby_hub_nwc",
+                "alias": getattr(info, "alias", "Alby Hub"),
+                "pubkey": getattr(info, "pubkey", None),
+                "network": getattr(info, "network", "mainnet"),
+                "block_height": getattr(info, "block_height", None),
+                "balance_msats": getattr(balance, "balance", 0),
+                "balance_sats": getattr(balance, "balance", 0) // 1000,
+                "supported_methods": methods_list,
+            }
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(f"Error querying NWC wallet info: {exc}")
+            return {
+                "connected": False,
+                "backend": "alby_hub_nwc",
+                "error": str(exc),
+            }
+
+    def lookup_invoice(
+        self,
+        payment_hash: str | None = None,
+        invoice_bolt11: str | None = None,
+    ) -> dict:
+        """Verifica el estado de liquidación de una factura Lightning vía Alby Hub NWC."""
+        if not payment_hash and not invoice_bolt11:
+            return {"error": "Debe proveer payment_hash o invoice_bolt11"}
+
+        if self._nwc_client:
+            try:
+                req = LookupInvoiceRequest(payment_hash=payment_hash, invoice=invoice_bolt11)
+                res = _run_async(self._nwc_client.lookup_invoice(req))
+                state_str = str(res.state).split(".")[-1] if res.state is not None else "NONE"
+                return {
+                    "found": True,
+                    "backend": "alby_hub_nwc",
+                    "state": state_str,
+                    "settled": state_str == "SETTLED",
+                    "payment_hash": res.payment_hash,
+                    "preimage": res.preimage,
+                    "amount_msats": res.amount,
+                    "fees_paid_msats": res.fees_paid,
+                }
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(f"Error looking up invoice via NWC: {exc}")
+
+        # Fallback al vault sintético
+        if payment_hash and payment_hash in self.invoice_vault:
+            return {
+                "found": True,
+                "backend": "synthetic_vault",
+                "state": "SIMULATED_ACTIVE",
+                "settled": False,
+                "payment_hash": payment_hash,
+                "has_vault_preimage": True,
+            }
+
+        return {
+            "found": False,
+            "backend": "synthetic_vault",
+            "state": "UNKNOWN",
+            "settled": False,
+            "payment_hash": payment_hash,
+        }
+
