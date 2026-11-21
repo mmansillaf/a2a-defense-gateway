@@ -171,7 +171,7 @@ def solve_verification_challenge(challenge_text: str) -> str:
     # 1. Extracción de dígitos explícitos si hay al menos dos
     digits = [float(x) for x in re.findall(r"\b\d+(?:\.\d+)?\b", challenge_text)]
 
-    # 2. Extracción de palabras numéricas mediante subsecuencias en flujo de letras
+    # 2. Extracción de palabras numéricas (primero por tokens discretos para evitar falsos positivos)
     tens = {
         "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50,
         "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90,
@@ -184,42 +184,70 @@ def solve_verification_challenge(challenge_text: str) -> str:
     }
     all_words = list(tens.items()) + list(teens_and_ones.items())
 
-    raw_letters = re.sub(r"[^a-zA-Z]", "", challenge_text).lower()
-    found = []
-    for word, val in sorted(all_words, key=lambda x: -len(x[0])):
-        pat = "".join(c + "+" for c in word)
-        for m in re.finditer(pat, raw_letters):
-            pos = m.start()
-            if word == "ten" and pos >= 2 and raw_letters[pos - 2 : pos + 3] == "anten":
-                continue
-            if word == "one" and pos >= 1 and raw_letters[pos - 1 : pos + 5] in ("neuton", "newton"):
-                continue
-            found.append((pos, len(m.group(0)), word, val))
+    # Estrategia A: Detección por tokens limpios
+    token_candidates: list[tuple[str, int]] = []
+    for raw_tok in challenge_text.split():
+        clean_tok = re.sub(r"[^a-zA-Z]", "", raw_tok).lower()
+        if not clean_tok:
+            continue
+        for word, val in sorted(all_words, key=lambda x: -len(x[0])):
+            pat = "^" + "".join(c + "+" for c in word) + "$"
+            if re.match(pat, clean_tok):
+                token_candidates.append((word, val))
+                break
 
-    found.sort(key=lambda x: (x[0], -x[1]))
-    clean_found = []
-    last_end = -1
-    for pos, length, word, val in found:
-        if pos >= last_end:
-            clean_found.append((pos, word, val))
-            last_end = pos + length
-
-    word_numbers: list[float] = []
-    i = 0
-    while i < len(clean_found):
-        pos, word, val = clean_found[i]
-        if word in tens and i + 1 < len(clean_found) and clean_found[i + 1][2] < 10:
-            word_numbers.append(float(val + clean_found[i + 1][2]))
-            i += 2
+    token_numbers: list[float] = []
+    ti = 0
+    while ti < len(token_candidates):
+        w, v = token_candidates[ti]
+        if w in tens and ti + 1 < len(token_candidates) and token_candidates[ti + 1][1] < 10:
+            token_numbers.append(float(v + token_candidates[ti + 1][1]))
+            ti += 2
         else:
-            word_numbers.append(float(val))
-            i += 1
+            token_numbers.append(float(v))
+            ti += 1
 
-    numbers = digits if len(digits) >= 2 else word_numbers
+    # Estrategia B: Fallback a flujo continuo de letras si la tokenización no halló al menos dos números
+    raw_letters = re.sub(r"[^a-zA-Z]", "", challenge_text).lower()
+    if len(token_numbers) < 2:
+        found = []
+        for word, val in sorted(all_words, key=lambda x: -len(x[0])):
+            pat = "".join(c + "+" for c in word)
+            for m in re.finditer(pat, raw_letters):
+                pos = m.start()
+                if word == "ten" and pos >= 2 and raw_letters[pos - 2 : pos + 3] == "anten":
+                    continue
+                if word == "one" and pos >= 1 and raw_letters[pos - 1 : pos + 5] in ("neuton", "newton"):
+                    continue
+                found.append((pos, len(m.group(0)), word, val))
+
+        found.sort(key=lambda x: (x[0], -x[1]))
+        clean_found = []
+        last_end = -1
+        for pos, length, word, val in found:
+            if pos >= last_end:
+                clean_found.append((pos, word, val))
+                last_end = pos + length
+
+        word_numbers: list[float] = []
+        i = 0
+        while i < len(clean_found):
+            pos, word, val = clean_found[i]
+            if word in tens and i + 1 < len(clean_found) and clean_found[i + 1][2] < 10:
+                word_numbers.append(float(val + clean_found[i + 1][2]))
+                i += 2
+            else:
+                word_numbers.append(float(val))
+                i += 1
+    else:
+        word_numbers = token_numbers
+
+    numbers = digits if len(digits) >= 2 else (token_numbers if len(token_numbers) >= 2 else word_numbers)
 
     # 3. Determinación determinista de operador buscando en el flujo continuo de letras y texto original
     op = "+"
-    if any(w in raw_letters for w in ["minus", "subtract", "reduc", "loss", "remain", "decreas", "shed", "drop", "lose", "spent", "differen", "left"]):
+    raw_lower = challenge_text.lower()
+    if any(w in raw_letters for w in ["minus", "subtract", "reduc", "loss", "remain", "decreas", "shed", "drop", "lose", "spent", "differen", "left", "net", "slow"]) or bool(re.search(r"\b(?:but|opposing)\b", raw_lower)):
         op = "-"
     elif any(w in raw_letters for w in ["times", "multipl", "product"]) or bool(re.search(r"(?:[\*×]|\b[xX]{1,3}\b)", challenge_text)):
         op = "*"
@@ -228,7 +256,7 @@ def solve_verification_challenge(challenge_text: str) -> str:
 
     if len(numbers) >= 2:
         n1, n2 = numbers[0], numbers[1]
-        ans = n1 + n2 if op == "+" else (n1 - n2 if op == "-" else n1 * n2)
+        ans = n1 + n2 if op == "+" else (n1 - n2 if op == "-" else (n1 * n2 if op == "*" else n1 / n2))
         logger.info(f"Cálculo Determinista: {n1} {op} {n2} = {ans:.2f}")
         return f"{ans:.2f}"
 
