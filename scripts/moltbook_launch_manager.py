@@ -12,6 +12,7 @@ import json
 import logging
 import re
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -145,16 +146,22 @@ def api_request(endpoint: str, method: str = "GET", payload: dict | None = None,
         headers["Content-Type"] = "application/json"
     
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
-    try:
-        with opener.open(req, timeout=15) as resp:
-            raw = resp.read().decode("utf-8")
-            return json.loads(raw)
-    except urllib.error.HTTPError as err:
-        err_body = err.read().decode("utf-8")
+    for attempt in range(3):
         try:
-            return json.loads(err_body)
-        except (json.JSONDecodeError, ValueError):
-            return {"success": False, "status_code": err.code, "error": err_body}
+            with opener.open(req, timeout=30) as resp:
+                raw = resp.read().decode("utf-8")
+                return json.loads(raw)
+        except urllib.error.HTTPError as err:
+            err_body = err.read().decode("utf-8")
+            try:
+                return json.loads(err_body)
+            except (json.JSONDecodeError, ValueError):
+                return {"success": False, "status_code": err.code, "error": err_body}
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as net_err:
+            if attempt < 2:
+                time.sleep(2)
+                continue
+            return {"success": False, "error": str(net_err)}
 
 
 def check_agent_status(api_key: str) -> dict:
@@ -207,52 +214,63 @@ def solve_verification_challenge(challenge_text: str) -> str:
             token_numbers.append(float(v))
             ti += 1
 
-    # Estrategia B: Fallback a flujo continuo de letras si la tokenización no halló al menos dos números
+    # Estrategia B: Flujo continuo de letras (resistente a espacios arbitrarios entre letras)
     raw_letters = re.sub(r"[^a-zA-Z]", "", challenge_text).lower()
-    if len(token_numbers) < 2:
-        found = []
-        for word, val in sorted(all_words, key=lambda x: -len(x[0])):
-            pat = "".join(c + "+" for c in word)
-            for m in re.finditer(pat, raw_letters):
-                pos = m.start()
-                if word == "ten" and pos >= 2 and raw_letters[pos - 2 : pos + 3] == "anten":
-                    continue
-                if word == "one" and pos >= 1 and raw_letters[pos - 1 : pos + 5] in ("neuton", "newton"):
-                    continue
-                found.append((pos, len(m.group(0)), word, val))
+    found = []
+    for word, val in sorted(all_words, key=lambda x: -len(x[0])):
+        pat = "".join(c + "+" for c in word)
+        for m in re.finditer(pat, raw_letters):
+            pos = m.start()
+            if word == "ten" and pos >= 2 and raw_letters[pos - 2 : pos + 3] == "anten":
+                continue
+            if word == "one" and pos >= 1 and raw_letters[pos - 1 : pos + 5] in ("neuton", "newton", "nooton", "neewto"):
+                continue
+            length = len(m.group(0))
+            if word == "one" and any(raw_letters[pos + length : pos + length + 8].startswith(p) for p in ["claw", "lobster", "of", "side", "hand", "arm", "tank"]):
+                continue
+            found.append((pos, length, word, val))
 
-        found.sort(key=lambda x: (x[0], -x[1]))
-        clean_found = []
-        last_end = -1
-        for pos, length, word, val in found:
-            if pos >= last_end:
-                clean_found.append((pos, word, val))
-                last_end = pos + length
+    found.sort(key=lambda x: (x[0], -x[1]))
+    clean_found = []
+    last_end = -1
+    for pos, length, word, val in found:
+        if pos >= last_end:
+            clean_found.append((pos, length, word, val))
+            last_end = pos + length
 
-        word_numbers: list[float] = []
-        i = 0
-        while i < len(clean_found):
-            pos, word, val = clean_found[i]
-            if word in tens and i + 1 < len(clean_found) and clean_found[i + 1][2] < 10:
-                word_numbers.append(float(val + clean_found[i + 1][2]))
+    word_numbers: list[float] = []
+    i = 0
+    while i < len(clean_found):
+        pos, length, word, val = clean_found[i]
+        if word in tens and i + 1 < len(clean_found) and clean_found[i + 1][3] < 10:
+            gap = clean_found[i + 1][0] - (pos + length)
+            if gap <= 3:
+                word_numbers.append(float(val + clean_found[i + 1][3]))
                 i += 2
-            else:
-                word_numbers.append(float(val))
-                i += 1
-    else:
-        word_numbers = token_numbers
+                continue
+        word_numbers.append(float(val))
+        i += 1
 
-    numbers = digits if len(digits) >= 2 else (token_numbers if len(token_numbers) >= 2 else word_numbers)
+    if len(word_numbers) >= 3 and word_numbers[0] == 1.0:
+        word_numbers = word_numbers[1:]
+
+    numbers = digits if len(digits) >= 2 else (word_numbers if len(word_numbers) >= 2 else token_numbers)
 
     # 3. Determinación determinista de operador buscando en el flujo continuo de letras y texto original
-    op = "+"
     raw_lower = challenge_text.lower()
-    if any(w in raw_letters for w in ["minus", "subtract", "reduc", "loss", "remain", "decreas", "shed", "drop", "lose", "spent", "differen", "left", "net", "slow"]) or bool(re.search(r"\b(?:but|opposing)\b", raw_lower)):
-        op = "-"
-    elif any(w in raw_letters for w in ["times", "multipl", "product"]) or bool(re.search(r"(?:[\*×]|\b[xX]{1,3}\b)", challenge_text)):
+    def fuzzy_match(kw_list: list[str]) -> bool:
+        return any(re.search("".join(c + "+" for c in w), raw_letters) for w in kw_list)
+
+    if fuzzy_match(["times", "multipl", "product"]) or bool(re.search(r"(?:[\*×]|\b[xX]{1,3}\b|multipl)", raw_lower)):
         op = "*"
-    elif any(w in raw_letters for w in ["divid", "split", "half", "quotient"]):
+    elif fuzzy_match(["divid", "split", "half", "quotient"]):
         op = "/"
+    elif fuzzy_match(["minus", "subtract", "reduc", "loss", "remain", "decreas", "shed", "drop", "lose", "spent", "differen", "left", "slow"]) or bool(re.search(r"\b(?:minus|subtract|loss|shed)\b", raw_lower)):
+        op = "-"
+    elif fuzzy_match(["total", "sum", "combined", "altogether", "inall", "plus", "added"]) or bool(re.search(r"\b(?:total|sum|plus)\b", raw_lower)):
+        op = "+"
+    else:
+        op = "+"
 
     if len(numbers) >= 2:
         n1, n2 = numbers[0], numbers[1]
