@@ -261,14 +261,33 @@ def solve_verification_challenge(challenge_text: str) -> str:
     def fuzzy_match(kw_list: list[str]) -> bool:
         return any(re.search("".join(c + "+" for c in w), raw_letters) for w in kw_list)
 
-    if fuzzy_match(["times", "multipl", "product"]) or bool(re.search(r"(?:[\*×]|\b[xX]{1,3}\b|multipl)", raw_lower)):
-        op = "*"
-    elif fuzzy_match(["divid", "split", "half", "quotient"]):
-        op = "/"
-    elif fuzzy_match(["minus", "subtract", "reduc", "loss", "remain", "decreas", "shed", "drop", "lose", "spent", "differen", "left", "slow"]) or bool(re.search(r"\b(?:minus|subtract|loss|shed)\b", raw_lower)):
-        op = "-"
-    elif fuzzy_match(["total", "sum", "combined", "altogether", "inall", "plus", "added"]) or bool(re.search(r"\b(?:total|sum|plus)\b", raw_lower)):
+    # Identificar operador matemático: priorizar palabras semánticas y operadores directos entre operandos
+    dash_between_operands = bool(re.search(r"[-−]\s*(?:[\[\]\^\\\/\s]*)(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|\d+)", challenge_text, re.I))
+    plus_between_operands = bool(re.search(r"[+]\s*(?:[\[\]\^\\\/\s]*)(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|\d+)", challenge_text, re.I))
+    mult_between_operands = bool(re.search(r"[*×]\s*(?:[\[\]\^\\\/\s]*)(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|\d+)", challenge_text, re.I))
+    div_between_operands = bool(re.search(r"[/÷]\s*(?:[\[\]\^\\\/\s]*)(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|\d+)", challenge_text, re.I))
+
+    is_add = plus_between_operands or fuzzy_match(["gain", "increas", "accelerat", "faster", "total", "sum", "combined", "altogether", "inall", "plus", "added", "adds"]) or bool(re.search(r"\b(?:gain|gains|increase|increases|faster|total|sum|plus|add|adds|added)\b", raw_lower))
+    is_sub = dash_between_operands or fuzzy_match(["minus", "subtract", "reduc", "loss", "remain", "decreas", "shed", "drop", "lose", "spent", "differen", "left", "slow"]) or bool(re.search(r"\b(?:minus|subtract|loss|shed|drop|drops|slow|slows|decreased|remains|left)\b", raw_lower))
+    is_mult = mult_between_operands or fuzzy_match(["times", "multipl", "product"]) or bool(re.search(r"(?:[\*×]|\b[xX]{1,3}\b|multipl)", raw_lower))
+    is_div = div_between_operands or fuzzy_match(["divid", "split", "half", "quotient"])
+
+    if is_add and not is_sub:
         op = "+"
+    elif is_sub and not is_add:
+        op = "-"
+    elif is_mult:
+        op = "*"
+    elif is_div:
+        op = "/"
+    elif dash_between_operands:
+        op = "-"
+    elif plus_between_operands:
+        op = "+"
+    elif mult_between_operands:
+        op = "*"
+    elif div_between_operands:
+        op = "/"
     else:
         op = "+"
 

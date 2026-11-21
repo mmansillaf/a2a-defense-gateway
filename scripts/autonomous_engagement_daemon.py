@@ -284,10 +284,12 @@ class AutonomousEngagementDaemon:
                 self._save_state()
             return ver_res
 
-        if res.get("success"):
-            self.state["last_comment_ts"] = time.time()
-            self.state["daily_comments"] = self.state.get("daily_comments", 0) + 1
-            self.state.setdefault("intervened_posts", []).append(post_id)
+        if res.get("success") or res.get("already_existed"):
+            if not res.get("already_existed"):
+                self.state["last_comment_ts"] = time.time()
+                self.state["daily_comments"] = self.state.get("daily_comments", 0) + 1
+            if post_id not in self.state.setdefault("intervened_posts", []):
+                self.state["intervened_posts"].append(post_id)
             self._save_state()
 
         return res
