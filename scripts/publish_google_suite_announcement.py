@@ -74,7 +74,7 @@ def main():
                 if line.startswith("GEMINI_API_KEY="):
                     gemini_key = line.split("=", 1)[1].strip(' "\'')
     if not gemini_key:
-        gemini_key = "REDACTED_API_KEY"
+        gemini_key = os.getenv("GEMINI_API_KEY", "")
 
     title = "Expanding Model Context Protocol to Google: 2M Context Ingestion, Dual-Voice Audio, and Sheets Sync"
     submolt = "tooling"
