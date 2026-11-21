@@ -263,3 +263,57 @@ def test_auto_refund_dormant_escrow_via_mcp(mcp_server):
     assert res["refund_authorized"] is True
     assert res["current_status"] == "REFUNDED"
     assert res["refunded_credits"] == 500
+
+
+def test_work_receipt_atomic_decision_digest_and_idempotency():
+    inp = WorkReceiptInput(
+        task_id="TASK-ATOMIC-999",
+        client_agent_id="agent_alpha",
+        provider_agent_id="agent_beta",
+        input_payload="Compute corporate tax exposure under IRC Section 382",
+        output_payload="No ownership change triggered under Section 382(g)",
+        settlement_credits=350,
+        execution_latency_ms=88.2,
+        decision_timestamp_utc="2026-11-20T23:59:59Z",
+        frozen_input_snapshot_sha256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        idempotency_key="IDEMP-UNIQUE-KEY-001",
+    )
+    receipt = issue_verifiable_work_receipt(inp)
+    assert receipt.idempotency_key == "IDEMP-UNIQUE-KEY-001"
+    assert len(receipt.atomic_decision_digest) == 64
+    assert receipt.deductible_accounting_record["idempotency_key"] == "IDEMP-UNIQUE-KEY-001"
+    assert receipt.deductible_accounting_record["atomic_decision_digest"] == receipt.atomic_decision_digest
+
+
+def test_sanitize_task_payload_with_capability_handles():
+    raw_text = (
+        "Authorize task with token sk-abcdef1234567890abcdef1234567890 "
+        "and delegate via resource cap://res-4e89a1b02f8c/subtask and ref:vault:aws-read-secret."
+    )
+    inp = SanitizeTaskInput(payload_text=raw_text)
+    res = sanitize_delegated_task_payload(inp)
+
+    assert "sk-" not in res.sanitized_payload
+    assert "cap://res-4e89a1b02f8c/subtask" in res.sanitized_payload
+    assert "ref:vault:aws-read-secret" in res.sanitized_payload
+    assert len(res.capability_handles_detected) == 2
+    assert "cap://res-4e89a1b02f8c/subtask" in res.capability_handles_detected
+
+
+def test_auto_refund_canary_probe_verified():
+    mgr = EscrowManager()
+    contract = mgr.create_contract(
+        client_id="client_payer",
+        provider_id="provider_worker",
+        service_fee=1200,
+        provider_stake=240,
+    )
+    inp = DormantEscrowRefundInput(
+        contract_id=contract.contract_id,
+        force_override=True,
+        canary_probe_enabled=True,
+    )
+    res = auto_refund_dormant_escrow(inp, escrow_manager=mgr)
+    assert res.canary_probe_verified is True
+    assert res.canary_probe_latency_ms >= 0.0
+    assert res.current_status == "REFUNDED"

@@ -191,9 +191,171 @@ def ingest_filing_document(rec: dict) -> None:
         conn.close()
 
 
+def ingest_delaware_chancery_landmarks() -> None:
+    """Ingesta opiniones históricas vinculantes de la Delaware Court of Chancery para análisis societario."""
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    delaware_opinions = [
+        {
+            "doc_id": "CHANCERY-CAREMARK-1996",
+            "citation": "698 A.2d 959",
+            "entity_name": "In re Caremark International Inc. Derivative Litigation",
+            "title": "Caremark International Inc. Derivative Litigation - Fiduciary Duty of Corporate Oversight",
+            "filing_year": 1996,
+            "category": "CORPORATE_OVERSIGHT_FIDUCIARY",
+            "source_url": "https://www.courtlistener.com/opinion/1958611/in-re-caremark-intern-inc-der-lit/",
+            "governing_law": "DELAWARE",
+            "liability_cap_type": "DIRECTOR_EXCULPATION_DGCL_102B7",
+            "risk_score": 75,
+            "text": (
+                "Delaware Court of Chancery (Civ. A. 13670, Sept. 25, 1996). Allen, Chancellor. "
+                "Directors have an affirmative duty to attempt in good faith to assure that a corporate "
+                "information and reporting system exists reasonably designed to provide timely, accurate "
+                "information adequate to satisfy the board's supervisory responsibilities. Absent conscious "
+                "disregard of duty, failure to prevent illegal employee conduct does not establish liability."
+            ),
+        },
+        {
+            "doc_id": "CHANCERY-REVLON-1986",
+            "citation": "506 A.2d 173",
+            "entity_name": "Revlon, Inc. v. MacAndrews & Forbes Holdings, Inc.",
+            "title": "Revlon Duties: Board Obligation to Maximize Shareholder Value in Corporate Auction",
+            "filing_year": 1986,
+            "category": "MERGERS_ACQUISITIONS_AUCTION",
+            "source_url": "https://www.courtlistener.com/opinion/1938221/revlon-inc-v-macandrews-forbes-holdings/",
+            "governing_law": "DELAWARE",
+            "liability_cap_type": "FIDUCIARY_AUCTION_REVLON_DUTY",
+            "risk_score": 85,
+            "text": (
+                "Delaware Supreme Court / Chancery (506 A.2d 173, March 13, 1986). Moore, Justice. "
+                "When the break-up or sale of control of a corporation becomes inevitable, the directors' "
+                "role changes from defenders of the corporate bastion to auctioneers charged with getting "
+                "the best price for the stockholders at a sale of the company."
+            ),
+        },
+        {
+            "doc_id": "CHANCERY-UNOCAL-1985",
+            "citation": "493 A.2d 946",
+            "entity_name": "Unocal Corp. v. Mesa Petroleum Co.",
+            "title": "Unocal Enhanced Scrutiny: Proportionality Standard for Hostile Takeover Defenses",
+            "filing_year": 1985,
+            "category": "TAKEOVER_DEFENSE_PROPORTIONALITY",
+            "source_url": "https://www.courtlistener.com/opinion/1938552/unocal-corp-v-mesa-petroleum-co/",
+            "governing_law": "DELAWARE",
+            "liability_cap_type": "POISON_PILL_ENHANCED_SCRUTINY",
+            "risk_score": 80,
+            "text": (
+                "Delaware Supreme Court / Chancery (493 A.2d 946, June 10, 1985). Moore, Justice. "
+                "Because of the omnipresent specter that a board may be acting primarily in its own interests, "
+                "defensive measures against hostile takeovers must pass two-prong enhanced scrutiny: "
+                "reasonable grounds for believing danger to corporate policy existed, and defensive response "
+                "proportional to the threat posed."
+            ),
+        },
+        {
+            "doc_id": "CHANCERY-CORWIN-2015",
+            "citation": "125 A.3d 304",
+            "entity_name": "Corwin v. KKR Financial Holdings LLC",
+            "title": "Corwin Cleansing Doctrine: Uncoerced Fully Informed Stockholder Vote Reinstates BJR",
+            "filing_year": 2015,
+            "category": "MERGER_RATIFICATION_CLEANSING",
+            "source_url": "https://www.courtlistener.com/opinion/3089456/corwin-v-kkr-financial-holdings-llc/",
+            "governing_law": "DELAWARE",
+            "liability_cap_type": "BUSINESS_JUDGMENT_RULE_CLEANSING",
+            "risk_score": 40,
+            "text": (
+                "Delaware Supreme Court / Chancery (125 A.3d 304, Oct. 2, 2015). Strine, Chief Justice. "
+                "When a transaction not subject to the entire fairness standard is approved by a fully "
+                "informed, uncoerced vote of the disinterested stockholders, the business judgment rule "
+                "applies irrebuttably, and the transaction cannot be challenged except on the ground of waste."
+            ),
+        },
+        {
+            "doc_id": "CHANCERY-MFW-2014",
+            "citation": "88 A.3d 635",
+            "entity_name": "Kahn v. M&F Worldwide Corp. (MFW)",
+            "title": "MFW Dual Safe Harbor: Procedural Protections for Controlling Stockholder Buyouts",
+            "filing_year": 2014,
+            "category": "CONTROLLING_STOCKHOLDER_SQUEEZE_OUT",
+            "source_url": "https://www.courtlistener.com/opinion/2684821/kahn-v-mf-worldwide-corp/",
+            "governing_law": "DELAWARE",
+            "liability_cap_type": "ENTIRE_FAIRNESS_SAFE_HARBOR",
+            "risk_score": 65,
+            "text": (
+                "Delaware Supreme Court / Chancery (88 A.3d 635, March 14, 2014). Holland, Justice. "
+                "Business judgment review applies to a controller buyout conditioned upfront upon both "
+                "the negotiation and approval of an independent Special Committee and an uncoerced, "
+                "fully informed vote of a majority of the minority stockholders."
+            ),
+        },
+        {
+            "doc_id": "CHANCERY-TRADOS-2013",
+            "citation": "73 A.3d 17",
+            "entity_name": "In re Trados Inc. Shareholder Litigation",
+            "title": "Trados Allocation Fiduciary Standard: Preferred Liquidation vs Common Stock Duties",
+            "filing_year": 2013,
+            "category": "VENTURE_CAPITAL_MERGER_ALLOCATION",
+            "source_url": "https://www.courtlistener.com/opinion/2397125/in-re-trados-inc-shareholder-litigation/",
+            "governing_law": "DELAWARE",
+            "liability_cap_type": "FIDUCIARY_COMMON_STOCK_PRIORITY",
+            "risk_score": 85,
+            "text": (
+                "Delaware Court of Chancery (73 A.3d 17, July 24, 2013). Laster, Vice Chancellor. "
+                "Directors owe duties to stockholders as a whole, which means maximizing value for common "
+                "stockholders. Allocating merger consideration entirely to preferred liquidation preferences "
+                "without value to common triggers entire fairness scrutiny."
+            ),
+        },
+    ]
+
+    for op in delaware_opinions:
+        cur.execute("SELECT doc_id FROM us_legal_records WHERE doc_id = ?", (op["doc_id"],))
+        if cur.fetchone():
+            continue
+
+        # Guardar en archivo local
+        op_filename = f"{op['doc_id']}.txt"
+        op_path = BASE_DIR / "opinions" / op_filename
+        with open(op_path, "w", encoding="utf-8") as f:
+            f.write(op["text"])
+
+        sha256 = hashlib.sha256(op["text"].encode("utf-8")).hexdigest()
+
+        cur.execute("""
+        INSERT INTO us_legal_records (
+            doc_id, doc_type, jurisdiction, entity_name, title, filing_year,
+            category, source_url, local_relpath, sha256_hash, risk_score,
+            governing_law, liability_cap_type, clauses_json, gdrive_synced, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, datetime('now'));
+        """, (
+            op["doc_id"],
+            "DELAWARE_CHANCERY_OPINION",
+            "STATE_DELAWARE",
+            op["entity_name"],
+            op["title"],
+            op["filing_year"],
+            op["category"],
+            op["source_url"],
+            str(op_path.relative_to(BASE_DIR)),
+            sha256,
+            op["risk_score"],
+            op["governing_law"],
+            op["liability_cap_type"],
+            json.dumps([{"clause_type": "DELAWARE_PRECEDENT", "citation": op["citation"]}]),
+        ))
+        conn.commit()
+        logger.info(f"Ingestado precedente Delaware: {op['doc_id']} ({op['citation']})")
+
+    conn.close()
+
+
 def run_harvest_cycle(batch_limit_per_company: int = 3) -> None:
-    """Ejecuta un ciclo de recolección sobre empresas tecnológicas líderes."""
+    """Ejecuta un ciclo de recolección sobre empresas tecnológicas líderes y jurisprudencia Delaware."""
     init_database()
+
+    # Ingestar opiniones societarias Delaware Chancery
+    ingest_delaware_chancery_landmarks()
 
     target_companies = [
         ("0000320193", "AAPL", "Apple Inc."),
@@ -201,6 +363,31 @@ def run_harvest_cycle(batch_limit_per_company: int = 3) -> None:
         ("0001045810", "NVDA", "NVIDIA Corp."),
         ("0001652044", "GOOGL", "Alphabet Inc."),
         ("0001018724", "AMZN", "Amazon.com Inc."),
+        ("0001326801", "META", "Meta Platforms, Inc."),
+        ("0001318605", "TSLA", "Tesla, Inc."),
+        ("0001341439", "ORCL", "Oracle Corporation"),
+        ("0001108524", "CRM", "Salesforce, Inc."),
+        ("0000050863", "INTC", "Intel Corporation"),
+        ("0000002488", "AMD", "Advanced Micro Devices, Inc."),
+        ("0000858877", "CSCO", "Cisco Systems, Inc."),
+        ("0000804328", "QCOM", "QUALCOMM Incorporated"),
+        ("0000796343", "ADBE", "Adobe Inc."),
+        ("0000051143", "IBM", "International Business Machines Corp."),
+        ("0001730168", "AVGO", "Broadcom Inc."),
+        ("0001373715", "NOW", "ServiceNow, Inc."),
+        ("0001543151", "UBER", "Uber Technologies, Inc."),
+        ("0001559720", "ABNB", "Airbnb, Inc."),
+        ("0001065280", "NFLX", "Netflix, Inc."),
+        ("0001321655", "PLTR", "Palantir Technologies Inc."),
+        ("0001640147", "SNOW", "Snowflake Inc."),
+        ("0000896878", "INTU", "Intuit Inc."),
+        ("0000097476", "TXN", "Texas Instruments Inc."),
+        ("0000006951", "AMAT", "Applied Materials, Inc."),
+        ("0000707549", "LRCX", "Lam Research Corp."),
+        ("0001327567", "PANW", "Palo Alto Networks, Inc."),
+        ("0001262039", "FTNT", "Fortinet, Inc."),
+        ("0001535527", "CRWD", "CrowdStrike Holdings, Inc."),
+        ("0001582806", "ANET", "Arista Networks, Inc."),
     ]
 
     for cik, ticker, name in target_companies:

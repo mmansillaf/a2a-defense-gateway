@@ -217,13 +217,13 @@ def solve_verification_challenge(challenge_text: str) -> str:
 
     numbers = digits if len(digits) >= 2 else word_numbers
 
-    # 3. Determinación determinista de operador buscando en el flujo continuo de letras
+    # 3. Determinación determinista de operador buscando en el flujo continuo de letras y texto original
     op = "+"
-    if any(w in raw_letters for w in ["minus", "subtract", "reduc", "loss", "remain", "decreas", "shed", "drop", "lose", "spent"]):
+    if any(w in raw_letters for w in ["minus", "subtract", "reduc", "loss", "remain", "decreas", "shed", "drop", "lose", "spent", "differen", "left"]):
         op = "-"
-    elif any(w in raw_letters for w in ["times", "multipl", "product"]):
+    elif any(w in raw_letters for w in ["times", "multipl", "product"]) or bool(re.search(r"(?:[\*×]|\b[xX]{1,3}\b)", challenge_text)):
         op = "*"
-    elif any(w in raw_letters for w in ["divid", "split", "half"]):
+    elif any(w in raw_letters for w in ["divid", "split", "half", "quotient"]):
         op = "/"
 
     if len(numbers) >= 2:
