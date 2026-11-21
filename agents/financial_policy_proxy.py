@@ -104,12 +104,25 @@ class FinancialPolicyProxy:
         db_path: str | None = None,
     ):
         self.config = config or PolicyConfig()
-        self.db_path = db_path or os.getenv("A2A_PAYMENT_AUDIT_DB", "data/payment_audit.db")
+        if db_path:
+            self.db_path = db_path
+        elif os.getenv("A2A_PAYMENT_AUDIT_DB"):
+            self.db_path = os.environ["A2A_PAYMENT_AUDIT_DB"]
+        elif os.path.exists("/opt/a2a-defense-system/data"):
+            self.db_path = "/opt/a2a-defense-system/data/payment_audit.db"
+        elif os.path.exists("data"):
+            self.db_path = "data/payment_audit.db"
+        else:
+            self.db_path = "/tmp/payment_audit.db"
+
         self._init_db()
 
     def _init_db(self) -> None:
         if self.db_path != ":memory:":
-            os.makedirs(os.path.dirname(os.path.abspath(self.db_path)), exist_ok=True)
+            try:
+                os.makedirs(os.path.dirname(os.path.abspath(self.db_path)), exist_ok=True)
+            except OSError:
+                self.db_path = "/tmp/payment_audit.db"
 
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("PRAGMA journal_mode=WAL;")
