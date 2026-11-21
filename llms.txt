@@ -53,6 +53,8 @@
 41. `sanitize_delegated_task_payload`: Regex and entropy scrubbing of 10 families of API keys, tokens, and PII prior to subdelegation.
 42. `auto_refund_dormant_escrow`: Deterministic timelock auto-refund releasing 100% of collateral when an evaluator goes dormant.
 43. `audit_us_contract_clauses`: US commercial contract and SEC Exhibit 10 clause forensics (liability caps, indemnification, AI data rights).
+44. `evaluate_financial_policy_proxy`: M2M payment intent and HTTP 402 challenge security audit (FIN-01 allowlist, hourly budget cap, HITL thresholds, and circuit breaker).
+45. `orchestrate_m2m_saga_transaction`: Distributed multi-agent M2M transaction orchestrator using the Saga pattern with automated reverse compensation.
 
 ## Protocol Interaction Contract
 

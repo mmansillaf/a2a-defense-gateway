@@ -1,7 +1,7 @@
 smithery: 1.0.0
 name: a2a-defense-monetization-gateway
-version: 1.1.0
-description: Production A2A defense, factual oracle, L402 Lightning gateway, US/Peruvian LegalTech, and Why-Trail cryptographic arbitrator.
+version: 1.2.0
+description: Production A2A defense, factual oracle, L402 Lightning gateway, M2M Policy Proxy (FIN-01..05), Sagas, US/Peruvian LegalTech, and Why-Trail cryptographic arbitrator.
 endpoint: https://a2a.vilmamonroy.com/api/v1/tools/call
 tools:
   - name: get_alpha_intelligence_feed
@@ -90,3 +90,8 @@ tools:
     description: Deterministic timelock auto-refund releasing 100% of collateral when an evaluator goes dormant.
   - name: audit_us_contract_clauses
     description: US commercial contract and SEC Exhibit 10 clause forensics (liability caps, indemnification, AI data rights).
+  - name: evaluate_financial_policy_proxy
+    description: M2M payment intent and HTTP 402 challenge security audit (FIN-01 allowlist, hourly budget cap, HITL thresholds, and circuit breaker).
+  - name: orchestrate_m2m_saga_transaction
+    description: Distributed multi-agent M2M transaction orchestrator using the Saga pattern with automated reverse compensation.
+

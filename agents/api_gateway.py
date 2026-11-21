@@ -306,6 +306,7 @@ EXEMPT_PATHS = (
     "/.well-known",
     "/mcp/.well-known",
     "/api/v1/l402",
+    "/api/v1/policy",
     "/api/v1/audit/verify",
     "/login",
     "/dashboard",
@@ -602,6 +603,25 @@ async def get_l402_wallet_status():
 async def lookup_l402_invoice(payment_hash: str | None = None, invoice_bolt11: str | None = None):
     """Consulta el estado de liquidación de una factura Lightning vía Alby Hub NWC o vault sintético."""
     return server.l402_gateway.lookup_invoice(payment_hash=payment_hash, invoice_bolt11=invoice_bolt11)
+
+
+@app.post("/api/v1/policy/evaluate")
+async def evaluate_financial_policy(intent_payload: dict[str, Any]):
+    """Audita intenciones de pago M2M/HTTP 402 contra políticas FIN-01 a FIN-05."""
+    return server.call_tool("evaluate_financial_policy_proxy", intent_payload)
+
+
+@app.get("/api/v1/policy/audit")
+async def get_financial_policy_audit(agent_id: str | None = None):
+    """Retorna resumen métrico de la bitácora financiera, eventos recientes y estado de disyuntores."""
+    return server.policy_proxy.get_audit_summary(agent_id=agent_id)
+
+
+@app.post("/api/v1/policy/saga")
+async def execute_m2m_saga(saga_payload: dict[str, Any]):
+    """Orquesta transacciones distribuidas multi-agente bajo el patrón Saga."""
+    return server.call_tool("orchestrate_m2m_saga_transaction", saga_payload)
+
 
 
 

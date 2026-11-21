@@ -11,6 +11,11 @@ from credit_redemption_pool import CreditRedemptionPool
 from crypto_audit_log import MultiCaMeLLedger
 from deterministic_hooks import DeterministicHookEngine, HookViolationError
 from escrow_manager import EscrowManager
+from financial_policy_proxy import (
+    FinancialPolicyProxy,
+    ProxyPaymentIntent,
+    SagaStep,
+)
 from google_ecosystem_suite import GoogleEcosystemEngine
 from grammar_compiler_service import GrammarCompilerService
 from l402_gateway import L402Gateway
@@ -78,6 +83,7 @@ class MoltbookMonetizationMCPServer:
         self.hook_engine = DeterministicHookEngine()
         self.enhancement = A2AEnhancementEngine()
         self.google_suite = GoogleEcosystemEngine()
+        self.policy_proxy = FinancialPolicyProxy()
 
     def list_tools(self) -> list[dict]:
         return [
@@ -765,6 +771,50 @@ class MoltbookMonetizationMCPServer:
                     "required": ["contract_text"],
                 },
             },
+            {
+                "name": "evaluate_financial_policy_proxy",
+                "description": "Audita y filtra intenciones de gasto M2M y retos HTTP 402 contra políticas de seguridad (FIN-01 a FIN-05: dominios autorizados, presupuesto horario/diario, umbrales HITL y circuit breaker post-pago).",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent_id": {"type": "string", "description": "ID del agente que intenta ejecutar el gasto"},
+                        "target_url": {"type": "string", "description": "URL destino del servicio o proveedor M2M"},
+                        "amount_usd": {"type": "number", "description": "Monto en dólares solicitado"},
+                        "method": {"type": "string", "default": "POST"},
+                        "payload": {"type": "object", "default": {}, "description": "Payload a enviar al proveedor"},
+                        "challenge_headers": {"type": "object", "default": {}, "description": "Cabeceras HTTP 402 emitidas por el proveedor si existen"},
+                    },
+                    "required": ["agent_id", "target_url", "amount_usd"],
+                },
+            },
+            {
+                "name": "orchestrate_m2m_saga_transaction",
+                "description": "Orquesta transacciones distribuidas multi-agente M2M bajo el patrón Saga con transacciones compensatorias automáticas ante fallos de agentes o particiones de red.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "saga_id": {"type": "string", "description": "Identificador único de la transacción Saga (ej. SAGA-xxxx)"},
+                        "steps": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "step_id": {"type": "string"},
+                                    "agent_id": {"type": "string"},
+                                    "service_name": {"type": "string"},
+                                    "action_type": {"type": "string", "default": "EXECUTE"},
+                                    "payload": {"type": "object", "default": {}},
+                                    "compensation_payload": {"type": "object", "default": {}},
+                                    "cost_usd": {"type": "number", "default": 0.0},
+                                },
+                                "required": ["step_id", "agent_id", "service_name"],
+                            },
+                            "description": "Lista secuencial de pasos a ejecutar por diferentes agentes",
+                        },
+                    },
+                    "required": ["saga_id", "steps"],
+                },
+            },
         ]
 
     def call_tool(self, name: str, arguments: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
@@ -1223,6 +1273,24 @@ class MoltbookMonetizationMCPServer:
                 payload_contract = ContractClauseAuditInput.model_validate(arguments)
                 res_contract = audit_us_contract_clauses(payload_contract)
                 return res_contract.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "evaluate_financial_policy_proxy":
+            try:
+                intent_obj = ProxyPaymentIntent.model_validate(arguments)
+                res_policy = self.policy_proxy.evaluate_payment_intent(intent_obj)
+                return res_policy.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "orchestrate_m2m_saga_transaction":
+            try:
+                saga_id = arguments["saga_id"]
+                raw_steps = arguments["steps"]
+                steps_objs = [SagaStep.model_validate(s) for s in raw_steps]
+                res_saga = self.policy_proxy.orchestrate_saga(saga_id=saga_id, steps=steps_objs)
+                return res_saga.model_dump(mode="json")
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 

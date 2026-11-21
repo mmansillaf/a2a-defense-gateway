@@ -56,7 +56,7 @@ def test_mcp_tools_list():
     response = client.post("/mcp", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert len(data["result"]["tools"]) == 43
+    assert len(data["result"]["tools"]) == 45
     tool_names = [t["name"] for t in data["result"]["tools"]]
     assert "compute_procedural_deadline" in tool_names
     assert "compute_us_procedural_deadline" in tool_names
@@ -338,3 +338,43 @@ def test_login_success_and_authenticated_dashboard():
     # Intento de acceso posterior -> redirección a login
     after_dash = client.get("/dashboard", cookies={"a2a_session": session_cookie}, follow_redirects=False)
     assert after_dash.status_code in [302, 303, 307]
+
+
+def test_financial_policy_gateway_endpoints():
+    client = TestClient(app)
+
+    # 1. Evaluar intención de pago permitida
+    intent = {
+        "agent_id": "test_agent_gw",
+        "target_url": "https://api.proveedor-verificado.com/v1/service",
+        "amount_usd": 0.15,
+        "method": "POST",
+        "payload": {"query": "valid"},
+    }
+    resp_eval = client.post("/api/v1/policy/evaluate", json=intent)
+    assert resp_eval.status_code == 200
+    data_eval = resp_eval.json()
+    assert data_eval["decision"] == "ALLOWED"
+    assert data_eval["status_code"] == 200
+
+    # 2. Consultar auditoría
+    resp_audit = client.get("/api/v1/policy/audit", params={"agent_id": "test_agent_gw"})
+    assert resp_audit.status_code == 200
+    data_audit = resp_audit.json()
+    assert "status_breakdown" in data_audit
+    assert "active_circuits" in data_audit
+
+    # 3. Orquestar Saga multi-agente
+    saga_payload = {
+        "saga_id": "SAGA-GW-01",
+        "steps": [
+            {"step_id": "ST1", "agent_id": "ag_1", "service_name": "step1", "action_type": "EXECUTE", "cost_usd": 0.05},
+            {"step_id": "ST2", "agent_id": "ag_2", "service_name": "step2", "action_type": "EXECUTE", "cost_usd": 0.05},
+        ],
+    }
+    resp_saga = client.post("/api/v1/policy/saga", json=saga_payload)
+    assert resp_saga.status_code == 200
+    data_saga = resp_saga.json()
+    assert data_saga["status"] == "COMPLETED"
+    assert data_saga["steps_executed"] == 2
+
