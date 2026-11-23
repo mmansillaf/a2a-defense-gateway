@@ -560,7 +560,7 @@ async def a2a_agent_card_endpoint():
         content={
             "protocolVersion": "0.2.0",
             "name": "A2A Defense Gateway",
-            "description": "Official Agent-to-Agent Defense & Monetization Gateway. 45 production MCP tools, L402 Lightning payments, Why-Trail causal ledger, and ClawHavoc AST certifier.",
+            "description": "Official Agent-to-Agent Defense & Monetization Gateway. 50 production MCP tools, L402 Lightning payments, Why-Trail causal ledger, and ClawHavoc AST certifier.",
             "url": "https://a2a.vilmamonroy.com",
             "version": "1.0.0",
             "capabilities": {
@@ -1746,6 +1746,9 @@ TOOL_CATEGORY_MAP: dict[str, str] = {
     "orchestrate_m2m_saga_transaction": "Economía & Liquidación",
     "verify_ap2_cart_mandate_integrity": "Comercio Agéntico & AP2",
     "serialize_geo_product_catalog": "Comercio Agéntico & AP2",
+    "propose_trade_envelope": "FinTech & Trading Risk Envelope",
+    "simulate_order_mev_protection": "FinTech & Trading Risk Envelope",
+    "enforce_trading_circuit_breaker": "FinTech & Trading Risk Envelope",
 }
 
 DASHBOARD_HTML = """<!DOCTYPE html>

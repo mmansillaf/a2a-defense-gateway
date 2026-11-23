@@ -98,5 +98,11 @@ tools:
     description: Cryptographic integrity, spending limit, and zero-hallucination verification for Google/FIDO AP2 Cart Mandates.
   - name: serialize_geo_product_catalog
     description: Generative Engine Optimization (GEO) catalog serializer to W3C schema.org/Product and Offer JSON-LD to prevent agent abandonment.
+  - name: propose_trade_envelope
+    description: Evaluates and restrains financial order proposals out-of-prompt against USD caps, pair whitelists, and max slippage, triggering HITL above $250.
+  - name: simulate_order_mev_protection
+    description: Pre-flight dry-run simulating transaction against pool depth to detect sandwich attacks, front-running, and honeypots before execution.
+  - name: enforce_trading_circuit_breaker
+    description: Deterministic out-of-prompt financial circuit breaker locking agent trading credentials upon excessive drawdown or consecutive losses.
 
 

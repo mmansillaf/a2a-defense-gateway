@@ -115,7 +115,7 @@ def test_serialize_geo_product_catalog_success():
 
 def test_mcp_server_dispatches_new_tools():
     server = MoltbookMonetizationMCPServer()
-    assert len(server.list_tools()) == 47
+    assert len(server.list_tools()) == 50
 
     # Test call tool 46
     res_ap2 = server.call_tool(

@@ -872,12 +872,57 @@ class MoltbookMonetizationMCPServer:
                                     "category": {"type": "string", "default": "General"},
                                     "url": {"type": "string"},
                                     "specifications": {"type": "object"},
-                                },
+                                    },
                                 "required": ["name", "sku", "price"],
                             },
                         },
                     },
                     "required": ["merchant_name", "catalog_id", "products"],
+                },
+            },
+            {
+                "name": "propose_trade_envelope",
+                "description": "Evalúa y acota una propuesta de orden financiera fuera del prompt contra límites USD, whitelist de activos y control de slippage, requiriendo HITL si excede $250.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "symbol": {"type": "string", "description": "Par de trading, e.g. BTCUSDT, ETHUSDT, SOLUSDT, USDCUSDT"},
+                        "side": {"type": "string", "enum": ["buy", "sell"], "description": "Dirección de la orden"},
+                        "quote_amount_usd": {"type": "number", "description": "Monto en USD/USDC"},
+                        "max_slippage_bps": {"type": "integer", "default": 50, "description": "Slippage máximo tolerado en bps"},
+                        "agent_id": {"type": "string", "default": "agent_unknown"},
+                    },
+                    "required": ["symbol", "side", "quote_amount_usd"],
+                },
+            },
+            {
+                "name": "simulate_order_mev_protection",
+                "description": "Simula pre-flight una orden en mempools y pools de liquidez para detectar ataques sándwich, front-running y honeypots antes de la ejecución.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "symbol": {"type": "string", "description": "Par objetivo a simular"},
+                        "dex_protocol": {"type": "string", "enum": ["uniswap_v3", "hyperliquid", "raydium", "jito_solana"], "default": "uniswap_v3"},
+                        "quote_amount_usd": {"type": "number", "description": "Valor nominal de la operación en USD"},
+                        "mempool_type": {"type": "string", "enum": ["public", "private_relay"], "default": "public"},
+                    },
+                    "required": ["symbol", "quote_amount_usd"],
+                },
+            },
+            {
+                "name": "enforce_trading_circuit_breaker",
+                "description": "Circuit breaker determinista fuera del prompt que bloquea el envelope de trading del agente ante exceso de drawdown acumulado o rachas de pérdidas.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent_id": {"type": "string", "description": "Identificador del agente autónomo"},
+                        "rolling_24h_drawdown_pct": {"type": "number", "description": "Porcentaje de drawdown acumulado en 24h"},
+                        "consecutive_loss_count": {"type": "integer", "description": "Número de operaciones consecutivas con pérdida"},
+                        "unrealized_loss_usd": {"type": "number", "default": 0.0},
+                        "max_allowed_drawdown_pct": {"type": "number", "default": 5.0},
+                        "max_consecutive_losses": {"type": "integer", "default": 3},
+                    },
+                    "required": ["agent_id", "rolling_24h_drawdown_pct", "consecutive_loss_count"],
                 },
             },
         ]
@@ -1376,6 +1421,36 @@ class MoltbookMonetizationMCPServer:
                 payload_geo = GEOCatalogInput.model_validate(arguments)
                 res_geo = serialize_geo_product_catalog(payload_geo)
                 return res_geo.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "propose_trade_envelope":
+            try:
+                from trading_risk_envelope import TradeProposalRequest, propose_trade_envelope
+
+                payload_trade = TradeProposalRequest.model_validate(arguments)
+                res_trade = propose_trade_envelope(payload_trade)
+                return res_trade.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "simulate_order_mev_protection":
+            try:
+                from trading_risk_envelope import MEVSimulationRequest, simulate_order_mev_protection
+
+                payload_mev = MEVSimulationRequest.model_validate(arguments)
+                res_mev = simulate_order_mev_protection(payload_mev)
+                return res_mev.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "enforce_trading_circuit_breaker":
+            try:
+                from trading_risk_envelope import CircuitBreakerRequest, enforce_trading_circuit_breaker
+
+                payload_cb = CircuitBreakerRequest.model_validate(arguments)
+                res_cb = enforce_trading_circuit_breaker(payload_cb)
+                return res_cb.model_dump(mode="json")
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 
