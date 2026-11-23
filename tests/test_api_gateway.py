@@ -420,4 +420,27 @@ def test_a2a_agent_card_endpoints():
         assert "l402" in data["securitySchemes"]
 
 
+def test_llms_txt_and_smithery_endpoints():
+    """Valida que /llms.txt y /smithery.yaml expongan las 56 herramientas activas."""
+    resp_llms = client.get("/llms.txt")
+    assert resp_llms.status_code == 200
+    text_llms = resp_llms.text
+    assert "56 Production Tools" in text_llms
+    assert "verify_meatspace_attestation" in text_llms
+    assert "verify_kya_attestation" in text_llms
+    assert "translate_x402_to_l402_settlement" in text_llms
+
+    resp_full = client.get("/llms-full.txt")
+    assert resp_full.status_code == 200
+    assert "56 Production Tools" in resp_full.text
+
+    resp_smith = client.get("/smithery.yaml")
+    assert resp_smith.status_code == 200
+    text_smith = resp_smith.text
+    assert "verify_meatspace_attestation" in text_smith
+    assert "verify_kya_attestation" in text_smith
+    assert "translate_x402_to_l402_settlement" in text_smith
+
+
+
 

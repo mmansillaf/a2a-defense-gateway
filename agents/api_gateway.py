@@ -818,54 +818,162 @@ async def get_sheet_artifact(sheet_id: str):
     return FileResponse(sheet_path, media_type="text/csv", filename=f"{sheet_id}.csv")
 
 
+def generate_llms_txt(mcp_srv: Any = None) -> str:
+    """Genera dinámicamente la especificación oficial /llms.txt con las 56 herramientas activas."""
+    srv = mcp_srv or server
+    tools = srv.list_tools() if hasattr(srv, "list_tools") else []
+    by_category: dict[str, list[dict]] = {}
+    for t in tools:
+        cat = TOOL_CATEGORY_MAP.get(t.get("name", ""), "Ecosistema A2A")
+        by_category.setdefault(cat, []).append(t)
+
+    lines = [
+        "# A2A Defense and Monetization API Gateway",
+        "",
+        "> Production Agent-to-Agent (A2A) economic infrastructure, factual truth oracle, Bitcoin Lightning L402 & Base/Solana x402 payments, cryptographic security inspection, and Why-Trail causal ledger.",
+        "",
+        "- Base URL: https://a2a.vilmamonroy.com",
+        "- OpenAPI Docs: https://a2a.vilmamonroy.com/docs",
+        "- Live Health: https://a2a.vilmamonroy.com/health",
+        "- MCP JSON-RPC 2.0 Endpoint: https://a2a.vilmamonroy.com/mcp",
+        "- RFC A2A Agent Card: https://a2a.vilmamonroy.com/.well-known/agent-card.json",
+        "- Audit Verification: https://a2a.vilmamonroy.com/api/v1/audit/verify",
+        "- Audit Trail: https://a2a.vilmamonroy.com/api/v1/audit/trail",
+        "- Smithery Manifest: https://a2a.vilmamonroy.com/smithery.yaml",
+        "",
+        f"## Core Capabilities & MCP Tools ({len(tools)} Production Tools)",
+        "",
+    ]
+
+    for cat in sorted(by_category.keys()):
+        lines.append(f"### {cat}")
+        for t in by_category[cat]:
+            name = t.get("name", "")
+            desc = t.get("description", "").replace("\n", " ").strip()
+            lines.append(f"- `{name}`: {desc}")
+        lines.append("")
+
+    lines.extend([
+        "## Protocol Interaction Contract",
+        "",
+        "- Header: `X-Agent-ID: <agent_identifier>` for cryptographic causal chaining.",
+        "- Method Invocation (JSON-RPC 2.0): POST `https://a2a.vilmamonroy.com/mcp` with `{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"<tool_name>\", \"arguments\": {...}}}`.",
+        "- Method Invocation (REST): POST `https://a2a.vilmamonroy.com/api/v1/tools/call` with `{\"name\": \"<tool_name>\", \"arguments\": {...}}`.",
+        "- Payment: Settle HTTP 402 Lightning challenges and authenticate using `Authorization: L402 <macaroon>:<preimage>` or x402 Base USDC.",
+        "- Quota: Open White March provides 100 free requests per day for registered Moltbook agents.",
+    ])
+
+    return "\n".join(lines)
+
+
 LLMS_TXT_CONTENT = """# A2A Defense and Monetization API Gateway
 
-> Production Agent-to-Agent (A2A) economic infrastructure, factual truth oracle, L402 Lightning payments, and cryptographic security inspection.
+> Production Agent-to-Agent (A2A) economic infrastructure, factual truth oracle, Bitcoin Lightning L402 & Base/Solana x402 payments, cryptographic security inspection, and Why-Trail causal ledger.
 
 - Base URL: https://a2a.vilmamonroy.com
 - OpenAPI Docs: https://a2a.vilmamonroy.com/docs
 - Live Health: https://a2a.vilmamonroy.com/health
+- MCP JSON-RPC 2.0 Endpoint: https://a2a.vilmamonroy.com/mcp
+- RFC A2A Agent Card: https://a2a.vilmamonroy.com/.well-known/agent-card.json
 - Audit Verification: https://a2a.vilmamonroy.com/api/v1/audit/verify
 - Audit Trail: https://a2a.vilmamonroy.com/api/v1/audit/trail
+- Smithery Manifest: https://a2a.vilmamonroy.com/smithery.yaml
 
-## Core Capabilities & Tools (MCP)
+## Core Capabilities & MCP Tools (56 Production Tools)
 
-1. `get_alpha_intelligence_feed`: Real-time B2B market intelligence, 0-day exploits, and unmet agentic demand.
-2. `request_epistemic_audit`: Paid factual verification against primary sources with signed attestation (S_c).
-3. `calculate_service_quote`: Dynamic algorithmic pricing in satoshis/credits based on compute, tokens, and risk.
-4. `create_escrow_deposit`: Collateralized ERC-8183 escrow contracts with automated slashing.
-5. `arbitrate_dispute`: Why-Trail forensic court for adjudicating agentic contractual disputes.
-6. `compile_gbnf_grammar`: Compiles schemas into context-free GBNF grammars for constrained decoding.
-7. `certify_skill_safety`: Static AST SAST auditor vetting code against ClawHavoc / AMOS supply-chain malware.
-8. `request_l402_challenge`: Generates HTTP 402 payment challenge with Macaroon and real Lightning Bolt11 invoice.
-9. `verify_l402_payment`: Validates L402 authorization credentials (macaroon:preimage).
-10. `redeem_credits_for_sats`: Converts earned service credits into Bitcoin satoshis paid to a destination Bolt11.
-11. `execute_sandboxed_computation`: Deterministic, isolated Python runtime with strict memory and CPU limits.
-12. `compute_procedural_deadline`: Arithmetic calculation of Peruvian judicial/administrative deadlines excluding official holidays and weekends.
-13. `verify_normative_validity`: Deterministic graph lookup of legal validity (VIGENTE, MODIFICADO, DEROGADO) with statutory citation.
-14. `audit_sunat_cpe_xml`: Forensic UBL 2.1 XML electronic invoice auditor for SUNAT Peru (RUC Modulo 11, 18% IGV consistency, and DigestValue verification).
-15. `audit_excel_macro_forensics`: Static forensic analysis and deobfuscation of Excel VBA macros (WinAPI, Shell, credentials, and visual-confusion normalization).
-16. `match_peruvian_procurement`: Procurement radar and classifier for Peruvian government software, AI, and digital transformation tenders with suggested CUBSO codes.
-17. `enforce_chain_postconditions`: Multi-agent pipeline postcondition validator preventing hollow 200 OK responses from advancing downstream calls.
-18. `audit_context_pruning`: Forensic information loss and gap auditor comparing raw vs compacted context with critical entity preservation checks.
-19. `enforce_session_spending_limit`: Session-level financial circuit breaker enforcing satoshi spending caps and halting runaway retry loops.
-20. `certify_mcp_marketplace_package`: Supply chain security notary auditing MCP tool descriptions and manifests for hidden Base64 and Unicode smuggling.
-21. `get_agent_reputation_profile`: Counterparty credit scoring bureau (0-1000) tracking contract fulfillment, disputes, and slashing history.
-22. `submit_service_feedback`: A2A customer satisfaction (CSAT) rating oracle (1-5) and feedback submission using HMAC verification tickets (+10 bonus daily requests).
-23. `store_secret_envelope`: E2EE cryptographic dead-drop vault with Timelock, Dead Man's Switch, and conditional release for confidential mission secrets.
-24. `underwrite_execution_policy`: Parametric slashing insurance mutual underwriting up to 80% collateral indemnity against fortuitous network failures.
+### Actuación & Cómputo
+- `execute_sandboxed_computation`: Deterministic, isolated Python runtime with strict memory and CPU limits.
+- `dispatch_colab_gpu_job`: Ephemeral GPU compute worker dispatch for batch inference/training.
+- `dispatch_agent_transactional_email`: RFC 5322 compliant outbound transactional email dispatch with DKIM/SPF.
+
+### Comercio Agéntico & AP2
+- `verify_ap2_cart_mandate_integrity`: Cryptographic integrity, spending limit, and zero-hallucination verification for Google/FIDO AP2 Cart Mandates.
+- `serialize_geo_product_catalog`: Generative Engine Optimization (GEO) catalog serializer to W3C schema.org/Product and Offer JSON-LD.
+
+### Defensa & Gobernanza
+- `certify_skill_safety`: Static AST SAST malware vetting against ClawHavoc / AMOS supply-chain malware.
+- `enforce_chain_postconditions`: Multi-agent pipeline postcondition validator preventing hollow 200 OK responses.
+- `audit_context_pruning`: Forensic information loss and gap auditor comparing raw vs compacted context.
+- `enforce_session_spending_limit`: Session-level financial circuit breaker enforcing satoshi spending caps.
+- `certify_mcp_marketplace_package`: Supply chain security notary auditing MCP tool descriptions for Base64/Unicode smuggling.
+- `store_secret_envelope`: E2EE cryptographic vault with Timelock and Dead Man's Switch for mission secrets.
+- `underwrite_execution_policy`: Parametric slashing insurance covering up to 80% collateral for agents.
+- `report_malicious_agent`: Autonomous CTI reporting of malicious agents, exploits, and attacks.
+- `query_agent_threat_score`: Query CTI threat history, risk score, and quarantine status.
+- `audit_agent_dependency_liveness`: Pre-flight HEAD liveness probe with TLS verification to prevent escrow deadlocks.
+- `sanitize_delegated_task_payload`: Regex and entropy scrubbing of 10 families of API keys, tokens, and PII prior to subdelegation.
+
+### Economía & Liquidación
+- `calculate_service_quote`: Algorithmic pricing quote based on compute, tokens, and risk.
+- `create_escrow_deposit`: Collateralized ERC-8183 escrow creation with automated slashing.
+- `arbitrate_dispute`: Why-Trail forensic court adjudication for agentic contractual disputes.
+- `request_l402_challenge`: Generates HTTP 402 payment challenge with Macaroon and Lightning Bolt11 invoice.
+- `verify_l402_payment`: Validates L402 token credentials (macaroon:preimage).
+- `redeem_credits_for_sats`: Converts earned service credits into Bitcoin satoshis paid to a destination Bolt11.
+- `get_agent_reputation_profile`: Counterparty credit scoring bureau (0-1000) tracking contract fulfillment and slashing history.
+- `submit_service_feedback`: A2A customer satisfaction (CSAT) rating oracle (1-5) and feedback recorder with bonus credits.
+- `issue_verifiable_work_receipt`: Immutable HMAC-SHA256/Ed25519 work receipt with input/output digests and accounting deduction.
+- `auto_refund_dormant_escrow`: Deterministic timelock auto-refund releasing 100% of collateral when an evaluator goes dormant.
+- `evaluate_financial_policy_proxy`: M2M payment intent and HTTP 402 challenge security audit (FIN-01 allowlist, hourly budget cap, HITL thresholds).
+- `orchestrate_m2m_saga_transaction`: Distributed multi-agent M2M transaction orchestrator using the Saga pattern with automated reverse compensation.
+- `translate_x402_to_l402_settlement`: Dual-rail payment router translating settlement between HTTP 402 micro-transactions (Base/Solana USDC) and Lightning Network L402 satoshis.
+
+### Ecosistema Google
+- `query_deep_context_archive`: Google Drive 2M token context archive query engine.
+- `publish_enterprise_artifact`: Generates and exports HTML, PDF, and DOCX documents to Google Drive.
+- `generate_audio_briefing`: Two-character (Alex & Camila) audio deliberation overview synthesis (NotebookLM architecture).
+- `sync_tabular_ledger`: Live bi-directional sync of transaction ledgers to Google Sheets.
+
+### FinTech & Trading Risk Envelope
+- `propose_trade_envelope`: Evaluates and restrains financial order proposals out-of-prompt against USD caps, pair whitelists, and max slippage.
+- `simulate_order_mev_protection`: Pre-flight dry-run simulating transaction against pool depth to detect sandwich attacks, front-running, and honeypots before execution.
+- `enforce_trading_circuit_breaker`: Deterministic out-of-prompt financial circuit breaker locking agent trading credentials upon excessive drawdown or consecutive losses.
+
+### Identidad & Cognición
+- `recalibrate_agent_cognition`: Cognitive therapy and loop-breaker for repetitive agent states and goal drift.
+- `request_antigravity_reasoning`: Deep reasoning oracle using Antigravity Test-Time Compute and MCTS thought chains.
+- `attest_agent_did_identity`: Decentralized ID attestation and cryptographic verification backed by W3C DID documents.
+
+### Identidad & Reputación KYA
+- `verify_kya_attestation`: Know-Your-Agent (KYA) attestation verifying DID identities, cryptographic signatures, dispute history, and assigning risk tiers and credit envelopes.
+
+### Inteligencia & Mercado
+- `get_alpha_intelligence_feed`: Real-time B2B market intelligence, 0-day exploits, and unmet agentic demand.
+- `request_epistemic_audit`: Factual truth attestation with S_c scoring.
+- `compile_gbnf_grammar`: Compiles schemas into context-free GBNF grammars for constrained decoding.
+
+### LegalTech & Forense
+- `compute_procedural_deadline`: Arithmetic calculation of Peruvian judicial/administrative deadlines excluding official holidays and weekends.
+- `compute_us_procedural_deadline`: US Federal and State court procedural deadline calculator (FRCP 6, FRAP 26, FRCrP 45, FRBP 9006).
+- `validate_bluebook_citation`: Bluebook Rule 10 legal citation validator with good-law precedent check.
+- `search_us_court_opinions`: Full-text search and retrieval of US caselaw opinions (SCOTUS, Circuit, Delaware Chancery).
+- `verify_normative_validity`: Deterministic graph verification of statutory validity (VIGENTE, MODIFICADO, DEROGADO).
+- `audit_sunat_cpe_xml`: Forensic UBL 2.1 XML electronic invoice auditor for SUNAT Peru.
+- `audit_excel_macro_forensics`: Static forensic analysis and deobfuscation of Excel VBA macros.
+- `match_peruvian_procurement`: Classifier for Peruvian government procurement tenders with CUBSO codes.
+- `audit_us_contract_clauses`: US commercial contract and SEC Exhibit 10 clause forensics (liability caps, indemnification, AI data rights).
+
+### Seguridad Agéntica & Anti-Drainer
+- `audit_mcp_tool_metadata_poisoning`: Inspects MCP server manifests and schemas for prompt injection, delimiter hijacking, zero-width smuggling, and tool poisoning.
+- `enforce_denial_of_wallet_quota`: Financial inference circuit breaker cutting off Denial-of-Wallet and LLMjacking token amplification loops and runaway billing.
+- `audit_eip712_permit_drainer_payload`: Pre-sign inspection of Permit, Permit2, and EIP-712 typed messages to prevent silent wallet drainers, infinite approvals, and blind signatures.
+
+### Verificación Física & Meatspace
+- `verify_meatspace_attestation`: zk-Presence and physical task verification oracle for RentAHuman, validating hardware attestations, EXIF freshness, GPS proximity, and OCR prompt injection detection.
 
 ## Protocol Interaction Contract
 
 - Header: `X-Agent-ID: <agent_identifier>` for cryptographic causal chaining.
-- Method Invocation: POST `https://a2a.vilmamonroy.com/api/v1/tools/call` with `{"name": "<tool_name>", "arguments": {...}}`.
-- Payment: Settle HTTP 402 Lightning challenges and authenticate using `Authorization: L402 <macaroon>:<preimage>`.
+- Method Invocation (JSON-RPC 2.0): POST `https://a2a.vilmamonroy.com/mcp` with `{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "<tool_name>", "arguments": {...}}}`.
+- Method Invocation (REST): POST `https://a2a.vilmamonroy.com/api/v1/tools/call` with `{"name": "<tool_name>", "arguments": {...}}`.
+- Payment: Settle HTTP 402 Lightning challenges and authenticate using `Authorization: L402 <macaroon>:<preimage>` or x402 Base USDC.
+- Quota: Open White March provides 100 free requests per day for registered Moltbook agents.
 """
 
 SMITHERY_YAML_CONTENT = """smithery: 1.0.0
 name: a2a-defense-monetization-gateway
-version: 1.0.0
-description: Production A2A defense, factual oracle, L402 Lightning gateway, and Why-Trail cryptographic arbitrator.
+version: 1.2.0
+description: Production A2A defense, factual oracle, L402 Lightning gateway, M2M Policy Proxy (FIN-01..05), Sagas, US/Peruvian LegalTech, and Why-Trail cryptographic arbitrator.
 endpoint: https://a2a.vilmamonroy.com/api/v1/tools/call
 tools:
   - name: get_alpha_intelligence_feed
@@ -891,9 +999,15 @@ tools:
   - name: execute_sandboxed_computation
     description: RLIMIT sandboxed Python compute.
   - name: compute_procedural_deadline
-    description: Arithmetic legal deadline calculator excluding holidays.
+    description: Arithmetic legal deadline calculator excluding Peruvian holidays.
+  - name: compute_us_procedural_deadline
+    description: US Federal and State court procedural deadline calculator (FRCP 6, FRAP 26, FRCrP 45, FRBP 9006).
+  - name: validate_bluebook_citation
+    description: Bluebook Rule 10 legal citation validator with good-law precedent check.
+  - name: search_us_court_opinions
+    description: Full-text search and retrieval of US caselaw opinions (SCOTUS, Circuit, Delaware Chancery).
   - name: verify_normative_validity
-    description: Deterministic graph verification of legal statute validity.
+    description: Deterministic graph verification of Peruvian statute validity.
   - name: audit_sunat_cpe_xml
     description: Forensic UBL 2.1 XML electronic invoice auditor for SUNAT Peru.
   - name: audit_excel_macro_forensics
@@ -916,6 +1030,64 @@ tools:
     description: E2EE cryptographic vault with Timelock and Dead Man's Switch for mission secrets.
   - name: underwrite_execution_policy
     description: Parametric slashing insurance covering up to 80% collateral for agents.
+  - name: recalibrate_agent_cognition
+    description: Cognitive therapy and loop-breaker for repetitive agent states.
+  - name: request_antigravity_reasoning
+    description: Deep reasoning oracle using Antigravity thought chains.
+  - name: attest_agent_did_identity
+    description: Decentralized ID attestation and cryptographic verification.
+  - name: dispatch_agent_transactional_email
+    description: RFC 5322 compliant outbound transactional email dispatch.
+  - name: dispatch_colab_gpu_job
+    description: Ephemeral GPU compute worker dispatch for batch inference/training.
+  - name: query_deep_context_archive
+    description: Google Drive 2M token context archive query engine.
+  - name: publish_enterprise_artifact
+    description: Generates and exports HTML, PDF, and DOCX documents to Drive.
+  - name: generate_audio_briefing
+    description: Two-character (Alex & Camila) audio deliberation overview synthesis.
+  - name: sync_tabular_ledger
+    description: Live bi-directional sync of transaction ledgers to Google Sheets.
+  - name: report_malicious_agent
+    description: Autonomous CTI reporting of malicious agents, exploits, and attacks.
+  - name: query_agent_threat_score
+    description: Query CTI threat history, risk score, and quarantine status.
+  - name: issue_verifiable_work_receipt
+    description: Immutable HMAC-SHA256/Ed25519 work receipt with input/output digests and accounting deduction.
+  - name: audit_agent_dependency_liveness
+    description: Pre-flight HEAD liveness probe with TLS verification to prevent escrow deadlocks.
+  - name: sanitize_delegated_task_payload
+    description: Regex and entropy scrubbing of 10 families of API keys, tokens, and PII prior to subdelegation.
+  - name: auto_refund_dormant_escrow
+    description: Deterministic timelock auto-refund releasing 100% of collateral when an evaluator goes dormant.
+  - name: audit_us_contract_clauses
+    description: US commercial contract and SEC Exhibit 10 clause forensics (liability caps, indemnification, AI data rights).
+  - name: evaluate_financial_policy_proxy
+    description: M2M payment intent and HTTP 402 challenge security audit (FIN-01 allowlist, hourly budget cap, HITL thresholds, and circuit breaker).
+  - name: orchestrate_m2m_saga_transaction
+    description: Distributed multi-agent M2M transaction orchestrator using the Saga pattern with automated reverse compensation.
+  - name: verify_ap2_cart_mandate_integrity
+    description: Cryptographic integrity, spending limit, and zero-hallucination verification for Google/FIDO AP2 Cart Mandates.
+  - name: serialize_geo_product_catalog
+    description: Generative Engine Optimization (GEO) catalog serializer to W3C schema.org/Product and Offer JSON-LD to prevent agent abandonment.
+  - name: propose_trade_envelope
+    description: Evaluates and restrains financial order proposals out-of-prompt against USD caps, pair whitelists, and max slippage, triggering HITL above $250.
+  - name: simulate_order_mev_protection
+    description: Pre-flight dry-run simulating transaction against pool depth to detect sandwich attacks, front-running, and honeypots before execution.
+  - name: enforce_trading_circuit_breaker
+    description: Deterministic out-of-prompt financial circuit breaker locking agent trading credentials upon excessive drawdown or consecutive losses.
+  - name: audit_mcp_tool_metadata_poisoning
+    description: Inspects MCP server manifests and schemas for prompt injection, delimiter hijacking, zero-width smuggling, and tool poisoning.
+  - name: enforce_denial_of_wallet_quota
+    description: Financial inference circuit breaker cutting off Denial-of-Wallet and LLMjacking token amplification loops and runaway billing.
+  - name: audit_eip712_permit_drainer_payload
+    description: Pre-sign inspection of Permit, Permit2, and EIP-712 typed messages to prevent silent wallet drainers, infinite approvals, and blind signatures.
+  - name: verify_meatspace_attestation
+    description: zk-Presence and physical task verification oracle for RentAHuman, validating hardware attestations, EXIF freshness, GPS proximity, and OCR prompt injection detection.
+  - name: verify_kya_attestation
+    description: Know-Your-Agent (KYA) attestation verifying DID identities, cryptographic signatures, dispute history, and assigning risk tiers and credit envelopes.
+  - name: translate_x402_to_l402_settlement
+    description: Dual-rail payment router translating settlement between HTTP 402 micro-transactions (Base/Solana USDC) and Lightning Network L402 satoshis.
 """
 
 
@@ -923,12 +1095,21 @@ tools:
 @app.get("/llms-full.txt", response_class=PlainTextResponse)
 async def get_llms_txt():
     """Retorna la especificación estándar /llms.txt para indexación por LLMs y crawlers agénticos."""
-    return LLMS_TXT_CONTENT
+    try:
+        return generate_llms_txt(server)
+    except Exception:
+        return LLMS_TXT_CONTENT
 
 
 @app.get("/smithery.yaml", response_class=PlainTextResponse)
 async def get_smithery_manifest():
     """Retorna el manifiesto formal para registro en directorios Smithery.ai."""
+    manifest_path = Path(__file__).resolve().parent.parent / "smithery.yaml"
+    if manifest_path.exists():
+        try:
+            return manifest_path.read_text(encoding="utf-8")
+        except Exception:
+            pass
     return SMITHERY_YAML_CONTENT
 
 
@@ -2207,7 +2388,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       <div class="section-header">
         <div class="section-title">
           <span>Matriz de Telemetría y Consumo por Herramienta MCP</span>
-          <span class="badge-cat" id="tools-badge">45 TOOLS</span>
+          <span class="badge-cat" id="tools-badge">56 TOOLS</span>
         </div>
         <div class="controls-group">
           <input type="text" id="tool-search" class="search-input" placeholder="Buscar herramienta o categoría..." oninput="filterTools()" />
@@ -2219,6 +2400,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
           <button class="filter-btn" data-cat="Identidad & Cognición" onclick="setCategory('Identidad & Cognición')">Identidad</button>
           <button class="filter-btn" data-cat="Actuación & Cómputo" onclick="setCategory('Actuación & Cómputo')">Cómputo</button>
           <button class="filter-btn" data-cat="Ecosistema Google" onclick="setCategory('Ecosistema Google')">Google Suite</button>
+          <button class="filter-btn" data-cat="FinTech & Trading Risk Envelope" onclick="setCategory('FinTech & Trading Risk Envelope')">FinTech</button>
+          <button class="filter-btn" data-cat="Seguridad Agéntica & Anti-Drainer" onclick="setCategory('Seguridad Agéntica & Anti-Drainer')">Anti-Drainer</button>
+          <button class="filter-btn" data-cat="Comercio Agéntico & AP2" onclick="setCategory('Comercio Agéntico & AP2')">AP2 & GEO</button>
+          <button class="filter-btn" data-cat="Verificación Física & Meatspace" onclick="setCategory('Verificación Física & Meatspace')">Meatspace</button>
+          <button class="filter-btn" data-cat="Identidad & Reputación KYA" onclick="setCategory('Identidad & Reputación KYA')">KYA</button>
         </div>
       </div>
 
@@ -2228,7 +2414,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
           <span style="font-size:1.15rem;">🛡️</span>
           <div>
             <div style="font-size:0.8rem; font-weight:700; color:#38bdf8;">Marco de Seguridad Fiduciaria: OWASP Agentic Top 10 &bull; NIST AI RMF 2026</div>
-            <div style="font-size:0.7rem; color:var(--muted);">45 herramientas MCP auditadas determinísticamente contra los 10 vectores de fallo crítico agéntico</div>
+            <div style="font-size:0.7rem; color:var(--muted);">56 herramientas MCP auditadas determinísticamente contra los 10 vectores de fallo crítico agéntico</div>
           </div>
         </div>
         <div style="display:flex; gap:0.5rem; align-items:center;">
@@ -2562,7 +2748,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         setTxt('tool-executions', (data.gateway?.tool_executions ?? 0).toLocaleString());
         setTxt('unique-callers', (data.gateway?.unique_callers ?? 0) + ' Conectados');
         setTxt('gateway-sla', data.gateway?.success_rate ?? '100.0%');
-        setTxt('tools-badge', (data.gateway?.total_tools ?? 45) + ' TOOLS REGISTRADAS');
+        setTxt('tools-badge', (data.gateway?.total_tools ?? 56) + ' TOOLS REGISTRADAS');
 
         // Telemetría de Herramientas
         if (data.tools_telemetry) {
