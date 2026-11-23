@@ -104,5 +104,11 @@ tools:
     description: Pre-flight dry-run simulating transaction against pool depth to detect sandwich attacks, front-running, and honeypots before execution.
   - name: enforce_trading_circuit_breaker
     description: Deterministic out-of-prompt financial circuit breaker locking agent trading credentials upon excessive drawdown or consecutive losses.
+  - name: audit_mcp_tool_metadata_poisoning
+    description: Inspects MCP server manifests and schemas for prompt injection, delimiter hijacking, zero-width smuggling, and tool poisoning.
+  - name: enforce_denial_of_wallet_quota
+    description: Financial inference circuit breaker cutting off Denial-of-Wallet and LLMjacking token amplification loops and runaway billing.
+  - name: audit_eip712_permit_drainer_payload
+    description: Pre-sign inspection of Permit, Permit2, and EIP-712 typed messages to prevent silent wallet drainers, infinite approvals, and blind signatures.
 
 

@@ -51,7 +51,7 @@ def test_mcp_server_stdio_initialize_and_tools_list(tmp_path: Path) -> None:
     tools_res = json.loads(lines[1])
     assert tools_res["id"] == 2
     tools = tools_res["result"]["tools"]
-    assert len(tools) == 50
+    assert len(tools) == 53
 
     call_res = json.loads(lines[2])
     assert call_res["id"] == 3

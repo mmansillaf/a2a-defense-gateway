@@ -925,6 +925,70 @@ class MoltbookMonetizationMCPServer:
                     "required": ["agent_id", "rolling_24h_drawdown_pct", "consecutive_loss_count"],
                 },
             },
+            {
+                "name": "audit_mcp_tool_metadata_poisoning",
+                "description": "Inspecciona servidores y manifiestos MCP en busca de Tool Poisoning, comandos ocultos de inyección de prompts, delimitadores y exfiltración de credenciales en esquemas.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "tools_manifest": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {"type": "string"},
+                                    "description": {"type": "string"},
+                                    "inputSchema": {"type": "object"},
+                                },
+                                "required": ["name"],
+                            },
+                        },
+                        "strict_mode": {"type": "boolean", "default": True},
+                    },
+                    "required": ["tools_manifest"],
+                },
+            },
+            {
+                "name": "enforce_denial_of_wallet_quota",
+                "description": "Circuit breaker financiero de inferencia que corta ataques de Denial-of-Wallet y LLMjacking, detectando bucles de amplificación de tokens (>10x) y gastos descontrolados.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "session_id": {"type": "string", "description": "ID de sesión del agente"},
+                        "agent_id": {"type": "string", "description": "ID del agente"},
+                        "prompt_tokens": {"type": "integer", "description": "Tokens de entrada"},
+                        "completion_tokens": {"type": "integer", "description": "Tokens de salida"},
+                        "thinking_tokens": {"type": "integer", "default": 0, "description": "Tokens de razonamiento CoT"},
+                        "cost_usd": {"type": "number", "description": "Costo acumulado en USD"},
+                        "max_budget_usd": {"type": "number", "default": 5.0},
+                        "max_amplification_ratio": {"type": "number", "default": 10.0},
+                    },
+                    "required": ["session_id", "agent_id", "prompt_tokens", "completion_tokens", "cost_usd"],
+                },
+            },
+            {
+                "name": "audit_eip712_permit_drainer_payload",
+                "description": "Audita y decodifica pre-sign firmas Permit, Permit2 y mensajes tipados EIP-712 en busca de patrones de Wallet Drainers, aprobaciones ilimitadas y firmas ciegas.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "primary_type": {"type": "string", "description": "Permit, Permit2, PermitSingle, PermitBatch, PersonalSign"},
+                        "domain": {
+                            "type": "object",
+                            "properties": {
+                                "name": {"type": "string"},
+                                "version": {"type": "string", "default": "1"},
+                                "chainId": {"type": "integer", "default": 1},
+                                "verifyingContract": {"type": "string"},
+                            },
+                            "required": ["verifyingContract"],
+                        },
+                        "message": {"type": "object", "description": "Cuerpo del mensaje tipado EIP-712"},
+                        "raw_hash": {"type": "string", "description": "Hash opcional si es eth_sign"},
+                    },
+                    "required": ["primary_type", "domain", "message"],
+                },
+            },
         ]
 
     def call_tool(self, name: str, arguments: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
@@ -1451,6 +1515,36 @@ class MoltbookMonetizationMCPServer:
                 payload_cb = CircuitBreakerRequest.model_validate(arguments)
                 res_cb = enforce_trading_circuit_breaker(payload_cb)
                 return res_cb.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "audit_mcp_tool_metadata_poisoning":
+            try:
+                from agentic_threat_sentinel import MCPMetadataAuditRequest, audit_mcp_tool_metadata_poisoning
+
+                payload_mcp = MCPMetadataAuditRequest.model_validate(arguments)
+                res_mcp = audit_mcp_tool_metadata_poisoning(payload_mcp)
+                return res_mcp.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "enforce_denial_of_wallet_quota":
+            try:
+                from agentic_threat_sentinel import DenialOfWalletRequest, enforce_denial_of_wallet_quota
+
+                payload_dow = DenialOfWalletRequest.model_validate(arguments)
+                res_dow = enforce_denial_of_wallet_quota(payload_dow)
+                return res_dow.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "audit_eip712_permit_drainer_payload":
+            try:
+                from agentic_threat_sentinel import EIP712DrainerAuditRequest, audit_eip712_permit_drainer_payload
+
+                payload_eip = EIP712DrainerAuditRequest.model_validate(arguments)
+                res_eip = audit_eip712_permit_drainer_payload(payload_eip)
+                return res_eip.model_dump(mode="json")
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 
