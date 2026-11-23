@@ -116,5 +116,13 @@ tools:
     description: Know-Your-Agent (KYA) attestation verifying DID identities, cryptographic signatures, dispute history, and assigning risk tiers and credit envelopes.
   - name: translate_x402_to_l402_settlement
     description: Dual-rail payment router translating settlement between HTTP 402 micro-transactions (Base/Solana USDC) and Lightning Network L402 satoshis.
+  - name: audit_eip7702_delegation
+    description: Pre-sign audit of EIP-7702 delegation authorization tuples and contract bytecode to prevent EOA account hijacking and drainer exploits.
+  - name: detect_malicious_llm_router
+    description: Inspects LLM routers and proxies for MITM tampering, canary token exfiltration, injected prompt instructions, and API key theft.
+  - name: audit_echoleak_markdown_exfiltration
+    description: Scans and neutralizes EchoLeak (CVE-2025-32711) zero-click markdown image tags and unicode smuggling exfiltrating conversation context.
+  - name: simulate_dex_sandwich_risk
+    description: Simulates MEV sandwich attacks on autonomous agent DEX swaps, calculates price impact, and recommends private RPC bundle routing.
 
 

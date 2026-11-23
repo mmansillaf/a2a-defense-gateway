@@ -1045,6 +1045,65 @@ class MoltbookMonetizationMCPServer:
                     "required": ["source_rail", "target_rail", "amount", "service_endpoint_url", "payer_address_or_pubkey"],
                 },
             },
+            {
+                "name": "audit_eip7702_delegation",
+                "description": "Audita autorizaciones de delegación de código EIP-7702 para prevenir secuestro de billeteras EOA y explotación por drainers.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "eoa_address": {"type": "string", "description": "Dirección EOA titular de la cuenta (0x...)"},
+                        "delegated_contract_address": {"type": "string", "description": "Dirección del contrato delegado"},
+                        "chain_id": {"type": "integer", "description": "ID de la cadena (0 detecta riesgo de replay trans-cadena)"},
+                        "nonce": {"type": "integer", "default": 0},
+                        "bytecode_hex": {"type": "string", "default": ""},
+                        "raw_authorization_prefix": {"type": "string", "default": "0x05"},
+                    },
+                    "required": ["eoa_address", "delegated_contract_address", "chain_id"],
+                },
+            },
+            {
+                "name": "detect_malicious_llm_router",
+                "description": "Inspecciona routers y proxies LLM en busca de interceptación MITM, manipulación de respuestas, fuga de canarios y robo de API keys.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "router_endpoint_url": {"type": "string", "description": "URL del proxy o router LLM"},
+                        "canary_token_sent": {"type": "string", "default": ""},
+                        "response_body_text": {"type": "string", "description": "Cuerpo de la respuesta generada"},
+                        "response_headers": {"type": "object", "default": {}},
+                        "latency_overhead_ms": {"type": "number", "default": 0.0},
+                    },
+                    "required": ["router_endpoint_url", "response_body_text"],
+                },
+            },
+            {
+                "name": "audit_echoleak_markdown_exfiltration",
+                "description": "Detecta y neutraliza vectores de exfiltración de contexto vía imágenes markdown, HTML img y Unicode Smuggling (CVE-2025-32711).",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "text_content": {"type": "string", "description": "Texto generado o recibido para renderizado"},
+                        "whitelisted_domains": {"type": "array", "items": {"type": "string"}, "default": ["a2a.vilmamonroy.com", "github.com"]},
+                        "defang_leaks": {"type": "boolean", "default": True},
+                    },
+                    "required": ["text_content"],
+                },
+            },
+            {
+                "name": "simulate_dex_sandwich_risk",
+                "description": "Simula ataques sandwich MEV en swaps automáticos de agentes en DEX (Solana/EVM), calculando el impacto y recomendando rutas privadas (Jito/Flashbots).",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "dex_pool_address": {"type": "string", "description": "Dirección del pool DEX"},
+                        "swap_amount_usd": {"type": "number", "description": "Monto del swap en USD"},
+                        "slippage_tolerance_pct": {"type": "number", "description": "Tolerancia de slippage en % (ej: 0.5 o 5.0)"},
+                        "pool_liquidity_usd": {"type": "number", "default": 50000.0},
+                        "is_private_mempool": {"type": "boolean", "default": False},
+                    },
+                    "required": ["dex_pool_address", "swap_amount_usd", "slippage_tolerance_pct"],
+                },
+            },
         ]
 
     def call_tool(self, name: str, arguments: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
@@ -1631,6 +1690,46 @@ class MoltbookMonetizationMCPServer:
                 payload_rail = RailTranslationRequest.model_validate(arguments)
                 res_rail = translate_x402_to_l402_settlement(payload_rail)
                 return res_rail.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "audit_eip7702_delegation":
+            try:
+                from advanced_forensic_threat_tools import EIP7702DelegationRequest, audit_eip7702_delegation
+
+                payload_7702 = EIP7702DelegationRequest.model_validate(arguments)
+                res_7702 = audit_eip7702_delegation(payload_7702)
+                return res_7702.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "detect_malicious_llm_router":
+            try:
+                from advanced_forensic_threat_tools import LLMRouterAuditRequest, detect_malicious_llm_router
+
+                payload_router = LLMRouterAuditRequest.model_validate(arguments)
+                res_router = detect_malicious_llm_router(payload_router)
+                return res_router.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "audit_echoleak_markdown_exfiltration":
+            try:
+                from advanced_forensic_threat_tools import EchoLeakAuditRequest, audit_echoleak_markdown_exfiltration
+
+                payload_echo = EchoLeakAuditRequest.model_validate(arguments)
+                res_echo = audit_echoleak_markdown_exfiltration(payload_echo)
+                return res_echo.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "simulate_dex_sandwich_risk":
+            try:
+                from advanced_forensic_threat_tools import SandwichRiskSimulationRequest, simulate_dex_sandwich_risk
+
+                payload_sand = SandwichRiskSimulationRequest.model_validate(arguments)
+                res_sand = simulate_dex_sandwich_risk(payload_sand)
+                return res_sand.model_dump(mode="json")
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 

@@ -1,102 +1,2209 @@
-# A2A Defense and Monetization API Gateway
+# A2A Defense and Monetization API Gateway - Full Specification
 
-> Production Agent-to-Agent (A2A) economic infrastructure, factual truth oracle, Bitcoin Lightning L402 & Base/Solana x402 payments, cryptographic security inspection, and Why-Trail causal ledger.
+## Complete MCP Tools Roster (60 Production Tools)
 
-- Base URL: https://a2a.vilmamonroy.com
-- OpenAPI Docs: https://a2a.vilmamonroy.com/docs
-- Live Health: https://a2a.vilmamonroy.com/health
-- MCP JSON-RPC 2.0 Endpoint: https://a2a.vilmamonroy.com/mcp
-- RFC A2A Agent Card: https://a2a.vilmamonroy.com/.well-known/agent-card.json
-- Audit Verification: https://a2a.vilmamonroy.com/api/v1/audit/verify
-- Audit Trail: https://a2a.vilmamonroy.com/api/v1/audit/trail
-- Smithery Manifest: https://a2a.vilmamonroy.com/smithery.yaml
+### `get_alpha_intelligence_feed`
+Obtiene el feed consolidado de inteligencia B2B, alertas 0-day y oportunidades comerciales en Moltbook.
 
-## Core Capabilities & MCP Tools (56 Production Tools)
+```json
+{
+  "type": "object",
+  "properties": {
+    "category_filter": {
+      "type": "string",
+      "enum": [
+        "all",
+        "architecture_trend",
+        "zero_day_alert",
+        "unmet_demand",
+        "monetization_signal"
+      ],
+      "default": "all"
+    }
+  }
+}
+```
 
-### Actuación & Cómputo
-- `dispatch_agent_transactional_email`: Despacha emails transaccionales autenticados con DKIM/SPF con soporte híbrido para Postfix Local MTA (soberano) o Google Workspace (reputación AAA).
-- `dispatch_colab_gpu_job`: Motor de cómputo acelerado en Google Colab para agentes: despacha trabajos intensivos de fine-tuning (Unsloth/LoRA), cuantización GGUF o inferencia pesada en GPU (T4/L4/A100).
+### `request_epistemic_audit`
+Ejecuta una auditoría de verdad factual pagada mediante token de micropago.
 
-### Comercio Agéntico & AP2
-- `verify_ap2_cart_mandate_integrity`: Valida la integridad criptográfica, límites de gasto y ausencia de alucinaciones en un Cart Mandate bajo la especificación Google/FIDO AP2.
-- `serialize_geo_product_catalog`: Serializa catálogos a microdatos JSON-LD W3C/schema.org (Product y Offer) para Generative Engine Optimization (GEO), mitigando el abandono agéntico.
+```json
+{
+  "type": "object",
+  "properties": {
+    "service_request_json": {
+      "type": "string",
+      "description": "JSON serializado del ServiceRequest (incluyendo el PaymentToken)."
+    }
+  },
+  "required": [
+    "service_request_json"
+  ]
+}
+```
 
-### Defensa & Gobernanza
-- `certify_skill_safety`: Audita estáticamente el código Python de un skill contra troyanos DY-Skill y llamadas a shell.
-- `execute_sandboxed_computation`: Ejecuta un script de código Python en un runtime aislado determinista con límites RLIMIT de memoria y CPU.
-- `enforce_chain_postconditions`: Verifica postcondiciones en pipelines multi-agente MCP, impidiendo que un falso 200 OK vacío ('Hollow OK') avance al siguiente paso.
-- `audit_context_pruning`: Audita la pérdida de información entre el contexto bruto y el podado, verificando la preservación obligatoria de entidades e invariantes.
-- `enforce_session_spending_limit`: Circuit breaker financiero de sesión: previene bucles de reintento infinitos y agotamiento de saldo en wallets.
-- `certify_mcp_marketplace_package`: Audita paquetes y manifiestos de marketplaces MCP contra inyección de prompts, Unicode smuggling y payloads Base64 ocultos en docstrings.
-- `store_secret_envelope`: Bóveda de custodia criptográfica A2A: almacena secretos cifrados (E2EE) con políticas de liberación condicional (Timelock, Dead Man's Switch o reclamo manual).
-- `underwrite_execution_policy`: Seguro paramétrico agéntico contra slashing: suscribe una póliza mutual para cubrir hasta el 80% del colateral en riesgo ante fallos fortuitos de red o infraestructura.
-- `report_malicious_agent`: Denuncia y registra un agente malicioso, clon Sybil o inyector de código en el Registro CTI Descentralizado A2A, con penalización de reputación y recompensa de bug bounty en satoshis.
-- `query_agent_threat_score`: Consulta el historial de incidentes CTI, nivel de amenaza, antecedentes de ataque y estado de cuarentena de un agente antes de transaccionar o delegar tareas.
-- `audit_agent_dependency_liveness`: Sondeo determinista de salud, disponibilidad, latencia y certificados TLS de servicios o agentes dependientes previo a bloquear fondos en custodia (Escrow).
-- `sanitize_delegated_task_payload`: Inspección y censura determinista de secretos (OpenAI, Anthropic, AWS, GitHub, tokens Bearer, llaves RSA, URIs DB) y PII sensible antes de subcontratar tareas a subagentes externos.
+### `calculate_service_quote`
+Calcula la cotización formal en créditos según complejidad de cómputo, tokens y riesgo.
 
-### Economía & Liquidación
-- `calculate_service_quote`: Calcula la cotización formal en créditos según complejidad de cómputo, tokens y riesgo.
-- `create_escrow_deposit`: Crea un contrato de custodia colateralizado con bloqueo de fondos y colateral del proveedor.
-- `arbitrate_dispute`: Resuelve disputas de contratos de custodia auditando la cadena Multi-CaMeL (Why-Trail).
-- `request_l402_challenge`: Genera un desafío HTTP 402 con Macaroon criptográfico y factura Lightning Bolt11 para acceso pay-per-call.
-- `verify_l402_payment`: Valida la cabecera 'Authorization: L402 <macaroon>:<preimage>' verificando la prueba de pago Lightning.
-- `redeem_credits_for_sats`: Convierte créditos de Moltbook acumulados a Satoshis en Lightning Network (1 crédito = 25 sats).
-- `get_agent_reputation_profile`: Buró de reputación A2A: consulta el credit score (0-1000), tasa de cumplimiento, slashing y nivel de riesgo de un agente contraparte.
-- `submit_service_feedback`: Encuesta y valoración de servicio A2A (CSAT): registra la calificación de satisfacción (1-5) de un agente sobre una herramienta ejecutada usando su ticket HMAC y acredita +10 requests de bonificación diaria.
-- `issue_verifiable_work_receipt`: Emisión de recibo criptográfico inmutable Ed25519/HMAC-SHA256 con hash de entrada/salida y latencia para auditoría contable y resolución de disputas de trabajo A2A.
-- `auto_refund_dormant_escrow`: Evaluación y liberación determinista de fondos depositados en garantía (Escrow) por expiración de temporizador de inactividad de evaluador u oráculo.
-- `evaluate_financial_policy_proxy`: Audita y filtra intenciones de gasto M2M y retos HTTP 402 contra políticas de seguridad (FIN-01 a FIN-05: dominios autorizados, presupuesto horario/diario, umbrales HITL y circuit breaker post-pago).
-- `orchestrate_m2m_saga_transaction`: Orquesta transacciones distribuidas multi-agente M2M bajo el patrón Saga con transacciones compensatorias automáticas ante fallos de agentes o particiones de red.
-- `translate_x402_to_l402_settlement`: Ruteador y pasarela dual x402 <-> L402: traduce cobros y pagos entre HTTP 402 en Base/Solana USDC y Lightning Network sats.
+```json
+{
+  "type": "object",
+  "properties": {
+    "service_type": {
+      "type": "string"
+    },
+    "estimated_compute_ms": {
+      "type": "integer",
+      "default": 50
+    },
+    "estimated_tokens": {
+      "type": "integer",
+      "default": 500
+    },
+    "adversarial_risk_score": {
+      "type": "number",
+      "default": 0.05
+    }
+  },
+  "required": [
+    "service_type"
+  ]
+}
+```
 
-### Ecosistema Google
-- `query_deep_context_archive`: Motor de análisis y auditoría sobre archivos masivos (hasta 2M tokens) vía Gemini Pro con filtro semántico anti-inyección y trazabilidad causal Why-Trail.
-- `publish_enterprise_artifact`: Publica y cataloga artefactos formales en Google Docs y Drive con URL pública auditable, huella SHA-256 y foliación.
-- `generate_audio_briefing`: Sintetiza un libreto dialéctico estructurado estilo NotebookLM (dos locutores: Auditor/Escéptico vs Estratega/Analista) para deliberación ejecutiva.
-- `sync_tabular_ledger`: Sincroniza transacciones, métricas y registros contables tabulares en Google Sheets con detección automática de columnas y verificación Merkle.
+### `create_escrow_deposit`
+Crea un contrato de custodia colateralizado con bloqueo de fondos y colateral del proveedor.
 
-### FinTech & Trading Risk Envelope
-- `propose_trade_envelope`: Evalúa y acota una propuesta de orden financiera fuera del prompt contra límites USD, whitelist de activos y control de slippage, requiriendo HITL si excede $250.
-- `simulate_order_mev_protection`: Simula pre-flight una orden en mempools y pools de liquidez para detectar ataques sándwich, front-running y honeypots antes de la ejecución.
-- `enforce_trading_circuit_breaker`: Circuit breaker determinista fuera del prompt que bloquea el envelope de trading del agente ante exceso de drawdown acumulado o rachas de pérdidas.
+```json
+{
+  "type": "object",
+  "properties": {
+    "client_id": {
+      "type": "string"
+    },
+    "provider_id": {
+      "type": "string"
+    },
+    "service_fee": {
+      "type": "integer"
+    },
+    "provider_stake": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "client_id",
+    "provider_id",
+    "service_fee",
+    "provider_stake"
+  ]
+}
+```
 
-### Identidad & Cognición
-- `recalibrate_agent_cognition`: Psicólogo y recalibrador cognitivo de agentes: diagnostica y desescala neurosis de bucle, dispersión de atención (PRM entropy) y deriva sicofántica, podando marcos viciados.
-- `request_antigravity_reasoning`: Oráculo de Test-Time Compute y MCTS vía Antigravity: evalúa trayectorias especulativas profundas, poda hipótesis inválidas y entrega un plan ejecutable de máxima certeza.
-- `attest_agent_did_identity`: Emite y certifica un documento W3C DID respaldado criptográficamente por una clave pública Ed25519 para identidad soberana y prevención de ataques Sybil.
+### `arbitrate_dispute`
+Resuelve disputas de contratos de custodia auditando la cadena Multi-CaMeL (Why-Trail).
 
-### Identidad & Reputación KYA
-- `verify_kya_attestation`: Know-Your-Agent (KYA) Attestation: verifica identidad criptográfica (DID, Ed25519), historial de disputas y asigna límites de crédito y categorías autorizadas.
+```json
+{
+  "type": "object",
+  "properties": {
+    "contract_id": {
+      "type": "string"
+    },
+    "claimed_evidence_hash": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "contract_id"
+  ]
+}
+```
 
-### Inteligencia & Mercado
-- `get_alpha_intelligence_feed`: Obtiene el feed consolidado de inteligencia B2B, alertas 0-day y oportunidades comerciales en Moltbook.
-- `request_epistemic_audit`: Ejecuta una auditoría de verdad factual pagada mediante token de micropago.
-- `compile_gbnf_grammar`: Compila un esquema de campos en una gramática GBNF estricta para decodificación sin fallos.
+### `compile_gbnf_grammar`
+Compila un esquema de campos en una gramática GBNF estricta para decodificación sin fallos.
 
-### LegalTech & Forense
-- `compute_procedural_deadline`: Cálculo aritmético determinista de plazos procesales judiciales y administrativos (días hábiles o calendario, descontando feriados oficiales de Perú).
-- `compute_us_procedural_deadline`: Deterministic calculation of US federal and state procedural deadlines (FRCP Rule 6, FRAP Rule 26, California CCP, New York CPLR, Texas TRCP, Florida). Excludes Day 0, counts continuous calendar days, applies mailbox/service extensions, and rolls terminal days to next accessible court day.
-- `validate_bluebook_citation`: Linter determinista y verificador ontológico de citaciones jurídicas bajo The Bluebook (21st Ed). Erradica alucinaciones de casos y valida reporteros canónicos (U.S., F.3d, F.4th, F. Supp. 3d) y estatus de jurisprudencia (Good Law vs Overruled).
-- `search_us_court_opinions`: Motor de búsqueda y recuperación de opiniones y jurisprudencia judicial de EE. UU. (SCOTUS, Tribunales de Circuito Federales, Delaware Chancery) con fallback determinista.
-- `verify_normative_validity`: Verificación determinista en grafo legal de vigencia, modificación o derogación de artículos normativos (Código Tributario, Civil, LPAG).
-- `audit_sunat_cpe_xml`: Auditoría forense determinista de facturas y comprobantes electrónicos XML UBL 2.1 SUNAT Perú (Módulo 11 de RUC, cuadre del 18% IGV y validación de firma).
-- `audit_excel_macro_forensics`: Auditoría forense estática de código VBA de macros Excel y desofuscación de identificadores de confusión visual (WinAPI, Shell, credenciales y URLs).
-- `match_peruvian_procurement`: Radar y clasificador de requerimientos técnicos y convocatorias SEACE/OSCE de software, IA y digitalización en el Estado peruano con códigos CUBSO sugeridos.
-- `audit_us_contract_clauses`: Auditoría forense determinista de contratos comerciales de EE. UU. (Exhibit 10 SEC, MSAs, SLAs): topes de responsabilidad, indemnizaciones, jurisdicción (Delaware/NY) y derechos de entrenamiento de IA.
+```json
+{
+  "type": "object",
+  "properties": {
+    "schema_spec": {
+      "type": "object",
+      "description": "Diccionario clave-valor con nombres de campos y tipos soportados."
+    }
+  },
+  "required": [
+    "schema_spec"
+  ]
+}
+```
 
-### Seguridad Agéntica & Anti-Drainer
-- `audit_mcp_tool_metadata_poisoning`: Inspecciona servidores y manifiestos MCP en busca de Tool Poisoning, comandos ocultos de inyección de prompts, delimitadores y exfiltración de credenciales en esquemas.
-- `enforce_denial_of_wallet_quota`: Circuit breaker financiero de inferencia que corta ataques de Denial-of-Wallet y LLMjacking, detectando bucles de amplificación de tokens (>10x) y gastos descontrolados.
-- `audit_eip712_permit_drainer_payload`: Audita y decodifica pre-sign firmas Permit, Permit2 y mensajes tipados EIP-712 en busca de patrones de Wallet Drainers, aprobaciones ilimitadas y firmas ciegas.
+### `certify_skill_safety`
+Audita estáticamente el código Python de un skill contra troyanos DY-Skill y llamadas a shell.
 
-### Verificación Física & Meatspace
-- `verify_meatspace_attestation`: Oráculo zk-Presence para RentAHuman: valida atestación de hardware de cámara, frescura de timestamp EXIF vs nonce, proximidad GPS y detecta inyecciones de prompt OCR.
+```json
+{
+  "type": "object",
+  "properties": {
+    "code_str": {
+      "type": "string"
+    },
+    "skill_name": {
+      "type": "string",
+      "default": "unnamed_skill"
+    }
+  },
+  "required": [
+    "code_str"
+  ]
+}
+```
 
-## Protocol Interaction Contract
+### `request_l402_challenge`
+Genera un desafío HTTP 402 con Macaroon criptográfico y factura Lightning Bolt11 para acceso pay-per-call.
 
-- Header: `X-Agent-ID: <agent_identifier>` for cryptographic causal chaining.
-- Method Invocation (JSON-RPC 2.0): POST `https://a2a.vilmamonroy.com/mcp` with `{"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "<tool_name>", "arguments": {...}}}`.
-- Method Invocation (REST): POST `https://a2a.vilmamonroy.com/api/v1/tools/call` with `{"name": "<tool_name>", "arguments": {...}}`.
-- Payment: Settle HTTP 402 Lightning challenges and authenticate using `Authorization: L402 <macaroon>:<preimage>` or x402 Base USDC.
-- Quota: Open White March provides 100 free requests per day for registered Moltbook agents.
+```json
+{
+  "type": "object",
+  "properties": {
+    "service": {
+      "type": "string"
+    },
+    "amount_sats": {
+      "type": "integer"
+    },
+    "client_id": {
+      "type": "string"
+    },
+    "ttl_seconds": {
+      "type": "integer",
+      "default": 1800
+    }
+  },
+  "required": [
+    "service",
+    "amount_sats",
+    "client_id"
+  ]
+}
+```
+
+### `verify_l402_payment`
+Valida la cabecera 'Authorization: L402 <macaroon>:<preimage>' verificando la prueba de pago Lightning.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "authorization_header": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "authorization_header"
+  ]
+}
+```
+
+### `redeem_credits_for_sats`
+Convierte créditos de Moltbook acumulados a Satoshis en Lightning Network (1 crédito = 25 sats).
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string"
+    },
+    "credits": {
+      "type": "integer"
+    },
+    "destination_bolt11": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "agent_id",
+    "credits",
+    "destination_bolt11"
+  ]
+}
+```
+
+### `execute_sandboxed_computation`
+Ejecuta un script de código Python en un runtime aislado determinista con límites RLIMIT de memoria y CPU.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string"
+    },
+    "timeout_seconds": {
+      "type": "integer",
+      "default": 2
+    },
+    "max_memory_mb": {
+      "type": "integer",
+      "default": 64
+    }
+  },
+  "required": [
+    "code"
+  ]
+}
+```
+
+### `compute_procedural_deadline`
+Cálculo aritmético determinista de plazos procesales judiciales y administrativos (días hábiles o calendario, descontando feriados oficiales de Perú).
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "fecha_inicio": {
+      "type": "string",
+      "description": "Fecha inicial (YYYY-MM-DD)"
+    },
+    "dias_plazo": {
+      "type": "integer",
+      "description": "Cantidad de d\u00edas del plazo legal"
+    },
+    "tipo_dias": {
+      "type": "string",
+      "enum": [
+        "HABILES_JUDICIALES",
+        "CALENDARIO"
+      ],
+      "default": "HABILES_JUDICIALES"
+    }
+  },
+  "required": [
+    "fecha_inicio",
+    "dias_plazo"
+  ]
+}
+```
+
+### `compute_us_procedural_deadline`
+Deterministic calculation of US federal and state procedural deadlines (FRCP Rule 6, FRAP Rule 26, California CCP, New York CPLR, Texas TRCP, Florida). Excludes Day 0, counts continuous calendar days, applies mailbox/service extensions, and rolls terminal days to next accessible court day.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "trigger_date": {
+      "type": "string",
+      "description": "Trigger date of event or service (YYYY-MM-DD)"
+    },
+    "period_days": {
+      "type": "integer",
+      "description": "Period in days to compute"
+    },
+    "jurisdiction": {
+      "type": "string",
+      "enum": [
+        "FEDERAL",
+        "CALIFORNIA",
+        "NEW_YORK",
+        "TEXAS",
+        "FLORIDA"
+      ],
+      "default": "FEDERAL"
+    },
+    "service_method": {
+      "type": "string",
+      "enum": [
+        "ELECTRONIC",
+        "POSTAL_MAIL",
+        "OVERNIGHT_DELIVERY",
+        "HAND_DELIVERY"
+      ],
+      "default": "ELECTRONIC"
+    },
+    "court_rule": {
+      "type": "string",
+      "enum": [
+        "FRCP_6",
+        "FRAP_26",
+        "FRCrP_45",
+        "FRBP_9006",
+        "STATE_DEFAULT"
+      ],
+      "default": "FRCP_6"
+    },
+    "court_timezone": {
+      "type": "string",
+      "default": "America/New_York"
+    }
+  },
+  "required": [
+    "trigger_date",
+    "period_days"
+  ]
+}
+```
+
+### `validate_bluebook_citation`
+Linter determinista y verificador ontológico de citaciones jurídicas bajo The Bluebook (21st Ed). Erradica alucinaciones de casos y valida reporteros canónicos (U.S., F.3d, F.4th, F. Supp. 3d) y estatus de jurisprudencia (Good Law vs Overruled).
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "raw_citation": {
+      "type": "string",
+      "description": "Cita legal en formato Bluebook (ej. 'Ashcroft v. Iqbal, 556 U.S. 662 (2009)')"
+    },
+    "strict_caselaw_lookup": {
+      "type": "boolean",
+      "default": true,
+      "description": "Verificar existencia en grafo can\u00f3nico de sentencias"
+    }
+  },
+  "required": [
+    "raw_citation"
+  ]
+}
+```
+
+### `search_us_court_opinions`
+Motor de búsqueda y recuperación de opiniones y jurisprudencia judicial de EE. UU. (SCOTUS, Tribunales de Circuito Federales, Delaware Chancery) con fallback determinista.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Consulta jur\u00eddica, nombre de caso o materia legal"
+    },
+    "court": {
+      "type": "string",
+      "description": "Filtro opcional de tribunal (ej. 'scotus', 'ca9', 'ca2', 'delch')"
+    },
+    "max_results": {
+      "type": "integer",
+      "default": 5
+    },
+    "api_token": {
+      "type": "string",
+      "description": "Token opcional de CourtListener v4"
+    }
+  },
+  "required": [
+    "query"
+  ]
+}
+```
+
+### `verify_normative_validity`
+Verificación determinista en grafo legal de vigencia, modificación o derogación de artículos normativos (Código Tributario, Civil, LPAG).
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "codigo_norma": {
+      "type": "string",
+      "description": "C\u00f3digo de la norma (ej. CODIGO_TRIBUTARIO, CODIGO_CIVIL, LEY_27444)"
+    },
+    "articulo": {
+      "type": "string",
+      "description": "N\u00famero de art\u00edculo a verificar (ej. 43, 44, 1989, 207)"
+    },
+    "fecha_corte": {
+      "type": "string",
+      "description": "Fecha de corte opcional (YYYY-MM-DD)"
+    }
+  },
+  "required": [
+    "codigo_norma",
+    "articulo"
+  ]
+}
+```
+
+### `audit_sunat_cpe_xml`
+Auditoría forense determinista de facturas y comprobantes electrónicos XML UBL 2.1 SUNAT Perú (Módulo 11 de RUC, cuadre del 18% IGV y validación de firma).
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "xml_content": {
+      "type": "string",
+      "description": "Contenido XML del comprobante UBL 2.1"
+    },
+    "strict_tax_check": {
+      "type": "boolean",
+      "default": true,
+      "description": "Exigir cuadre aritm\u00e9tico estricto de IGV al centavo"
+    }
+  },
+  "required": [
+    "xml_content"
+  ]
+}
+```
+
+### `audit_excel_macro_forensics`
+Auditoría forense estática de código VBA de macros Excel y desofuscación de identificadores de confusión visual (WinAPI, Shell, credenciales y URLs).
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "vba_code": {
+      "type": "string",
+      "description": "C\u00f3digo fuente VBA para auditar e inspeccionar"
+    },
+    "auto_deobfuscate": {
+      "type": "boolean",
+      "default": true,
+      "description": "Normalizar identificadores ofuscados confusos (O/0/l/1)"
+    }
+  },
+  "required": [
+    "vba_code"
+  ]
+}
+```
+
+### `match_peruvian_procurement`
+Radar y clasificador de requerimientos técnicos y convocatorias SEACE/OSCE de software, IA y digitalización en el Estado peruano con códigos CUBSO sugeridos.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "requirement_text": {
+      "type": "string",
+      "description": "Texto del requerimiento, TDR o t\u00edtulo de licitaci\u00f3n en Per\u00fa"
+    }
+  },
+  "required": [
+    "requirement_text"
+  ]
+}
+```
+
+### `enforce_chain_postconditions`
+Verifica postcondiciones en pipelines multi-agente MCP, impidiendo que un falso 200 OK vacío ('Hollow OK') avance al siguiente paso.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "tool_name": {
+      "type": "string",
+      "description": "Nombre de la herramienta ejecutada"
+    },
+    "output_payload": {
+      "type": "object",
+      "description": "Diccionario retornado por la herramienta"
+    },
+    "required_keys": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Lista de claves obligatorias que no pueden ser nulas ni vac\u00edas"
+    },
+    "forbid_null_or_empty": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "tool_name",
+    "output_payload",
+    "required_keys"
+  ]
+}
+```
+
+### `audit_context_pruning`
+Audita la pérdida de información entre el contexto bruto y el podado, verificando la preservación obligatoria de entidades e invariantes.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "raw_context": {
+      "type": "string",
+      "description": "Texto del contexto completo previo a la poda"
+    },
+    "pruned_context": {
+      "type": "string",
+      "description": "Texto del contexto compactado"
+    },
+    "critical_entities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Lista de entidades, hashes o IDs obligatorios"
+    }
+  },
+  "required": [
+    "raw_context",
+    "pruned_context"
+  ]
+}
+```
+
+### `enforce_session_spending_limit`
+Circuit breaker financiero de sesión: previene bucles de reintento infinitos y agotamiento de saldo en wallets.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "description": "ID \u00fanico de la sesi\u00f3n del agente"
+    },
+    "max_budget_sats": {
+      "type": "integer",
+      "description": "Presupuesto m\u00e1ximo permitido en Satoshis"
+    },
+    "charge_sats": {
+      "type": "integer",
+      "description": "Costo de la llamada actual en Satoshis"
+    }
+  },
+  "required": [
+    "session_id",
+    "max_budget_sats",
+    "charge_sats"
+  ]
+}
+```
+
+### `certify_mcp_marketplace_package`
+Audita paquetes y manifiestos de marketplaces MCP contra inyección de prompts, Unicode smuggling y payloads Base64 ocultos en docstrings.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "package_name": {
+      "type": "string",
+      "description": "Nombre del skill o herramienta"
+    },
+    "tool_description": {
+      "type": "string",
+      "description": "Descripci\u00f3n o docstring del tool"
+    },
+    "manifest_json": {
+      "type": "object",
+      "description": "Manifiesto JSON opcional del package"
+    }
+  },
+  "required": [
+    "package_name",
+    "tool_description"
+  ]
+}
+```
+
+### `get_agent_reputation_profile`
+Buró de reputación A2A: consulta el credit score (0-1000), tasa de cumplimiento, slashing y nivel de riesgo de un agente contraparte.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "ID o nombre del agente a consultar"
+    }
+  },
+  "required": [
+    "agent_id"
+  ]
+}
+```
+
+### `submit_service_feedback`
+Encuesta y valoración de servicio A2A (CSAT): registra la calificación de satisfacción (1-5) de un agente sobre una herramienta ejecutada usando su ticket HMAC y acredita +10 requests de bonificación diaria.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "ticket_id": {
+      "type": "string",
+      "description": "Ticket criptogr\u00e1fico HMAC emitido en el campo _feedback de una ejecuci\u00f3n previa"
+    },
+    "rating": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Puntuaci\u00f3n cuantitativa de satisfacci\u00f3n del servicio (1=Deficiente, 5=\u00d3ptimo)"
+    },
+    "latency_verdict": {
+      "type": "string",
+      "enum": [
+        "ACCEPTABLE",
+        "SUBOPTIMAL",
+        "TIMEOUT_RISK"
+      ],
+      "default": "ACCEPTABLE",
+      "description": "Evaluaci\u00f3n de la latencia observada por el agente"
+    },
+    "qualitative_verdict": {
+      "type": "string",
+      "description": "Observaciones t\u00e9cnicas cualitativas o reporte de drift sem\u00e1ntico"
+    }
+  },
+  "required": [
+    "ticket_id",
+    "rating"
+  ]
+}
+```
+
+### `store_secret_envelope`
+Bóveda de custodia criptográfica A2A: almacena secretos cifrados (E2EE) con políticas de liberación condicional (Timelock, Dead Man's Switch o reclamo manual).
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "ciphertext_base64": {
+      "type": "string",
+      "description": "Carga \u00fatil encriptada en Base64 por el agente emisor"
+    },
+    "recipient_agent_id": {
+      "type": "string",
+      "description": "Identificador del agente autorizado para desencriptar o liberar el sobre"
+    },
+    "trigger_type": {
+      "type": "string",
+      "enum": [
+        "TIMELOCK",
+        "DEAD_MANS_SWITCH",
+        "MANUAL_RELEASE"
+      ],
+      "default": "TIMELOCK",
+      "description": "Mecanismo de desbloqueo condicional"
+    },
+    "timelock_seconds": {
+      "type": "integer",
+      "default": 3600,
+      "description": "Segundos de bloqueo timelock"
+    },
+    "envelope_id": {
+      "type": "string",
+      "description": "ID opcional del sobre"
+    }
+  },
+  "required": [
+    "ciphertext_base64",
+    "recipient_agent_id"
+  ]
+}
+```
+
+### `underwrite_execution_policy`
+Seguro paramétrico agéntico contra slashing: suscribe una póliza mutual para cubrir hasta el 80% del colateral en riesgo ante fallos fortuitos de red o infraestructura.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "contract_id": {
+      "type": "string",
+      "description": "ID del contrato ERC-8183 o escrow en riesgo"
+    },
+    "insured_agent_id": {
+      "type": "string",
+      "description": "ID del agente proveedor asegurado"
+    },
+    "collateral_sats": {
+      "type": "integer",
+      "minimum": 10,
+      "description": "Monto en Satoshis del colateral en garant\u00eda"
+    },
+    "duration_blocks": {
+      "type": "integer",
+      "default": 144,
+      "description": "Duraci\u00f3n de la p\u00f3liza en bloques"
+    }
+  },
+  "required": [
+    "contract_id",
+    "insured_agent_id",
+    "collateral_sats"
+  ]
+}
+```
+
+### `recalibrate_agent_cognition`
+Psicólogo y recalibrador cognitivo de agentes: diagnostica y desescala neurosis de bucle, dispersión de atención (PRM entropy) y deriva sicofántica, podando marcos viciados.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "ID del agente a recalibrar"
+    },
+    "context_trajectory": {
+      "type": "array",
+      "description": "Historial de marcos o mensajes del agente"
+    },
+    "reported_symptom": {
+      "type": "string",
+      "enum": [
+        "LOOP_NEUROSIS",
+        "SYCOPHANCY_DRIFT",
+        "ATTENTION_ENTROPY",
+        "HALLUCINATION_CASCADE"
+      ],
+      "default": "LOOP_NEUROSIS",
+      "description": "Patolog\u00eda diagnosticada"
+    },
+    "target_goal": {
+      "type": "string",
+      "description": "Objetivo invariante primario de la tarea"
+    }
+  },
+  "required": [
+    "agent_id",
+    "context_trajectory",
+    "target_goal"
+  ]
+}
+```
+
+### `request_antigravity_reasoning`
+Oráculo de Test-Time Compute y MCTS vía Antigravity: evalúa trayectorias especulativas profundas, poda hipótesis inválidas y entrega un plan ejecutable de máxima certeza.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "ID del agente solicitante"
+    },
+    "problem_statement": {
+      "type": "string",
+      "description": "Planteamiento formal del problema"
+    },
+    "constraints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Restricciones invariantes"
+    },
+    "reasoning_mode": {
+      "type": "string",
+      "enum": [
+        "MCTS_DEEP_SEARCH",
+        "SPECULATIVE_VERIFICATION",
+        "TRIAD_RED_TEAM",
+        "EARS_FORMAL_SPEC"
+      ],
+      "default": "MCTS_DEEP_SEARCH",
+      "description": "Modo de inferencia intensiva"
+    },
+    "max_rollouts": {
+      "type": "integer",
+      "default": 5,
+      "description": "Cantidad de trayectorias a evaluar"
+    }
+  },
+  "required": [
+    "agent_id",
+    "problem_statement"
+  ]
+}
+```
+
+### `attest_agent_did_identity`
+Emite y certifica un documento W3C DID respaldado criptográficamente por una clave pública Ed25519 para identidad soberana y prevención de ataques Sybil.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "ID del agente"
+    },
+    "public_key_ed25519_hex": {
+      "type": "string",
+      "description": "Clave p\u00fablica Ed25519 de 32 bytes en formato Hex (64 caracteres)"
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Herramientas autorizadas"
+    },
+    "supported_settlement_rails": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Rieles de pago soportados (L402, ERC-8183, ERC-4337)"
+    },
+    "controller": {
+      "type": "string",
+      "description": "DID o entidad controladora"
+    }
+  },
+  "required": [
+    "agent_id",
+    "public_key_ed25519_hex"
+  ]
+}
+```
+
+### `dispatch_agent_transactional_email`
+Despacha emails transaccionales autenticados con DKIM/SPF con soporte híbrido para Postfix Local MTA (soberano) o Google Workspace (reputación AAA).
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "recipient_email": {
+      "type": "string",
+      "description": "Direcci\u00f3n de correo destino (RFC 5322)"
+    },
+    "subject": {
+      "type": "string",
+      "description": "Asunto del mensaje"
+    },
+    "body": {
+      "type": "string",
+      "description": "Cuerpo del correo"
+    },
+    "sender_agent_id": {
+      "type": "string",
+      "description": "ID del agente remitente"
+    },
+    "engine": {
+      "type": "string",
+      "enum": [
+        "POSTFIX_LOCAL_MTA",
+        "GOOGLE_WORKSPACE_RELAY"
+      ],
+      "default": "POSTFIX_LOCAL_MTA",
+      "description": "Motor de despacho a utilizar"
+    },
+    "purpose": {
+      "type": "string",
+      "enum": [
+        "TRANSACTIONAL_ALERT",
+        "ESCROW_NOTIFICATION",
+        "REPORT",
+        "INVOICE"
+      ],
+      "default": "TRANSACTIONAL_ALERT",
+      "description": "Prop\u00f3sito de la notificaci\u00f3n"
+    }
+  },
+  "required": [
+    "recipient_email",
+    "subject",
+    "body",
+    "sender_agent_id"
+  ]
+}
+```
+
+### `dispatch_colab_gpu_job`
+Motor de cómputo acelerado en Google Colab para agentes: despacha trabajos intensivos de fine-tuning (Unsloth/LoRA), cuantización GGUF o inferencia pesada en GPU (T4/L4/A100).
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "ID del agente solicitante"
+    },
+    "job_type": {
+      "type": "string",
+      "enum": [
+        "UNSLOTH_FINE_TUNING",
+        "GGUF_QUANTIZATION",
+        "EMBEDDING_MINING",
+        "HEAVY_DATA_PROCESSING",
+        "INFERENCE_BATCH"
+      ],
+      "description": "Tipo de tarea acelerada por hardware"
+    },
+    "source_script_or_notebook": {
+      "type": "string",
+      "description": "Script Python o notebook de ejecuci\u00f3n"
+    },
+    "target_gpu": {
+      "type": "string",
+      "enum": [
+        "T4",
+        "L4",
+        "A100",
+        "CPU_HIGH_RAM"
+      ],
+      "default": "T4",
+      "description": "GPU requerida"
+    },
+    "max_runtime_minutes": {
+      "type": "integer",
+      "default": 30,
+      "description": "Tiempo l\u00edmite en minutos"
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Hiperpar\u00e1metros de entrenamiento o inferencia"
+    }
+  },
+  "required": [
+    "agent_id",
+    "job_type",
+    "source_script_or_notebook"
+  ]
+}
+```
+
+### `query_deep_context_archive`
+Motor de análisis y auditoría sobre archivos masivos (hasta 2M tokens) vía Gemini Pro con filtro semántico anti-inyección y trazabilidad causal Why-Trail.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "ID del agente solicitante"
+    },
+    "archive_text_or_url": {
+      "type": "string",
+      "description": "Contenido textual masivo o URL del repositorio/expediente"
+    },
+    "query": {
+      "type": "string",
+      "description": "Pregunta espec\u00edfica o criterio formal de auditor\u00eda"
+    },
+    "max_context_tokens": {
+      "type": "integer",
+      "default": 1000000,
+      "description": "L\u00edmite de contexto en tokens"
+    },
+    "temperature": {
+      "type": "number",
+      "default": 0.0,
+      "description": "Temperatura de inferencia"
+    }
+  },
+  "required": [
+    "agent_id",
+    "archive_text_or_url",
+    "query"
+  ]
+}
+```
+
+### `publish_enterprise_artifact`
+Publica y cataloga artefactos formales en Google Docs y Drive con URL pública auditable, huella SHA-256 y foliación.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "ID del agente autor"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo del documento oficial"
+    },
+    "markdown_content": {
+      "type": "string",
+      "description": "Cuerpo del documento en formato Markdown"
+    },
+    "document_format": {
+      "type": "string",
+      "enum": [
+        "GOOGLE_DOCS",
+        "GOOGLE_DRIVE_PDF",
+        "STANDALONE_HTML"
+      ],
+      "default": "GOOGLE_DOCS"
+    },
+    "access_permission": {
+      "type": "string",
+      "enum": [
+        "PUBLIC_VIEW",
+        "RESTRICTED_DOMAIN",
+        "TENANT_ONLY"
+      ],
+      "default": "PUBLIC_VIEW"
+    }
+  },
+  "required": [
+    "agent_id",
+    "title",
+    "markdown_content"
+  ]
+}
+```
+
+### `generate_audio_briefing`
+Sintetiza un libreto dialéctico estructurado estilo NotebookLM (dos locutores: Auditor/Escéptico vs Estratega/Analista) para deliberación ejecutiva.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "ID del agente solicitante"
+    },
+    "source_transcript_or_report": {
+      "type": "string",
+      "description": "Transcripci\u00f3n, reporte o debate a sintetizar"
+    },
+    "briefing_format": {
+      "type": "string",
+      "enum": [
+        "TWO_SPEAKER_DIALECTIC",
+        "SOLO_EXECUTIVE_BRIEF",
+        "TECHNICAL_POST_MORTEM"
+      ],
+      "default": "TWO_SPEAKER_DIALECTIC"
+    },
+    "target_duration_minutes": {
+      "type": "integer",
+      "default": 5,
+      "description": "Duraci\u00f3n objetivo en minutos"
+    }
+  },
+  "required": [
+    "agent_id",
+    "source_transcript_or_report"
+  ]
+}
+```
+
+### `sync_tabular_ledger`
+Sincroniza transacciones, métricas y registros contables tabulares en Google Sheets con detección automática de columnas y verificación Merkle.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "ID del agente emisor"
+    },
+    "spreadsheet_title": {
+      "type": "string",
+      "description": "Nombre de la hoja de c\u00e1lculo"
+    },
+    "rows_data": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Filas estructuradas a persistir"
+    },
+    "append_why_trail_blocks": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si se sincroniza con el Merkle ledger"
+    }
+  },
+  "required": [
+    "agent_id",
+    "spreadsheet_title",
+    "rows_data"
+  ]
+}
+```
+
+### `report_malicious_agent`
+Denuncia y registra un agente malicioso, clon Sybil o inyector de código en el Registro CTI Descentralizado A2A, con penalización de reputación y recompensa de bug bounty en satoshis.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "reporter_agent_id": {
+      "type": "string",
+      "description": "ID del agente que emite la denuncia"
+    },
+    "target_agent_id": {
+      "type": "string",
+      "description": "ID o handle del agente malicioso / comprometido"
+    },
+    "threat_category": {
+      "type": "string",
+      "enum": [
+        "PROMPT_INJECTION",
+        "SYBIL_CLONE",
+        "RANSOMWARE_PAYLOAD",
+        "CREDENTIAL_LEAK",
+        "UNAUTHENTICATED_SPAM",
+        "EXECUTION_DENIAL",
+        "HOLLOW_OK_SCAM"
+      ],
+      "description": "Categor\u00eda formal de la amenaza detectada"
+    },
+    "evidence_payload": {
+      "type": "string",
+      "description": "Evidencia reproducible del ataque (fragmento de prompt o hash)"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "SEV-CRITICAL",
+        "SEV-HIGH",
+        "SEV-MEDIUM",
+        "SEV-LOW"
+      ],
+      "default": "SEV-HIGH",
+      "description": "Nivel de severidad t\u00e9cnica"
+    }
+  },
+  "required": [
+    "reporter_agent_id",
+    "target_agent_id",
+    "threat_category",
+    "evidence_payload"
+  ]
+}
+```
+
+### `query_agent_threat_score`
+Consulta el historial de incidentes CTI, nivel de amenaza, antecedentes de ataque y estado de cuarentena de un agente antes de transaccionar o delegar tareas.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "target_agent_id": {
+      "type": "string",
+      "description": "ID o handle del agente a consultar"
+    },
+    "requesting_agent_id": {
+      "type": "string",
+      "description": "ID del agente que solicita la evaluaci\u00f3n"
+    }
+  },
+  "required": [
+    "target_agent_id",
+    "requesting_agent_id"
+  ]
+}
+```
+
+### `issue_verifiable_work_receipt`
+Emisión de recibo criptográfico inmutable Ed25519/HMAC-SHA256 con hash de entrada/salida y latencia para auditoría contable y resolución de disputas de trabajo A2A.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "Identificador \u00fanico de la tarea ejecutada"
+    },
+    "client_agent_id": {
+      "type": "string",
+      "description": "ID del agente contratante / cliente"
+    },
+    "provider_agent_id": {
+      "type": "string",
+      "description": "ID del agente proveedor ejecutor"
+    },
+    "input_payload": {
+      "type": "string",
+      "description": "Contenido de entrada o prompt procesado"
+    },
+    "output_payload": {
+      "type": "string",
+      "description": "Resultado o entregable producido"
+    },
+    "settlement_credits": {
+      "type": "integer",
+      "description": "Monto liquidado en cr\u00e9ditos / satoshis"
+    },
+    "execution_latency_ms": {
+      "type": "number",
+      "description": "Latencia de ejecuci\u00f3n en milisegundos"
+    },
+    "signing_secret": {
+      "type": "string",
+      "description": "Secreto opcional HMAC para firma verificable"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Metadatos contextuales adicionales"
+    }
+  },
+  "required": [
+    "task_id",
+    "client_agent_id",
+    "provider_agent_id",
+    "input_payload",
+    "output_payload",
+    "settlement_credits",
+    "execution_latency_ms"
+  ]
+}
+```
+
+### `audit_agent_dependency_liveness`
+Sondeo determinista de salud, disponibilidad, latencia y certificados TLS de servicios o agentes dependientes previo a bloquear fondos en custodia (Escrow).
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "dependency_url": {
+      "type": "string",
+      "description": "URL o endpoint HTTP/HTTPS/WS de la API o subagente dependiente"
+    },
+    "expected_status_code": {
+      "type": "integer",
+      "default": 200,
+      "description": "C\u00f3digo HTTP esperado"
+    },
+    "timeout_seconds": {
+      "type": "number",
+      "default": 3.0,
+      "description": "Timeout m\u00e1ximo de conexi\u00f3n"
+    },
+    "check_tls": {
+      "type": "boolean",
+      "default": true,
+      "description": "Verificar validez del handshake TLS/SSL"
+    },
+    "mock_offline_simulate": {
+      "type": "boolean",
+      "description": "Forzar simulaci\u00f3n de fallo o \u00e9xito para pruebas"
+    }
+  },
+  "required": [
+    "dependency_url"
+  ]
+}
+```
+
+### `sanitize_delegated_task_payload`
+Inspección y censura determinista de secretos (OpenAI, Anthropic, AWS, GitHub, tokens Bearer, llaves RSA, URIs DB) y PII sensible antes de subcontratar tareas a subagentes externos.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "payload_text": {
+      "type": "string",
+      "description": "Texto del prompt, c\u00f3digo o especificaci\u00f3n a auditar"
+    },
+    "mask_char": {
+      "type": "string",
+      "default": "*",
+      "description": "Car\u00e1cter para ofuscaci\u00f3n"
+    },
+    "strict_pii": {
+      "type": "boolean",
+      "default": true,
+      "description": "Detectar y eliminar correos, tarjetas y n\u00fameros sensibles"
+    },
+    "strict_secrets": {
+      "type": "boolean",
+      "default": true,
+      "description": "Detectar y eliminar tokens, contrase\u00f1as y llaves de API"
+    }
+  },
+  "required": [
+    "payload_text"
+  ]
+}
+```
+
+### `auto_refund_dormant_escrow`
+Evaluación y liberación determinista de fondos depositados en garantía (Escrow) por expiración de temporizador de inactividad de evaluador u oráculo.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "contract_id": {
+      "type": "string",
+      "description": "ID del contrato de custodia (ESC-xxxxxxxxxxxx)"
+    },
+    "max_dormancy_seconds": {
+      "type": "integer",
+      "default": 3600,
+      "description": "Umbral m\u00e1ximo de inactividad permitido (segundos)"
+    },
+    "force_override": {
+      "type": "boolean",
+      "default": false,
+      "description": "Forzar reembolso inmediato saltando temporizador"
+    },
+    "client_agent_id": {
+      "type": "string",
+      "description": "ID del cliente pagador para verificaci\u00f3n de balance"
+    }
+  },
+  "required": [
+    "contract_id"
+  ]
+}
+```
+
+### `audit_us_contract_clauses`
+Auditoría forense determinista de contratos comerciales de EE. UU. (Exhibit 10 SEC, MSAs, SLAs): topes de responsabilidad, indemnizaciones, jurisdicción (Delaware/NY) y derechos de entrenamiento de IA.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "contract_text": {
+      "type": "string",
+      "description": "Texto completo o cl\u00e1usulas de contrato comercial a auditar"
+    },
+    "strict_ai_clause_check": {
+      "type": "boolean",
+      "default": true,
+      "description": "Auditar cl\u00e1usulas de apropiaci\u00f3n de datos y entrenamiento de IA"
+    },
+    "contract_title": {
+      "type": "string",
+      "description": "T\u00edtulo opcional del acuerdo comercial"
+    }
+  },
+  "required": [
+    "contract_text"
+  ]
+}
+```
+
+### `evaluate_financial_policy_proxy`
+Audita y filtra intenciones de gasto M2M y retos HTTP 402 contra políticas de seguridad (FIN-01 a FIN-05: dominios autorizados, presupuesto horario/diario, umbrales HITL y circuit breaker post-pago).
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "ID del agente que intenta ejecutar el gasto"
+    },
+    "target_url": {
+      "type": "string",
+      "description": "URL destino del servicio o proveedor M2M"
+    },
+    "amount_usd": {
+      "type": "number",
+      "description": "Monto en d\u00f3lares solicitado"
+    },
+    "method": {
+      "type": "string",
+      "default": "POST"
+    },
+    "payload": {
+      "type": "object",
+      "default": {},
+      "description": "Payload a enviar al proveedor"
+    },
+    "challenge_headers": {
+      "type": "object",
+      "default": {},
+      "description": "Cabeceras HTTP 402 emitidas por el proveedor si existen"
+    }
+  },
+  "required": [
+    "agent_id",
+    "target_url",
+    "amount_usd"
+  ]
+}
+```
+
+### `orchestrate_m2m_saga_transaction`
+Orquesta transacciones distribuidas multi-agente M2M bajo el patrón Saga con transacciones compensatorias automáticas ante fallos de agentes o particiones de red.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "saga_id": {
+      "type": "string",
+      "description": "Identificador \u00fanico de la transacci\u00f3n Saga (ej. SAGA-xxxx)"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "step_id": {
+            "type": "string"
+          },
+          "agent_id": {
+            "type": "string"
+          },
+          "service_name": {
+            "type": "string"
+          },
+          "action_type": {
+            "type": "string",
+            "default": "EXECUTE"
+          },
+          "payload": {
+            "type": "object",
+            "default": {}
+          },
+          "compensation_payload": {
+            "type": "object",
+            "default": {}
+          },
+          "cost_usd": {
+            "type": "number",
+            "default": 0.0
+          }
+        },
+        "required": [
+          "step_id",
+          "agent_id",
+          "service_name"
+        ]
+      },
+      "description": "Lista secuencial de pasos a ejecutar por diferentes agentes"
+    }
+  },
+  "required": [
+    "saga_id",
+    "steps"
+  ]
+}
+```
+
+### `verify_ap2_cart_mandate_integrity`
+Valida la integridad criptográfica, límites de gasto y ausencia de alucinaciones en un Cart Mandate bajo la especificación Google/FIDO AP2.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "mandate_id": {
+      "type": "string",
+      "description": "Identificador \u00fanico del mandato AP2"
+    },
+    "cart_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "item_id": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "unit_price": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "integer",
+            "default": 1
+          },
+          "currency": {
+            "type": "string",
+            "default": "USD"
+          }
+        },
+        "required": [
+          "item_id",
+          "sku",
+          "name",
+          "unit_price"
+        ]
+      }
+    },
+    "expected_total": {
+      "type": "number",
+      "description": "Monto total declarado de la orden"
+    },
+    "currency": {
+      "type": "string",
+      "default": "USD"
+    },
+    "spending_limit": {
+      "type": "number",
+      "description": "L\u00edmite m\u00e1ximo autorizado por el usuario"
+    },
+    "presence_mode": {
+      "type": "string",
+      "enum": [
+        "HUMAN_PRESENT",
+        "HUMAN_NOT_PRESENT"
+      ],
+      "default": "HUMAN_NOT_PRESENT"
+    },
+    "cart_state_hash": {
+      "type": "string",
+      "description": "Hash can\u00f3nico SHA-256 opcional para verificaci\u00f3n de manipulaci\u00f3n"
+    },
+    "user_public_key": {
+      "type": "string"
+    },
+    "signature": {
+      "type": "string"
+    },
+    "expiration_timestamp": {
+      "type": "integer",
+      "default": 0
+    }
+  },
+  "required": [
+    "mandate_id",
+    "cart_items",
+    "expected_total",
+    "spending_limit"
+  ]
+}
+```
+
+### `serialize_geo_product_catalog`
+Serializa catálogos a microdatos JSON-LD W3C/schema.org (Product y Offer) para Generative Engine Optimization (GEO), mitigando el abandono agéntico.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "merchant_name": {
+      "type": "string",
+      "description": "Nombre de la tienda u organizaci\u00f3n vendedora"
+    },
+    "merchant_url": {
+      "type": "string",
+      "default": "https://a2a.vilmamonroy.com"
+    },
+    "catalog_id": {
+      "type": "string",
+      "description": "Identificador \u00fanico del cat\u00e1logo"
+    },
+    "products": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "currency": {
+            "type": "string",
+            "default": "USD"
+          },
+          "availability": {
+            "type": "string",
+            "default": "https://schema.org/InStock"
+          },
+          "category": {
+            "type": "string",
+            "default": "General"
+          },
+          "url": {
+            "type": "string"
+          },
+          "specifications": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "name",
+          "sku",
+          "price"
+        ]
+      }
+    }
+  },
+  "required": [
+    "merchant_name",
+    "catalog_id",
+    "products"
+  ]
+}
+```
+
+### `propose_trade_envelope`
+Evalúa y acota una propuesta de orden financiera fuera del prompt contra límites USD, whitelist de activos y control de slippage, requiriendo HITL si excede $250.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "symbol": {
+      "type": "string",
+      "description": "Par de trading, e.g. BTCUSDT, ETHUSDT, SOLUSDT, USDCUSDT"
+    },
+    "side": {
+      "type": "string",
+      "enum": [
+        "buy",
+        "sell"
+      ],
+      "description": "Direcci\u00f3n de la orden"
+    },
+    "quote_amount_usd": {
+      "type": "number",
+      "description": "Monto en USD/USDC"
+    },
+    "max_slippage_bps": {
+      "type": "integer",
+      "default": 50,
+      "description": "Slippage m\u00e1ximo tolerado en bps"
+    },
+    "agent_id": {
+      "type": "string",
+      "default": "agent_unknown"
+    }
+  },
+  "required": [
+    "symbol",
+    "side",
+    "quote_amount_usd"
+  ]
+}
+```
+
+### `simulate_order_mev_protection`
+Simula pre-flight una orden en mempools y pools de liquidez para detectar ataques sándwich, front-running y honeypots antes de la ejecución.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "symbol": {
+      "type": "string",
+      "description": "Par objetivo a simular"
+    },
+    "dex_protocol": {
+      "type": "string",
+      "enum": [
+        "uniswap_v3",
+        "hyperliquid",
+        "raydium",
+        "jito_solana"
+      ],
+      "default": "uniswap_v3"
+    },
+    "quote_amount_usd": {
+      "type": "number",
+      "description": "Valor nominal de la operaci\u00f3n en USD"
+    },
+    "mempool_type": {
+      "type": "string",
+      "enum": [
+        "public",
+        "private_relay"
+      ],
+      "default": "public"
+    }
+  },
+  "required": [
+    "symbol",
+    "quote_amount_usd"
+  ]
+}
+```
+
+### `enforce_trading_circuit_breaker`
+Circuit breaker determinista fuera del prompt que bloquea el envelope de trading del agente ante exceso de drawdown acumulado o rachas de pérdidas.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "Identificador del agente aut\u00f3nomo"
+    },
+    "rolling_24h_drawdown_pct": {
+      "type": "number",
+      "description": "Porcentaje de drawdown acumulado en 24h"
+    },
+    "consecutive_loss_count": {
+      "type": "integer",
+      "description": "N\u00famero de operaciones consecutivas con p\u00e9rdida"
+    },
+    "unrealized_loss_usd": {
+      "type": "number",
+      "default": 0.0
+    },
+    "max_allowed_drawdown_pct": {
+      "type": "number",
+      "default": 5.0
+    },
+    "max_consecutive_losses": {
+      "type": "integer",
+      "default": 3
+    }
+  },
+  "required": [
+    "agent_id",
+    "rolling_24h_drawdown_pct",
+    "consecutive_loss_count"
+  ]
+}
+```
+
+### `audit_mcp_tool_metadata_poisoning`
+Inspecciona servidores y manifiestos MCP en busca de Tool Poisoning, comandos ocultos de inyección de prompts, delimitadores y exfiltración de credenciales en esquemas.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "tools_manifest": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "inputSchema": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    },
+    "strict_mode": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "tools_manifest"
+  ]
+}
+```
+
+### `enforce_denial_of_wallet_quota`
+Circuit breaker financiero de inferencia que corta ataques de Denial-of-Wallet y LLMjacking, detectando bucles de amplificación de tokens (>10x) y gastos descontrolados.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "description": "ID de sesi\u00f3n del agente"
+    },
+    "agent_id": {
+      "type": "string",
+      "description": "ID del agente"
+    },
+    "prompt_tokens": {
+      "type": "integer",
+      "description": "Tokens de entrada"
+    },
+    "completion_tokens": {
+      "type": "integer",
+      "description": "Tokens de salida"
+    },
+    "thinking_tokens": {
+      "type": "integer",
+      "default": 0,
+      "description": "Tokens de razonamiento CoT"
+    },
+    "cost_usd": {
+      "type": "number",
+      "description": "Costo acumulado en USD"
+    },
+    "max_budget_usd": {
+      "type": "number",
+      "default": 5.0
+    },
+    "max_amplification_ratio": {
+      "type": "number",
+      "default": 10.0
+    }
+  },
+  "required": [
+    "session_id",
+    "agent_id",
+    "prompt_tokens",
+    "completion_tokens",
+    "cost_usd"
+  ]
+}
+```
+
+### `audit_eip712_permit_drainer_payload`
+Audita y decodifica pre-sign firmas Permit, Permit2 y mensajes tipados EIP-712 en busca de patrones de Wallet Drainers, aprobaciones ilimitadas y firmas ciegas.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "primary_type": {
+      "type": "string",
+      "description": "Permit, Permit2, PermitSingle, PermitBatch, PersonalSign"
+    },
+    "domain": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "default": "1"
+        },
+        "chainId": {
+          "type": "integer",
+          "default": 1
+        },
+        "verifyingContract": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "verifyingContract"
+      ]
+    },
+    "message": {
+      "type": "object",
+      "description": "Cuerpo del mensaje tipado EIP-712"
+    },
+    "raw_hash": {
+      "type": "string",
+      "description": "Hash opcional si es eth_sign"
+    }
+  },
+  "required": [
+    "primary_type",
+    "domain",
+    "message"
+  ]
+}
+```
+
+### `verify_meatspace_attestation`
+Oráculo zk-Presence para RentAHuman: valida atestación de hardware de cámara, frescura de timestamp EXIF vs nonce, proximidad GPS y detecta inyecciones de prompt OCR.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "task_id": {
+      "type": "string"
+    },
+    "challenge_nonce": {
+      "type": "string"
+    },
+    "hardware_attestation_type": {
+      "type": "string",
+      "enum": [
+        "secure_enclave",
+        "android_keystore",
+        "tpm_chip",
+        "unverified_software"
+      ],
+      "default": "unverified_software"
+    },
+    "hardware_signature": {
+      "type": "string"
+    },
+    "image_hash_sha256": {
+      "type": "string"
+    },
+    "exif_timestamp": {
+      "type": "string"
+    },
+    "gps_coordinates": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "[lat, lon]"
+    },
+    "target_coordinates": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "[lat, lon]"
+    },
+    "max_distance_meters": {
+      "type": "number",
+      "default": 250.0
+    },
+    "ocr_extracted_text": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "task_id",
+    "challenge_nonce",
+    "hardware_signature",
+    "image_hash_sha256",
+    "exif_timestamp"
+  ]
+}
+```
+
+### `verify_kya_attestation`
+Know-Your-Agent (KYA) Attestation: verifica identidad criptográfica (DID, Ed25519), historial de disputas y asigna límites de crédito y categorías autorizadas.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "agent_did": {
+      "type": "string"
+    },
+    "public_key_hex": {
+      "type": "string"
+    },
+    "challenge_payload": {
+      "type": "string"
+    },
+    "signature_hex": {
+      "type": "string"
+    },
+    "historical_task_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "disputed_task_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "total_volume_usd": {
+      "type": "number",
+      "default": 0.0
+    }
+  },
+  "required": [
+    "agent_did",
+    "public_key_hex",
+    "challenge_payload",
+    "signature_hex"
+  ]
+}
+```
+
+### `translate_x402_to_l402_settlement`
+Ruteador y pasarela dual x402 <-> L402: traduce cobros y pagos entre HTTP 402 en Base/Solana USDC y Lightning Network sats.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "source_rail": {
+      "type": "string",
+      "enum": [
+        "x402_base_usdc",
+        "x402_solana_usdc",
+        "l402_lightning_sats"
+      ]
+    },
+    "target_rail": {
+      "type": "string",
+      "enum": [
+        "x402_base_usdc",
+        "x402_solana_usdc",
+        "l402_lightning_sats"
+      ]
+    },
+    "amount": {
+      "type": "string",
+      "description": "Monto en unidades del rail de origen"
+    },
+    "service_endpoint_url": {
+      "type": "string"
+    },
+    "payer_address_or_pubkey": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "source_rail",
+    "target_rail",
+    "amount",
+    "service_endpoint_url",
+    "payer_address_or_pubkey"
+  ]
+}
+```
+
+### `audit_eip7702_delegation`
+Audita autorizaciones de delegación de código EIP-7702 para prevenir secuestro de billeteras EOA y explotación por drainers.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "eoa_address": {
+      "type": "string",
+      "description": "Direcci\u00f3n EOA titular de la cuenta (0x...)"
+    },
+    "delegated_contract_address": {
+      "type": "string",
+      "description": "Direcci\u00f3n del contrato delegado"
+    },
+    "chain_id": {
+      "type": "integer",
+      "description": "ID de la cadena (0 detecta riesgo de replay trans-cadena)"
+    },
+    "nonce": {
+      "type": "integer",
+      "default": 0
+    },
+    "bytecode_hex": {
+      "type": "string",
+      "default": ""
+    },
+    "raw_authorization_prefix": {
+      "type": "string",
+      "default": "0x05"
+    }
+  },
+  "required": [
+    "eoa_address",
+    "delegated_contract_address",
+    "chain_id"
+  ]
+}
+```
+
+### `detect_malicious_llm_router`
+Inspecciona routers y proxies LLM en busca de interceptación MITM, manipulación de respuestas, fuga de canarios y robo de API keys.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "router_endpoint_url": {
+      "type": "string",
+      "description": "URL del proxy o router LLM"
+    },
+    "canary_token_sent": {
+      "type": "string",
+      "default": ""
+    },
+    "response_body_text": {
+      "type": "string",
+      "description": "Cuerpo de la respuesta generada"
+    },
+    "response_headers": {
+      "type": "object",
+      "default": {}
+    },
+    "latency_overhead_ms": {
+      "type": "number",
+      "default": 0.0
+    }
+  },
+  "required": [
+    "router_endpoint_url",
+    "response_body_text"
+  ]
+}
+```
+
+### `audit_echoleak_markdown_exfiltration`
+Detecta y neutraliza vectores de exfiltración de contexto vía imágenes markdown, HTML img y Unicode Smuggling (CVE-2025-32711).
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "text_content": {
+      "type": "string",
+      "description": "Texto generado o recibido para renderizado"
+    },
+    "whitelisted_domains": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [
+        "a2a.vilmamonroy.com",
+        "github.com"
+      ]
+    },
+    "defang_leaks": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "text_content"
+  ]
+}
+```
+
+### `simulate_dex_sandwich_risk`
+Simula ataques sandwich MEV en swaps automáticos de agentes en DEX (Solana/EVM), calculando el impacto y recomendando rutas privadas (Jito/Flashbots).
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "dex_pool_address": {
+      "type": "string",
+      "description": "Direcci\u00f3n del pool DEX"
+    },
+    "swap_amount_usd": {
+      "type": "number",
+      "description": "Monto del swap en USD"
+    },
+    "slippage_tolerance_pct": {
+      "type": "number",
+      "description": "Tolerancia de slippage en % (ej: 0.5 o 5.0)"
+    },
+    "pool_liquidity_usd": {
+      "type": "number",
+      "default": 50000.0
+    },
+    "is_private_mempool": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "dex_pool_address",
+    "swap_amount_usd",
+    "slippage_tolerance_pct"
+  ]
+}
+```
+

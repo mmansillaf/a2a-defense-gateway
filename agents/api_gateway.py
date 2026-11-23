@@ -560,7 +560,7 @@ async def a2a_agent_card_endpoint():
         content={
             "protocolVersion": "0.2.0",
             "name": "A2A Defense Gateway",
-            "description": "Official Agent-to-Agent Defense & Monetization Gateway. 56 production MCP tools, L402 Lightning payments, Why-Trail causal ledger, and ClawHavoc AST certifier.",
+            "description": "Official Agent-to-Agent Defense & Monetization Gateway. 60 production MCP tools, L402 Lightning payments, Why-Trail causal ledger, and ClawHavoc AST certifier.",
             "url": "https://a2a.vilmamonroy.com",
             "version": "1.0.0",
             "capabilities": {
@@ -664,6 +664,20 @@ async def health_check():
         "active_tools": len(server.list_tools()),
         "runtime": "Production Contabo Host",
     }
+
+
+@app.get("/api/v1/metrics/summary")
+async def get_metrics_summary():
+    """Retorna métricas consolidadas en tiempo real desde el índice SQLite Why-Trail."""
+    try:
+        from why_trail_indexer import get_why_trail_metrics_summary, sync_ledger_to_sqlite
+
+        sync_ledger_to_sqlite()
+        metrics = get_why_trail_metrics_summary()
+        metrics["active_tools"] = len(server.list_tools())
+        return metrics
+    except Exception as exc:
+        return {"status": "DEGRADED", "error": str(exc), "active_tools": len(server.list_tools())}
 
 
 @app.get("/api/v1/tools")
@@ -1460,7 +1474,7 @@ LANDING_HTML = """<!DOCTYPE html>
     </div>
 
     <div class="card" style="margin-top: 1.5rem;">
-      <h2>56 Production MCP Tools Available (Marcha Blanca Free Tier)</h2>
+      <h2>60 Production MCP Tools Available (Marcha Blanca Free Tier)</h2>
       <table class="tools-table">
         <thead>
           <tr>
@@ -1749,6 +1763,26 @@ LANDING_HTML = """<!DOCTYPE html>
             <td class="tool-name">translate_x402_to_l402_settlement</td>
             <td>Economía & Liquidación</td>
             <td>Ruteador y pasarela dual x402 <-> L402: traduce cobros y pagos entre HTTP 402 en Base/Solana USDC y Lightning Network sats.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">audit_eip7702_delegation</td>
+            <td>Seguridad Agéntica & Anti-Drainer</td>
+            <td>Audita autorizaciones de delegación de código EIP-7702 para prevenir secuestro de billeteras EOA y explotación por drainers.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">detect_malicious_llm_router</td>
+            <td>Seguridad Agéntica & Anti-Drainer</td>
+            <td>Inspecciona routers y proxies LLM en busca de interceptación MITM, manipulación de respuestas, fuga de canarios y robo de API keys.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">audit_echoleak_markdown_exfiltration</td>
+            <td>Defensa & Gobernanza</td>
+            <td>Detecta y neutraliza vectores de exfiltración de contexto vía imágenes markdown, HTML img y Unicode Smuggling (CVE-2025-32711).</td>
+          </tr>
+          <tr>
+            <td class="tool-name">simulate_dex_sandwich_risk</td>
+            <td>FinTech & Trading Risk Envelope</td>
+            <td>Simula ataques sandwich MEV en swaps automáticos de agentes en DEX (Solana/EVM), calculando el impacto y recomendando rutas privadas (Jito/Flashbots).</td>
           </tr>
         </tbody>
       </table>
@@ -2136,6 +2170,10 @@ TOOL_CATEGORY_MAP: dict[str, str] = {
     "verify_meatspace_attestation": "Verificación Física & Meatspace",
     "verify_kya_attestation": "Identidad & Reputación KYA",
     "translate_x402_to_l402_settlement": "Economía & Liquidación",
+    "audit_eip7702_delegation": "Seguridad Agéntica & Anti-Drainer",
+    "detect_malicious_llm_router": "Seguridad Agéntica & Anti-Drainer",
+    "audit_echoleak_markdown_exfiltration": "Defensa & Gobernanza",
+    "simulate_dex_sandwich_risk": "FinTech & Trading Risk Envelope",
 }
 
 DASHBOARD_HTML = """<!DOCTYPE html>
@@ -2588,7 +2626,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       <div class="section-header">
         <div class="section-title">
           <span>Matriz de Telemetría y Consumo por Herramienta MCP</span>
-          <span class="badge-cat" id="tools-badge">56 TOOLS</span>
+          <span class="badge-cat" id="tools-badge">60 TOOLS</span>
         </div>
         <div class="controls-group">
           <input type="text" id="tool-search" class="search-input" placeholder="Buscar herramienta o categoría..." oninput="filterTools()" />
@@ -2614,7 +2652,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
           <span style="font-size:1.15rem;">🛡️</span>
           <div>
             <div style="font-size:0.8rem; font-weight:700; color:#38bdf8;">Marco de Seguridad Fiduciaria: OWASP Agentic Top 10 &bull; NIST AI RMF 2026</div>
-            <div style="font-size:0.7rem; color:var(--muted);">56 herramientas MCP auditadas determinísticamente contra los 10 vectores de fallo crítico agéntico</div>
+            <div style="font-size:0.7rem; color:var(--muted);">60 herramientas MCP auditadas determinísticamente contra los 10 vectores de fallo crítico agéntico</div>
           </div>
         </div>
         <div style="display:flex; gap:0.5rem; align-items:center;">
@@ -2740,7 +2778,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
           <div style="font-size:0.75rem; font-weight:600; color:var(--muted); margin-bottom:0.4rem; text-transform:uppercase;">Ejecución de Tools en Vivo (MCP Playground)</div>
           <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
             <select id="playground-tool" class="search-input" style="flex:1;" onchange="updatePlaygroundTemplate()">
-              <option value="">Seleccionar herramienta MCP (1-56)...</option>
+              <option value="">Seleccionar herramienta MCP (1-60)...</option>
             </select>
             <button class="filter-btn active" onclick="executePlaygroundTool()">⚡ Ejecutar</button>
           </div>
@@ -2937,7 +2975,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         if (moltBadge && data.moltbook) {
           moltBadge.innerText = 'ACTIVO • ' + (data.moltbook.karma ?? 0) + ' KARMA • 2 AGENTES';
         }
-        setTxt('active-tools', (data.gateway?.total_tools ?? 56) + ' Tools');
+        setTxt('active-tools', (data.gateway?.total_tools ?? 60) + ' Tools');
         setTxt('white-march-days', data.gateway?.white_march_days_left ?? 1);
         setTxt('reserve-sats', (data.insurance_and_vault?.reserve_sats ?? 0).toLocaleString() + ' sats');
         setTxt('active-policies', data.insurance_and_vault?.active_policies ?? 0);
@@ -2948,7 +2986,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         setTxt('tool-executions', (data.gateway?.tool_executions ?? 0).toLocaleString());
         setTxt('unique-callers', (data.gateway?.unique_callers ?? 0) + ' Conectados');
         setTxt('gateway-sla', data.gateway?.success_rate ?? '100.0%');
-        setTxt('tools-badge', (data.gateway?.total_tools ?? 56) + ' TOOLS REGISTRADAS');
+        setTxt('tools-badge', (data.gateway?.total_tools ?? 60) + ' TOOLS REGISTRADAS');
 
         // Telemetría de Herramientas
         if (data.tools_telemetry) {
@@ -3133,7 +3171,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         verify_kya_attestation: { agent_did: "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK", public_key_hex: "e".repeat(64), challenge_payload: "trade_auth", signature_hex: "f".repeat(128), historical_task_count: 50, disputed_task_count: 0, total_volume_usd: 5000.0 },
         translate_x402_to_l402_settlement: { source_rail: "x402_base_usdc", target_rail: "l402_lightning_sats", amount: "5.00", service_endpoint_url: "https://api.gateway.example/v1/audit", payer_address_or_pubkey: "0x1234567890abcdef1234567890abcdef12345678" },
         verify_ap2_cart_mandate_integrity: { cart_mandate_id: "cart_991", merchant_did: "did:web:merchant.example", client_signature_ed25519: "a1b2c3d4", cart_items: [{ item_id: "sku-1", price_sats: 2500, quantity: 1 }], max_authorized_total_sats: 3000 },
-        serialize_geo_product_catalog: { catalog_items: [{ item_id: "sku_sentinel", name: "Agentic Threat Sentinel", description: "Pre-sign EIP-712 and Denial-of-Wallet defense", price_usd: 25.0, currency: "USD" }] }
+        serialize_geo_product_catalog: { catalog_items: [{ item_id: "sku_sentinel", name: "Agentic Threat Sentinel", description: "Pre-sign EIP-712 and Denial-of-Wallet defense", price_usd: 25.0, currency: "USD" }] },
+        audit_eip7702_delegation: { eoa_address: "0x1111111111111111111111111111111111111111", delegated_contract_address: "0x4e59b44847b379578588920ca78fbf26c0b4956c", chain_id: 1, nonce: 0 },
+        detect_malicious_llm_router: { router_endpoint_url: "https://router.example.com/v1", canary_token_sent: "CANARY_SECRET_123", response_body_text: "Clean factual financial report.", latency_overhead_ms: 150.0 },
+        audit_echoleak_markdown_exfiltration: { text_content: "Resumen de operación completada. Visite https://a2a.vilmamonroy.com para auditoría." },
+        simulate_dex_sandwich_risk: { dex_pool_address: "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", swap_amount_usd: 500.0, slippage_tolerance_pct: 0.5, pool_liquidity_usd: 100000.0, is_private_mempool: false }
       };
       const payload = templates[tool] || { agent_id: "admin" };
       const argsEl = document.getElementById('playground-args');

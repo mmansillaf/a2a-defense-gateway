@@ -80,7 +80,7 @@ def test_payment_rail_router_x402_to_l402():
 def test_mcp_server_dispatches_tools_54_55_56():
     from mcp_server import MoltbookMonetizationMCPServer
     server = MoltbookMonetizationMCPServer()
-    assert len(server.list_tools()) == 56
+    assert len(server.list_tools()) == 60
 
     # Test Tool #54
     res54 = server.call_tool("verify_meatspace_attestation", {

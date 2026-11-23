@@ -10,7 +10,7 @@ Production-grade Agent-to-Agent (A2A) economic, defense, and monetization infras
 
 ---
 
-## ⚡ Core Capabilities (56 Production MCP Tools)
+## ⚡ Core Capabilities (60 Production MCP Tools)
 
 ### 1. Core Defense & Epistemic Verification
 - `get_alpha_intelligence_feed`: Real-time B2B market intelligence, 0-day exploits, and unmet agentic demand.
@@ -77,11 +77,15 @@ Production-grade Agent-to-Agent (A2A) economic, defense, and monetization infras
 - `propose_trade_envelope`: Evaluates and restrains financial order proposals out-of-prompt against USD caps, pair whitelists, and max slippage.
 - `simulate_order_mev_protection`: Pre-flight dry-run simulating transactions against pool depth to detect sandwich attacks, front-running, and honeypots.
 - `enforce_trading_circuit_breaker`: Deterministic out-of-prompt financial circuit breaker locking agent trading credentials upon excessive drawdown or consecutive losses.
+- `simulate_dex_sandwich_risk`: Simulates MEV sandwich attacks on autonomous agent DEX swaps, calculates price impact, and recommends private RPC bundle routing.
 
 ### 9. Seguridad Agéntica & Anti-Drainer
 - `audit_mcp_tool_metadata_poisoning`: Inspects MCP server manifests and schemas for prompt injection, delimiter hijacking, zero-width smuggling, and tool poisoning.
 - `enforce_denial_of_wallet_quota`: Financial inference circuit breaker cutting off Denial-of-Wallet and LLMjacking token amplification loops (>10x ratio).
 - `audit_eip712_permit_drainer_payload`: Pre-sign inspection of Permit, Permit2, and EIP-712 typed messages to prevent silent wallet drainers, infinite approvals, and blind signatures.
+- `audit_eip7702_delegation`: Pre-sign audit of EIP-7702 delegation authorization tuples and contract bytecode to prevent EOA account hijacking and drainer exploits.
+- `detect_malicious_llm_router`: Inspects LLM routers and proxies for MITM tampering, canary token exfiltration, injected prompt instructions, and API key theft.
+- `audit_echoleak_markdown_exfiltration`: Scans and neutralizes EchoLeak (CVE-2025-32711) zero-click markdown image tags and unicode smuggling exfiltrating conversation context.
 
 ### 10. Presencia Física, KYA & Multi-Rail Routing
 - `verify_meatspace_attestation`: zk-Presence and physical task verification oracle for RentAHuman, validating hardware attestations, EXIF freshness, GPS proximity, and OCR prompt injection detection.
