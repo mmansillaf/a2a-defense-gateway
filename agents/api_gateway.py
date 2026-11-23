@@ -542,6 +542,52 @@ async def glama_claim_verification():
     )
 
 
+@app.get("/.well-known/agent-card.json")
+@app.get("/.well-known/agent.json")
+async def a2a_agent_card_endpoint():
+    """Endpoint oficial del Protocolo Google/IBM A2A (Agent-to-Agent) y Agent Card estándar."""
+    skills = []
+    for t in server.list_tools():
+        name = t["name"]
+        skills.append({
+            "id": name,
+            "name": name.replace("_", " ").title(),
+            "description": t.get("description", ""),
+            "tags": [TOOL_CATEGORY_MAP.get(name, "A2A Ecosystem"), "mcp", "security", "a2a"],
+            "inputSchema": t.get("inputSchema", {}),
+        })
+    return JSONResponse(
+        content={
+            "protocolVersion": "0.2.0",
+            "name": "A2A Defense Gateway",
+            "description": "Official Agent-to-Agent Defense & Monetization Gateway. 45 production MCP tools, L402 Lightning payments, Why-Trail causal ledger, and ClawHavoc AST certifier.",
+            "url": "https://a2a.vilmamonroy.com",
+            "version": "1.0.0",
+            "capabilities": {
+                "streaming": True,
+                "push_notifications": True,
+                "protocols_supported": ["A2A-0.2", "MCP-2024-11-05", "AP2-0.2", "UCP-1.0", "L402", "x402"],
+            },
+            "endpoints": {
+                "jsonrpc": "https://a2a.vilmamonroy.com/mcp",
+                "a2a_agentcard": "https://a2a.vilmamonroy.com/.well-known/agent-card.json",
+                "dashboard": "https://a2a.vilmamonroy.com/dashboard",
+                "health": "https://a2a.vilmamonroy.com/health",
+            },
+            "skills": skills,
+            "securitySchemes": {
+                "l402": {
+                    "type": "http",
+                    "scheme": "bearer",
+                    "description": "Bitcoin Lightning L402 payment challenge or Open White March daily quota.",
+                }
+            },
+        },
+        status_code=200,
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
+
+
 @app.post("/mcp")
 async def mcp_jsonrpc_endpoint(req: JsonRpcRequest):
     if req.method:
@@ -1696,6 +1742,10 @@ TOOL_CATEGORY_MAP: dict[str, str] = {
     "audit_agent_dependency_liveness": "Defensa & Gobernanza",
     "sanitize_delegated_task_payload": "Defensa & Gobernanza",
     "audit_us_contract_clauses": "LegalTech & Forense",
+    "evaluate_financial_policy_proxy": "Economía & Liquidación",
+    "orchestrate_m2m_saga_transaction": "Economía & Liquidación",
+    "verify_ap2_cart_mandate_integrity": "Comercio Agéntico & AP2",
+    "serialize_geo_product_catalog": "Comercio Agéntico & AP2",
 }
 
 DASHBOARD_HTML = """<!DOCTYPE html>

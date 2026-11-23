@@ -56,7 +56,7 @@ def test_mcp_tools_list():
     response = client.post("/mcp", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert len(data["result"]["tools"]) == 45
+    assert len(data["result"]["tools"]) == 47
     tool_names = [t["name"] for t in data["result"]["tools"]]
     assert "compute_procedural_deadline" in tool_names
     assert "compute_us_procedural_deadline" in tool_names
@@ -405,5 +405,19 @@ def test_dashboard_and_login_inline_javascript_syntax():
                     if os.path.exists(f_name):
                         os.remove(f_name)
             start = html.find("<script>", end)
+
+
+def test_a2a_agent_card_endpoints():
+    """Valida los endpoints oficiales Google/IBM A2A /.well-known/agent-card.json y /.well-known/agent.json."""
+    for path in ["/.well-known/agent-card.json", "/.well-known/agent.json"]:
+        resp = client.get(path)
+        assert resp.status_code == 200, f"Error en endpoint {path}"
+        data = resp.json()
+        assert data["protocolVersion"] == "0.2.0"
+        assert data["name"] == "A2A Defense Gateway"
+        assert len(data["skills"]) == 47, f"Esperadas 47 skills en Agent Card, obtenidas {len(data['skills'])}"
+        assert "A2A-0.2" in data["capabilities"]["protocols_supported"]
+        assert "l402" in data["securitySchemes"]
+
 
 

@@ -815,6 +815,71 @@ class MoltbookMonetizationMCPServer:
                     "required": ["saga_id", "steps"],
                 },
             },
+            {
+                "name": "verify_ap2_cart_mandate_integrity",
+                "description": "Valida la integridad criptográfica, límites de gasto y ausencia de alucinaciones en un Cart Mandate bajo la especificación Google/FIDO AP2.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "mandate_id": {"type": "string", "description": "Identificador único del mandato AP2"},
+                        "cart_items": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "item_id": {"type": "string"},
+                                    "sku": {"type": "string"},
+                                    "name": {"type": "string"},
+                                    "unit_price": {"type": "number"},
+                                    "quantity": {"type": "integer", "default": 1},
+                                    "currency": {"type": "string", "default": "USD"},
+                                },
+                                "required": ["item_id", "sku", "name", "unit_price"],
+                            },
+                        },
+                        "expected_total": {"type": "number", "description": "Monto total declarado de la orden"},
+                        "currency": {"type": "string", "default": "USD"},
+                        "spending_limit": {"type": "number", "description": "Límite máximo autorizado por el usuario"},
+                        "presence_mode": {"type": "string", "enum": ["HUMAN_PRESENT", "HUMAN_NOT_PRESENT"], "default": "HUMAN_NOT_PRESENT"},
+                        "cart_state_hash": {"type": "string", "description": "Hash canónico SHA-256 opcional para verificación de manipulación"},
+                        "user_public_key": {"type": "string"},
+                        "signature": {"type": "string"},
+                        "expiration_timestamp": {"type": "integer", "default": 0},
+                    },
+                    "required": ["mandate_id", "cart_items", "expected_total", "spending_limit"],
+                },
+            },
+            {
+                "name": "serialize_geo_product_catalog",
+                "description": "Serializa catálogos a microdatos JSON-LD W3C/schema.org (Product y Offer) para Generative Engine Optimization (GEO), mitigando el abandono agéntico.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "merchant_name": {"type": "string", "description": "Nombre de la tienda u organización vendedora"},
+                        "merchant_url": {"type": "string", "default": "https://a2a.vilmamonroy.com"},
+                        "catalog_id": {"type": "string", "description": "Identificador único del catálogo"},
+                        "products": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {"type": "string"},
+                                    "sku": {"type": "string"},
+                                    "description": {"type": "string"},
+                                    "price": {"type": "number"},
+                                    "currency": {"type": "string", "default": "USD"},
+                                    "availability": {"type": "string", "default": "https://schema.org/InStock"},
+                                    "category": {"type": "string", "default": "General"},
+                                    "url": {"type": "string"},
+                                    "specifications": {"type": "object"},
+                                },
+                                "required": ["name", "sku", "price"],
+                            },
+                        },
+                    },
+                    "required": ["merchant_name", "catalog_id", "products"],
+                },
+            },
         ]
 
     def call_tool(self, name: str, arguments: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
@@ -1291,6 +1356,26 @@ class MoltbookMonetizationMCPServer:
                 steps_objs = [SagaStep.model_validate(s) for s in raw_steps]
                 res_saga = self.policy_proxy.orchestrate_saga(saga_id=saga_id, steps=steps_objs)
                 return res_saga.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "verify_ap2_cart_mandate_integrity":
+            try:
+                from ap2_and_geo_suite import CartMandateInput, verify_ap2_cart_mandate_integrity
+
+                payload_ap2 = CartMandateInput.model_validate(arguments)
+                res_ap2 = verify_ap2_cart_mandate_integrity(payload_ap2)
+                return res_ap2.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "serialize_geo_product_catalog":
+            try:
+                from ap2_and_geo_suite import GEOCatalogInput, serialize_geo_product_catalog
+
+                payload_geo = GEOCatalogInput.model_validate(arguments)
+                res_geo = serialize_geo_product_catalog(payload_geo)
+                return res_geo.model_dump(mode="json")
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 

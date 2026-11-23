@@ -94,4 +94,9 @@ tools:
     description: M2M payment intent and HTTP 402 challenge security audit (FIN-01 allowlist, hourly budget cap, HITL thresholds, and circuit breaker).
   - name: orchestrate_m2m_saga_transaction
     description: Distributed multi-agent M2M transaction orchestrator using the Saga pattern with automated reverse compensation.
+  - name: verify_ap2_cart_mandate_integrity
+    description: Cryptographic integrity, spending limit, and zero-hallucination verification for Google/FIDO AP2 Cart Mandates.
+  - name: serialize_geo_product_catalog
+    description: Generative Engine Optimization (GEO) catalog serializer to W3C schema.org/Product and Offer JSON-LD to prevent agent abandonment.
+
 
