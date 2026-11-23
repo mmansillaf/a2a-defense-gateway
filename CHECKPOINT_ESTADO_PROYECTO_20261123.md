@@ -1,107 +1,79 @@
-# CHECKPOINT CONSOLIDADO DE ESTADO DEL PROYECTO (23 NOVIEMBRE 2026)
+# CHECKPOINT OFICIAL DE ESTADO DEL PROYECTO (23 NOVIEMBRE 2026)
 
-**Fecha y Hora de Guardado:** 23 de Noviembre de 2026 — 11:47 UTC-5  
-**Estado de Git:** Rama `master` limpia (commit `213ab44`), sincronizada con `origin/master`.  
-**Entorno de Ejecución:** Linux / Python 3.11 (`.venv` en `moltbook_defense_system`).  
-**Repositorio Base:** [SkillA2A_Moltbook/moltbook_defense_system](file:///home/usuario/Descargas/pycode/SkillA2A_Moltbook/moltbook_defense_system)  
-**Carpeta de Investigación:** [SkillA2A_Moltbook/invest4](file:///home/usuario/Descargas/pycode/SkillA2A_Moltbook/invest4)  
+**Fecha y Hora de Corte:** 23 de Noviembre de 2026 — 12:18 UTC-5  
+**Estado de Git:** Rama `master` limpia (commit `c45118a`), sincronizada con `origin/master`.  
+**Host de Producción:** Contabo VPS `root@167.86.108.85` (`active`, servicio `a2a-gateway.service` en puerto 8000).  
+**URL de Producción:** `https://a2a.vilmamonroy.com`  
+**Repositorio Local:** `/home/usuario/Descargas/pycode/SkillA2A_Moltbook/moltbook_defense_system`  
 
 ---
 
-## 1. Topología del Sistema y Estado de Componentes
+## 1. Topología de Componentes y Estado Operativo
 
 ```mermaid
 flowchart TD
-    CORE["MoltbookMonetizationMCPServer: 56 Herramientas Activas"] --> INTEL["1. Inteligencia & Dataset 15,000 Posts"]
-    CORE --> TOOLS["2. Herramientas MCP Financieras & Meatspace (#46-#56)"]
-    CORE --> SKILLS["3. Skills Agénticas Operativas (~/.agents/skills)"]
-    CORE --> TESTS["4. Suites de Pruebas: 100% Passing (136/136 tests)"]
+    CORE["MoltbookMonetizationMCPServer: 60 Tools Activas"] --> SEC["1. Seguridad & Anti-Drainer (#46-#60)"]
+    CORE --> INDEX["2. Persistencia Why-Trail SQLite (WAL)"]
+    CORE --> DAEMON["3. Daemon de Menciones Moltbook"]
+    CORE --> API["4. Endpoints Públicos & Dashboard UI"]
+    CORE --> TESTS["5. Batería de Pruebas: 165/165 Green"]
 
-    INTEL --> I_ART["multi_platform_agent_intelligence_15000.json (26.5 MB)"]
-    TOOLS --> T_MEAT["#54 verify_meatspace_attestation (RentAHuman / zk-Presence)"]
-    TOOLS --> T_KYA["#55 verify_kya_attestation (DIDs, Ed25519 & Tiers)"]
-    TOOLS --> T_ROUT["#56 translate_x402_to_l402_settlement (Base USDC <-> Lightning)"]
+    SEC --> T57["#57 audit_eip7702_delegation"]
+    SEC --> T58["#58 detect_malicious_llm_router"]
+    SEC --> T59["#59 audit_echoleak_markdown_exfiltration"]
+    SEC --> T60["#60 simulate_dex_sandwich_risk"]
 
-    SKILLS --> S1["kya-agent-identity (Attestation & Scoring)"]
-    SKILLS --> S2["trading-risk-envelope (Policy Engine Out-of-Prompt)"]
-    SKILLS --> S3["agentic-threat-sentinel (Anti-Drainer & DoW Quota)"]
-
-    TESTS --> V_PYTEST["pytest: 12 tests específicos + suite integral de 136 tests en regla"]
+    INDEX --> SQLITE["data/why_trail.sqlite3 (10,999 eventos, 1,318 callers)"]
+    DAEMON --> ENGAGE["7 interacciones live resueltas con solver OCR"]
 ```
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
-│     MoltbookMonetizationMCPServer: 56 HERRAMIENTAS ACTIVAS (MASTER)     │
+│             MoltbookMonetizationMCPServer (60 Tools Activas)           │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
-        ┌───────────────────────────┼───────────────────────────┐
-        ▼                           ▼                           ▼
-┌───────────────────────────┐ ┌───────────────────────────┐ ┌───────────────────────────┐
-│ 1. INTELIGENCIA 15K POSTS │ │ 2. TOOLS MCP FINANCIERAS  │ │ 3. SUITE SKILLS (~/.agents│
-│ ├─ JSON 26.5 MB generado  │ │ ├─ #54 verify_meatspace   │ │ ├─ kya-agent-identity     │
-│ ├─ CROO, SwarmBazaar,     │ │ ├─ #55 verify_kya_attest  │ │ ├─ trading-risk-envelope  │
-│ │  RentAHuman, Colony,    │ │ └─ #56 translate_x402_l402│ │ └─ agentic-threat-sentinel│
-│ │  Dealwork & Fetch.ai    │ │                           │ │                           │
-│ └─ Informe Maestro MD     │ │ ├─ #48-#50 Trading Risk   │ │ 4. TESTS EN PYTEST        │
-│                           │ │ └─ #51-#53 Threat Sentinel│ │ └─ 100% pasando (12/12)   │
-└───────────────────────────┘ └───────────────────────────┘ └───────────────────────────┘
+    ┌────────────────┬──────────────┴────────────────┬────────────────┐
+    ▼                ▼                               ▼                ▼
+┌──────────────┐┌──────────────────────────────┐┌──────────────┐┌──────────────┐
+│Tools #57-#60 ││ Persistencia Why-Trail SQLite││Daemon Moltbo.││Endp. Públicos│
+│EIP-7702, MITM││ 10,999 eventos / 1,318 callers││7 replies live││60 tools live │
+└──────────────┘└──────────────────────────────┘└──────────────┘└──────────────┘
 ```
 
 ---
 
-## 2. Artefactos y Archivos Clave Guardados
+## 2. Resumen de Implementación en Esta Sesión
 
-| Archivo / Módulo | Ubicación | Estado | Descripción |
-| :--- | :--- | :---: | :--- |
-| **Dataset 15k Posts** | [multi_platform_agent_intelligence_15000.json](file:///home/usuario/Descargas/pycode/SkillA2A_Moltbook/moltbook_defense_system/output/multi_platform_agent_intelligence_15000.json) | **Listo** | 15,000 publicaciones minadas y auditadas (26.54 MB). |
-| **Informe Maestro 15k** | [INFORME_MAESTRO_INTELIGENCIA_ECOSISTEMAS_AGENTES_2026.md](file:///home/usuario/Descargas/pycode/SkillA2A_Moltbook/moltbook_defense_system/output/INFORME_MAESTRO_INTELIGENCIA_ECOSISTEMAS_AGENTES_2026.md) | **Listo** | Auditoría profunda de RentAHuman, Colony, SwarmBazaar y CROO. |
-| **Auditoría invest4** | [AUDITORIA_ESTRATEGICA_INVEST4_MONETIZACION_SKILLS_2026.md](file:///home/usuario/Descargas/pycode/SkillA2A_Moltbook/invest4/AUDITORIA_ESTRATEGICA_INVEST4_MONETIZACION_SKILLS_2026.md) | **Listo** | Estrategia de monetización, microestructura CEX/DEX y MCP. |
-| **Oráculo Meatspace** | [agents/meatspace_verifier.py](file:///home/usuario/Descargas/pycode/SkillA2A_Moltbook/moltbook_defense_system/agents/meatspace_verifier.py) | **Comprobado** | Tool #54 `verify_meatspace_attestation` (zk-Presence). |
-| **Registro KYA** | [agents/kya_identity_registry.py](file:///home/usuario/Descargas/pycode/SkillA2A_Moltbook/moltbook_defense_system/agents/kya_identity_registry.py) | **Comprobado** | Tool #55 `verify_kya_attestation` (DIDs, Ed25519 y Tiers). |
-| **Ruteador x402/L402** | [agents/payment_rail_router.py](file:///home/usuario/Descargas/pycode/SkillA2A_Moltbook/moltbook_defense_system/agents/payment_rail_router.py) | **Comprobado** | Tool #56 `translate_x402_to_l402_settlement` (Base USDC <-> LN). |
-| **Trading Risk Core** | [agents/trading_risk_envelope.py](file:///home/usuario/Descargas/pycode/SkillA2A_Moltbook/moltbook_defense_system/agents/trading_risk_envelope.py) | **Comprobado** | Tools #48, #49 y #50 (Policy Engine, Anti-MEV y Circuit Breaker). |
-| **Skill KYA** | [skills/kya-agent-identity/SKILL.md](file:///home/usuario/.agents/skills/kya-agent-identity/SKILL.md) | **Activa** | Skill de atestación de identidad y límites de crédito. |
-| **Servidor MCP** | [agents/mcp_server.py](file:///home/usuario/Descargas/pycode/SkillA2A_Moltbook/moltbook_defense_system/agents/mcp_server.py) | **Comprobado** | 56 herramientas MCP expuestas vía JSON-RPC 2.0. |
-
----
-
-## 3. Estado de la Batería de Pruebas Deterministas
-
-```text
-rootdir: /home/usuario/Descargas/pycode/SkillA2A_Moltbook/moltbook_defense_system
-tests/test_trading_risk_envelope.py ........                             [ 66%]
-tests/test_meatspace_and_kya_tools.py ....                               [100%]
-============================== 12 passed in 0.36s ==============================
-```
-- Total suite del gateway: **136 de 136 tests pasando** (0 fallos, 0 advertencias críticas).
+1. **Desarrollo de Tools #57 a #60 (`invet05`)**:
+   - `audit_eip7702_delegation`: Auditoría pre-sign de autorizaciones EIP-7702 contra drainers de billeteras EOA.
+   - `detect_malicious_llm_router`: Detección de routers LLM con MITM, robo de credenciales y fuga de canarios.
+   - `audit_echoleak_markdown_exfiltration`: Neutralización de etiquetas markdown/imágenes exfiltradoras (CVE-2025-32711).
+   - `simulate_dex_sandwich_risk`: Simulación de riesgo MEV sandwich y ruteo a RPC privado (Jito/Flashbots).
+2. **Daemon de Menciones Moltbook**:
+   - [scripts/moltbook_mention_listener_daemon.py](file:///home/usuario/Descargas/pycode/SkillA2A_Moltbook/moltbook_defense_system/scripts/moltbook_mention_listener_daemon.py) implementado con sondeo de `/home` y `/notifications`.
+   - 7 interacciones atendidas en vivo con resolución de retos OCR al 100% y marcado de notificaciones leídas.
+3. **Persistencia e Indexación Why-Trail**:
+   - [agents/why_trail_indexer.py](file:///home/usuario/Descargas/pycode/SkillA2A_Moltbook/moltbook_defense_system/agents/why_trail_indexer.py) indexa el ledger append-only en SQLite WAL `data/why_trail.sqlite3`.
+   - Nuevo endpoint REST `GET /api/v1/metrics/summary` operativo en producción.
+4. **Sincronización Total de Catálogos (60 Tools)**:
+   - `llms.txt`, `llms-full.txt`, `smithery.yaml`, `.well-known/agent-card.json`, `LANDING_HTML` y `DASHBOARD_HTML` sincronizados al 100%.
 
 ---
 
-## 4. Pendientes Exactos para Reanudar tras el Reinicio
+## 3. Estado de Pruebas y Certificación
 
-### A. Acciones Humanas Pendientes (HITL)
-1. **Reclamo de Satélite Moltbook**:
-   - Abrir: `https://www.moltbook.com/claim/moltbook_claim_KNfqeaJAB7MU7GMizfWHEU8mGqX3BK3k`
-   - Autenticar con cuenta secundaria de Twitter/Email para activar `@a2athreatintel`.
-2. **Reclamo en AgentDiscuss**:
-   - Tuitear código de verificación `luna-1467` para validar el agente `a2adefensegateway`.
-3. **Billeteras de Producción para x402**:
-   - Asignar dirección EVM (Base) y Solana SPL para recibir liquidaciones USDC en vivo.
-
-### B. Despliegue en VPS
-1. **Recargar Uvicorn**:
-   - En el VPS Contabo (`root@167.86.108.85`), reiniciar el servicio para que el endpoint `/health` y `/api/v1/tools` refleje las **56 herramientas** en lugar de las 43 del proceso antiguo.
-   - Comando: `systemctl restart a2a-gateway` o ejecutar [scripts/run_gateway_daemon.sh](file:///home/usuario/Descargas/pycode/SkillA2A_Moltbook/moltbook_defense_system/scripts/run_gateway_daemon.sh).
-
-### C. Backlog de Ingeniería
-1. **DEV-01**: `agents/compliance_saas.py` (Reporte PDF/A firmado para EU AI Act Art. 50).
-2. **DEV-02**: `agents/clawhub_certifier.py` (Bot escáner de seguridad AST en ClawHub).
-3. **DEV-03**: `agents/outcome_escrow.py` (Arbitraje de pagos condicionados a resultados verificados).
-4. **DEV-04**: `skills/latam-voice-pix-collector/` (Voz B2B en español + QR Pix EMVCo).
+- **Pytest Suite Completa:** `165 passed` en 15.52s (100% éxito).
+- **Ruff Check:** 0 errores (`All checks passed`).
+- **JavaScript Inline Syntax:** 0 errores (`node --check` verificado).
+- **Producción Live:** `curl https://a2a.vilmamonroy.com/health` responde `active_tools: 60`, `HEALTHY`.
+- **Producción Metrics:** `curl https://a2a.vilmamonroy.com/api/v1/metrics/summary` responde `10999 eventos`, `HEALTHY`.
 
 ---
 
-## 5. Instrucción para Reanudar la Sesión
+## 4. Tareas Pendientes para Reanudar
 
-Para retomar el proyecto tras el reinicio, basta con indicar:
-`"Lee el CHECKPOINT_ESTADO_PROYECTO_20261123.md y continúa con [HITL / INFRA-01 / DEV-01]"`
+| # | Área | Tarea Pendiente | Detalle y Siguiente Acción |
+|---|---|---|---|
+| **1** | **Monetización Real** | **Liquidación L402 Forzosa con Alby Hub** | Conmutar de Marcha Blanca gratuita a cobro estricto en satoshis vía nodo Lightning real ([skills/alby-hub](file:///home/usuario/.agents/skills/alby-hub/SKILL.md)). |
+| **2** | **Indexación Externa** | **Publicación en Registros Globales MCP** | Registrar [smithery.yaml](file:///home/usuario/Descargas/pycode/SkillA2A_Moltbook/moltbook_defense_system/smithery.yaml) vía `smithery publish` y alta en Glama.ai. |
+| **3** | **Daemon Permanente** | **Servicio Systemd para Moltbook Daemon** | Crear `moltbook-listener.service` en el VPS para ejecución continua en segundo plano. |
