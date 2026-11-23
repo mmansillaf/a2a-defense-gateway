@@ -8,23 +8,46 @@ métricas analíticas y de auditoría para el Dashboard y endpoints REST.
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from pathlib import Path
 from typing import Any
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DEFAULT_LEDGER_PATH = BASE_DIR / "data" / "a2a_audit_ledger.jsonl"
-FALLBACK_LEDGER_PATH = BASE_DIR / "data" / "multi_camel_ledger.jsonl"
-DEFAULT_DB_PATH = BASE_DIR / "data" / "why_trail.sqlite3"
+
+# Resolución inteligente de directorio de datos (soporta despliegue VPS y entorno local)
+DATA_DIR_ENV = os.environ.get("A2A_DATA_DIR")
+if DATA_DIR_ENV and Path(DATA_DIR_ENV).exists():
+    DATA_DIR = Path(DATA_DIR_ENV)
+elif (BASE_DIR.parent / "data" / "a2a_audit_ledger.jsonl").exists():
+    DATA_DIR = BASE_DIR.parent / "data"
+elif (BASE_DIR / "data").exists():
+    DATA_DIR = BASE_DIR / "data"
+else:
+    DATA_DIR = BASE_DIR / "data"
+
+DEFAULT_LEDGER_PATH = DATA_DIR / "a2a_audit_ledger.jsonl"
+FALLBACK_LEDGER_PATH = DATA_DIR / "multi_camel_ledger.jsonl"
+DEFAULT_DB_PATH = DATA_DIR / "why_trail.sqlite3"
 
 
-def init_why_trail_db(db_path: str | Path = DEFAULT_DB_PATH) -> sqlite3.Connection:
-    """Inicializa el esquema de base de datos SQLite para Why-Trail."""
+def init_why_trail_db(db_path: str | Path = DEFAULT_DB_PATH, read_only: bool = False) -> sqlite3.Connection:
+    """Inicializa o abre el esquema de base de datos SQLite para Why-Trail."""
     path_obj = Path(db_path)
+    if read_only and path_obj.exists():
+        try:
+            uri = f"file:{path_obj.resolve()}?mode=ro"
+            return sqlite3.connect(uri, uri=True)
+        except sqlite3.OperationalError:
+            pass
+
     path_obj.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(path_obj))
-    conn.execute("PRAGMA journal_mode=WAL;")
-    conn.execute("PRAGMA synchronous=NORMAL;")
+    try:
+        conn.execute("PRAGMA journal_mode=WAL;")
+        conn.execute("PRAGMA synchronous=NORMAL;")
+    except sqlite3.OperationalError:
+        pass
 
     with conn:
         conn.execute(
@@ -141,7 +164,7 @@ def sync_ledger_to_sqlite(
 
 def get_why_trail_metrics_summary(db_path: str | Path = DEFAULT_DB_PATH) -> dict[str, Any]:
     """Genera métricas consolidadas en tiempo real a partir del índice SQLite."""
-    conn = init_why_trail_db(db_path)
+    conn = init_why_trail_db(db_path, read_only=True)
     cursor = conn.cursor()
 
     cursor.execute("SELECT COUNT(*) FROM why_trail_events;")

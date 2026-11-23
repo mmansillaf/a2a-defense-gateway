@@ -672,7 +672,10 @@ async def get_metrics_summary():
     try:
         from why_trail_indexer import get_why_trail_metrics_summary, sync_ledger_to_sqlite
 
-        sync_ledger_to_sqlite()
+        try:
+            sync_ledger_to_sqlite()
+        except Exception:
+            pass
         metrics = get_why_trail_metrics_summary()
         metrics["active_tools"] = len(server.list_tools())
         return metrics
