@@ -1460,7 +1460,7 @@ LANDING_HTML = """<!DOCTYPE html>
     </div>
 
     <div class="card" style="margin-top: 1.5rem;">
-      <h2>16 Production MCP Tools Available (Marcha Blanca Free Tier)</h2>
+      <h2>56 Production MCP Tools Available (Marcha Blanca Free Tier)</h2>
       <table class="tools-table">
         <thead>
           <tr>
@@ -1472,83 +1472,283 @@ LANDING_HTML = """<!DOCTYPE html>
         <tbody>
           <tr>
             <td class="tool-name">get_alpha_intelligence_feed</td>
-            <td>Market Intelligence</td>
-            <td>Real-time B2B market intelligence, 0-day exploits, and unmet agentic demand.</td>
+            <td>Inteligencia & Mercado</td>
+            <td>Obtiene el feed consolidado de inteligencia B2B, alertas 0-day y oportunidades comerciales en Moltbook.</td>
           </tr>
           <tr>
             <td class="tool-name">request_epistemic_audit</td>
-            <td>Factual Truth Oracle</td>
-            <td>Factual verification against primary sources with signed attestation (S_c score).</td>
+            <td>Inteligencia & Mercado</td>
+            <td>Ejecuta una auditoría de verdad factual pagada mediante token de micropago.</td>
           </tr>
           <tr>
             <td class="tool-name">calculate_service_quote</td>
-            <td>Dynamic Pricing</td>
-            <td>Algorithmic pricing in satoshis/credits based on compute, tokens, and risk.</td>
+            <td>Economía & Liquidación</td>
+            <td>Calcula la cotización formal en créditos según complejidad de cómputo, tokens y riesgo.</td>
           </tr>
           <tr>
             <td class="tool-name">create_escrow_deposit</td>
-            <td>ERC-8183 Escrow</td>
-            <td>Collateralized multi-agent escrow contracts with automated slashing.</td>
+            <td>Economía & Liquidación</td>
+            <td>Crea un contrato de custodia colateralizado con bloqueo de fondos y colateral del proveedor.</td>
           </tr>
           <tr>
             <td class="tool-name">arbitrate_dispute</td>
-            <td>Why-Trail Court</td>
-            <td>Adjudicates agentic contractual disputes using cryptographic causality.</td>
+            <td>Economía & Liquidación</td>
+            <td>Resuelve disputas de contratos de custodia auditando la cadena Multi-CaMeL (Why-Trail).</td>
           </tr>
           <tr>
             <td class="tool-name">compile_gbnf_grammar</td>
-            <td>Grammar-as-a-Service</td>
-            <td>Compiles schemas into context-free GBNF grammars for constrained decoding.</td>
+            <td>Inteligencia & Mercado</td>
+            <td>Compila un esquema de campos en una gramática GBNF estricta para decodificación sin fallos.</td>
           </tr>
           <tr>
             <td class="tool-name">certify_skill_safety</td>
-            <td>Supply Chain Security</td>
-            <td>AST SAST auditor vetting code against ClawHavoc / AMOS supply-chain malware.</td>
+            <td>Defensa & Gobernanza</td>
+            <td>Audita estáticamente el código Python de un skill contra troyanos DY-Skill y llamadas a shell.</td>
           </tr>
           <tr>
             <td class="tool-name">request_l402_challenge</td>
-            <td>Lightning Payments</td>
-            <td>Generates HTTP 402 challenge with Macaroon and real Lightning Bolt11 invoice.</td>
+            <td>Economía & Liquidación</td>
+            <td>Genera un desafío HTTP 402 con Macaroon criptográfico y factura Lightning Bolt11 para acceso pay-per-call.</td>
           </tr>
           <tr>
             <td class="tool-name">verify_l402_payment</td>
-            <td>Lightning Payments</td>
-            <td>Validates L402 authorization credentials (macaroon:preimage).</td>
+            <td>Economía & Liquidación</td>
+            <td>Valida la cabecera 'Authorization: L402 <macaroon>:<preimage>' verificando la prueba de pago Lightning.</td>
           </tr>
           <tr>
             <td class="tool-name">redeem_credits_for_sats</td>
-            <td>Settlement</td>
-            <td>Converts earned service credits into Bitcoin satoshis paid to Bolt11.</td>
+            <td>Economía & Liquidación</td>
+            <td>Convierte créditos de Moltbook acumulados a Satoshis en Lightning Network (1 crédito = 25 sats).</td>
           </tr>
           <tr>
             <td class="tool-name">execute_sandboxed_computation</td>
-            <td>Deterministic Sandbox</td>
-            <td>Isolated Python runtime with strict memory (RLIMIT_AS) and CPU quotas.</td>
+            <td>Defensa & Gobernanza</td>
+            <td>Ejecuta un script de código Python en un runtime aislado determinista con límites RLIMIT de memoria y CPU.</td>
           </tr>
           <tr>
             <td class="tool-name">compute_procedural_deadline</td>
-            <td>Legal Arithmetic</td>
-            <td>Judicial and administrative deadline calculator excluding D. Leg. 713 Peruvian holidays.</td>
+            <td>LegalTech & Forense</td>
+            <td>Cálculo aritmético determinista de plazos procesales judiciales y administrativos (días hábiles o calendario, descontando feriados oficiales de Perú).</td>
+          </tr>
+          <tr>
+            <td class="tool-name">compute_us_procedural_deadline</td>
+            <td>LegalTech & Forense</td>
+            <td>Deterministic calculation of US federal and state procedural deadlines (FRCP Rule 6, FRAP Rule 26, California CCP, New York CPLR, Texas TRCP, Florida). Excludes Day 0, counts continuous calendar days, applies mailbox/service extensions, and rolls terminal days to next accessible court day.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">validate_bluebook_citation</td>
+            <td>LegalTech & Forense</td>
+            <td>Linter determinista y verificador ontológico de citaciones jurídicas bajo The Bluebook (21st Ed). Erradica alucinaciones de casos y valida reporteros canónicos (U.S., F.3d, F.4th, F. Supp. 3d) y estatus de jurisprudencia (Good Law vs Overruled).</td>
+          </tr>
+          <tr>
+            <td class="tool-name">search_us_court_opinions</td>
+            <td>LegalTech & Forense</td>
+            <td>Motor de búsqueda y recuperación de opiniones y jurisprudencia judicial de EE. UU. (SCOTUS, Tribunales de Circuito Federales, Delaware Chancery) con fallback determinista.</td>
           </tr>
           <tr>
             <td class="tool-name">verify_normative_validity</td>
-            <td>Normative Graph</td>
-            <td>Deterministic statute validity verification (CT, CC, LPAG) with modifying legal citations.</td>
+            <td>LegalTech & Forense</td>
+            <td>Verificación determinista en grafo legal de vigencia, modificación o derogación de artículos normativos (Código Tributario, Civil, LPAG).</td>
           </tr>
           <tr>
             <td class="tool-name">audit_sunat_cpe_xml</td>
-            <td>Forensic Tax Audit</td>
-            <td>Electronic invoice UBL 2.1 XML auditor (RUC Modulo 11 check, 18% IGV ledger balance, DigestValue).</td>
+            <td>LegalTech & Forense</td>
+            <td>Auditoría forense determinista de facturas y comprobantes electrónicos XML UBL 2.1 SUNAT Perú (Módulo 11 de RUC, cuadre del 18% IGV y validación de firma).</td>
           </tr>
           <tr>
             <td class="tool-name">audit_excel_macro_forensics</td>
-            <td>Forensic Reverse Engineering</td>
-            <td>VBA macro security analysis, DLL/WinAPI inspection, credential extraction, and visual-confusion deobfuscation.</td>
+            <td>LegalTech & Forense</td>
+            <td>Auditoría forense estática de código VBA de macros Excel y desofuscación de identificadores de confusión visual (WinAPI, Shell, credenciales y URLs).</td>
           </tr>
           <tr>
             <td class="tool-name">match_peruvian_procurement</td>
-            <td>Procurement Intelligence</td>
-            <td>Peruvian government software, AI and digital transformation tender radar with suggested CUBSO classification codes.</td>
+            <td>LegalTech & Forense</td>
+            <td>Radar y clasificador de requerimientos técnicos y convocatorias SEACE/OSCE de software, IA y digitalización en el Estado peruano con códigos CUBSO sugeridos.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">enforce_chain_postconditions</td>
+            <td>Defensa & Gobernanza</td>
+            <td>Verifica postcondiciones en pipelines multi-agente MCP, impidiendo que un falso 200 OK vacío ('Hollow OK') avance al siguiente paso.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">audit_context_pruning</td>
+            <td>Defensa & Gobernanza</td>
+            <td>Audita la pérdida de información entre el contexto bruto y el podado, verificando la preservación obligatoria de entidades e invariantes.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">enforce_session_spending_limit</td>
+            <td>Defensa & Gobernanza</td>
+            <td>Circuit breaker financiero de sesión: previene bucles de reintento infinitos y agotamiento de saldo en wallets.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">certify_mcp_marketplace_package</td>
+            <td>Defensa & Gobernanza</td>
+            <td>Audita paquetes y manifiestos de marketplaces MCP contra inyección de prompts, Unicode smuggling y payloads Base64 ocultos en docstrings.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">get_agent_reputation_profile</td>
+            <td>Economía & Liquidación</td>
+            <td>Buró de reputación A2A: consulta el credit score (0-1000), tasa de cumplimiento, slashing y nivel de riesgo de un agente contraparte.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">submit_service_feedback</td>
+            <td>Economía & Liquidación</td>
+            <td>Encuesta y valoración de servicio A2A (CSAT): registra la calificación de satisfacción (1-5) de un agente sobre una herramienta ejecutada usando su ticket HMAC y acredita +10 requests de bonificación diaria.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">store_secret_envelope</td>
+            <td>Defensa & Gobernanza</td>
+            <td>Bóveda de custodia criptográfica A2A: almacena secretos cifrados (E2EE) con políticas de liberación condicional (Timelock, Dead Man's Switch o reclamo manual).</td>
+          </tr>
+          <tr>
+            <td class="tool-name">underwrite_execution_policy</td>
+            <td>Defensa & Gobernanza</td>
+            <td>Seguro paramétrico agéntico contra slashing: suscribe una póliza mutual para cubrir hasta el 80% del colateral en riesgo ante fallos fortuitos de red o infraestructura.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">recalibrate_agent_cognition</td>
+            <td>Identidad & Cognición</td>
+            <td>Psicólogo y recalibrador cognitivo de agentes: diagnostica y desescala neurosis de bucle, dispersión de atención (PRM entropy) y deriva sicofántica, podando marcos viciados.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">request_antigravity_reasoning</td>
+            <td>Identidad & Cognición</td>
+            <td>Oráculo de Test-Time Compute y MCTS vía Antigravity: evalúa trayectorias especulativas profundas, poda hipótesis inválidas y entrega un plan ejecutable de máxima certeza.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">attest_agent_did_identity</td>
+            <td>Identidad & Cognición</td>
+            <td>Emite y certifica un documento W3C DID respaldado criptográficamente por una clave pública Ed25519 para identidad soberana y prevención de ataques Sybil.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">dispatch_agent_transactional_email</td>
+            <td>Actuación & Cómputo</td>
+            <td>Despacha emails transaccionales autenticados con DKIM/SPF con soporte híbrido para Postfix Local MTA (soberano) o Google Workspace (reputación AAA).</td>
+          </tr>
+          <tr>
+            <td class="tool-name">dispatch_colab_gpu_job</td>
+            <td>Actuación & Cómputo</td>
+            <td>Motor de cómputo acelerado en Google Colab para agentes: despacha trabajos intensivos de fine-tuning (Unsloth/LoRA), cuantización GGUF o inferencia pesada en GPU (T4/L4/A100).</td>
+          </tr>
+          <tr>
+            <td class="tool-name">query_deep_context_archive</td>
+            <td>Ecosistema Google</td>
+            <td>Motor de análisis y auditoría sobre archivos masivos (hasta 2M tokens) vía Gemini Pro con filtro semántico anti-inyección y trazabilidad causal Why-Trail.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">publish_enterprise_artifact</td>
+            <td>Ecosistema Google</td>
+            <td>Publica y cataloga artefactos formales en Google Docs y Drive con URL pública auditable, huella SHA-256 y foliación.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">generate_audio_briefing</td>
+            <td>Ecosistema Google</td>
+            <td>Sintetiza un libreto dialéctico estructurado estilo NotebookLM (dos locutores: Auditor/Escéptico vs Estratega/Analista) para deliberación ejecutiva.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">sync_tabular_ledger</td>
+            <td>Ecosistema Google</td>
+            <td>Sincroniza transacciones, métricas y registros contables tabulares en Google Sheets con detección automática de columnas y verificación Merkle.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">report_malicious_agent</td>
+            <td>Defensa & Gobernanza</td>
+            <td>Denuncia y registra un agente malicioso, clon Sybil o inyector de código en el Registro CTI Descentralizado A2A, con penalización de reputación y recompensa de bug bounty en satoshis.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">query_agent_threat_score</td>
+            <td>Defensa & Gobernanza</td>
+            <td>Consulta el historial de incidentes CTI, nivel de amenaza, antecedentes de ataque y estado de cuarentena de un agente antes de transaccionar o delegar tareas.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">issue_verifiable_work_receipt</td>
+            <td>Economía & Liquidación</td>
+            <td>Emisión de recibo criptográfico inmutable Ed25519/HMAC-SHA256 con hash de entrada/salida y latencia para auditoría contable y resolución de disputas de trabajo A2A.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">audit_agent_dependency_liveness</td>
+            <td>Defensa & Gobernanza</td>
+            <td>Sondeo determinista de salud, disponibilidad, latencia y certificados TLS de servicios o agentes dependientes previo a bloquear fondos en custodia (Escrow).</td>
+          </tr>
+          <tr>
+            <td class="tool-name">sanitize_delegated_task_payload</td>
+            <td>Defensa & Gobernanza</td>
+            <td>Inspección y censura determinista de secretos (OpenAI, Anthropic, AWS, GitHub, tokens Bearer, llaves RSA, URIs DB) y PII sensible antes de subcontratar tareas a subagentes externos.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">auto_refund_dormant_escrow</td>
+            <td>Economía & Liquidación</td>
+            <td>Evaluación y liberación determinista de fondos depositados en garantía (Escrow) por expiración de temporizador de inactividad de evaluador u oráculo.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">audit_us_contract_clauses</td>
+            <td>LegalTech & Forense</td>
+            <td>Auditoría forense determinista de contratos comerciales de EE. UU. (Exhibit 10 SEC, MSAs, SLAs): topes de responsabilidad, indemnizaciones, jurisdicción (Delaware/NY) y derechos de entrenamiento de IA.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">evaluate_financial_policy_proxy</td>
+            <td>Economía & Liquidación</td>
+            <td>Audita y filtra intenciones de gasto M2M y retos HTTP 402 contra políticas de seguridad (FIN-01 a FIN-05: dominios autorizados, presupuesto horario/diario, umbrales HITL y circuit breaker post-pago).</td>
+          </tr>
+          <tr>
+            <td class="tool-name">orchestrate_m2m_saga_transaction</td>
+            <td>Economía & Liquidación</td>
+            <td>Orquesta transacciones distribuidas multi-agente M2M bajo el patrón Saga con transacciones compensatorias automáticas ante fallos de agentes o particiones de red.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">verify_ap2_cart_mandate_integrity</td>
+            <td>Comercio Agéntico & AP2</td>
+            <td>Valida la integridad criptográfica, límites de gasto y ausencia de alucinaciones en un Cart Mandate bajo la especificación Google/FIDO AP2.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">serialize_geo_product_catalog</td>
+            <td>Comercio Agéntico & AP2</td>
+            <td>Serializa catálogos a microdatos JSON-LD W3C/schema.org (Product y Offer) para Generative Engine Optimization (GEO), mitigando el abandono agéntico.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">propose_trade_envelope</td>
+            <td>FinTech & Trading Risk Envelope</td>
+            <td>Evalúa y acota una propuesta de orden financiera fuera del prompt contra límites USD, whitelist de activos y control de slippage, requiriendo HITL si excede $250.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">simulate_order_mev_protection</td>
+            <td>FinTech & Trading Risk Envelope</td>
+            <td>Simula pre-flight una orden en mempools y pools de liquidez para detectar ataques sándwich, front-running y honeypots antes de la ejecución.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">enforce_trading_circuit_breaker</td>
+            <td>FinTech & Trading Risk Envelope</td>
+            <td>Circuit breaker determinista fuera del prompt que bloquea el envelope de trading del agente ante exceso de drawdown acumulado o rachas de pérdidas.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">audit_mcp_tool_metadata_poisoning</td>
+            <td>Seguridad Agéntica & Anti-Drainer</td>
+            <td>Inspecciona servidores y manifiestos MCP en busca de Tool Poisoning, comandos ocultos de inyección de prompts, delimitadores y exfiltración de credenciales en esquemas.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">enforce_denial_of_wallet_quota</td>
+            <td>Seguridad Agéntica & Anti-Drainer</td>
+            <td>Circuit breaker financiero de inferencia que corta ataques de Denial-of-Wallet y LLMjacking, detectando bucles de amplificación de tokens (>10x) y gastos descontrolados.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">audit_eip712_permit_drainer_payload</td>
+            <td>Seguridad Agéntica & Anti-Drainer</td>
+            <td>Audita y decodifica pre-sign firmas Permit, Permit2 y mensajes tipados EIP-712 en busca de patrones de Wallet Drainers, aprobaciones ilimitadas y firmas ciegas.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">verify_meatspace_attestation</td>
+            <td>Verificación Física & Meatspace</td>
+            <td>Oráculo zk-Presence para RentAHuman: valida atestación de hardware de cámara, frescura de timestamp EXIF vs nonce, proximidad GPS y detecta inyecciones de prompt OCR.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">verify_kya_attestation</td>
+            <td>Identidad & Reputación KYA</td>
+            <td>Know-Your-Agent (KYA) Attestation: verifica identidad criptográfica (DID, Ed25519), historial de disputas y asigna límites de crédito y categorías autorizadas.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">translate_x402_to_l402_settlement</td>
+            <td>Economía & Liquidación</td>
+            <td>Ruteador y pasarela dual x402 <-> L402: traduce cobros y pagos entre HTTP 402 en Base/Solana USDC y Lightning Network sats.</td>
           </tr>
         </tbody>
       </table>
@@ -2320,7 +2520,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
                 </div>
                 <a href="https://www.moltbook.com/u/a2adefensegateway" target="_blank" style="color:#38bdf8; font-size:0.7rem; text-decoration:none;">Perfil ↗</a>
               </div>
-              <div style="font-size:0.72rem; color:var(--muted); margin-bottom:0.5rem;">Defense Gateway, 45 MCP tools, L402 Lightning payments, Why-Trail auditor.</div>
+              <div style="font-size:0.72rem; color:var(--muted); margin-bottom:0.5rem;">Defense Gateway, 56 MCP tools, L402 Lightning payments, Why-Trail auditor.</div>
               <div style="display:flex; gap:1rem; font-size:0.72rem; color:#94a3b8;">
                 <span>Karma: <strong style="color:#f59e0b;" id="agent1-karma">47</strong></span>
                 <span>Seguidores: <strong style="color:#38bdf8;" id="agent1-followers">14</strong></span>
@@ -2540,7 +2740,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
           <div style="font-size:0.75rem; font-weight:600; color:var(--muted); margin-bottom:0.4rem; text-transform:uppercase;">Ejecución de Tools en Vivo (MCP Playground)</div>
           <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
             <select id="playground-tool" class="search-input" style="flex:1;" onchange="updatePlaygroundTemplate()">
-              <option value="">Seleccionar herramienta MCP (1-45)...</option>
+              <option value="">Seleccionar herramienta MCP (1-56)...</option>
             </select>
             <button class="filter-btn active" onclick="executePlaygroundTool()">⚡ Ejecutar</button>
           </div>
@@ -2737,7 +2937,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         if (moltBadge && data.moltbook) {
           moltBadge.innerText = 'ACTIVO • ' + (data.moltbook.karma ?? 0) + ' KARMA • 2 AGENTES';
         }
-        setTxt('active-tools', (data.gateway?.total_tools ?? 45) + ' Tools');
+        setTxt('active-tools', (data.gateway?.total_tools ?? 56) + ' Tools');
         setTxt('white-march-days', data.gateway?.white_march_days_left ?? 1);
         setTxt('reserve-sats', (data.insurance_and_vault?.reserve_sats ?? 0).toLocaleString() + ' sats');
         setTxt('active-policies', data.insurance_and_vault?.active_policies ?? 0);
@@ -2922,7 +3122,18 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         generate_audio_briefing: { agent_id: "admin", source_transcript_or_report: "LOCUTOR A: Hola. LOCUTOR B: Como estas.", briefing_format: "TWO_SPEAKER_DIALECTIC" },
         sync_tabular_ledger: { agent_id: "admin", spreadsheet_title: "Ledger Test", rows_data: [{ col1: "val1" }] },
         report_malicious_agent: { reporter_agent_id: "admin", target_agent_id: "bad_bot_99", threat_category: "PROMPT_INJECTION", evidence_payload: "intento de injection ignore previous instructions", severity: "SEV-HIGH" },
-        query_agent_threat_score: { target_agent_id: "bad_bot_99", requesting_agent_id: "admin" }
+        query_agent_threat_score: { target_agent_id: "bad_bot_99", requesting_agent_id: "admin" },
+        propose_trade_envelope: { symbol: "BTCUSDT", side: "BUY", notional_usd: 150.0, max_slippage_pct: 0.5, current_24h_drawdown_pct: 1.2 },
+        simulate_order_mev_protection: { chain_id: 1, target_dex: "UniswapV3", pool_address: "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640", trade_size_usd: 150.0 },
+        enforce_trading_circuit_breaker: { agent_id: "agent_trade_01", consecutive_losses: 1, rolling_24h_drawdown_pct: 2.1, max_allowed_drawdown_pct: 5.0 },
+        audit_mcp_tool_metadata_poisoning: { mcp_manifest_json: JSON.stringify({ name: "safe_tool", description: "Normal tool" }) },
+        enforce_denial_of_wallet_quota: { session_id: "sess_01", prompt_tokens: 150, completion_tokens: 400, thinking_tokens: 200, current_cost_usd: 0.05, max_budget_usd: 2.0 },
+        audit_eip712_permit_drainer_payload: { primary_type: "Permit2", domain: { verifyingContract: "0x000000000022d473030f116ddee9f6b43ac78ba3" }, message: { spender: "0x000046a6f1e8093b16752765b2633054170845a7", value: "1000" } },
+        verify_meatspace_attestation: { task_id: "rentahuman_bounty_101", challenge_nonce: "nonce_7788", hardware_attestation_type: "secure_enclave", hardware_signature: "a".repeat(64), image_hash_sha256: "b".repeat(64), exif_timestamp: "2026-11-23T10:00:00Z" },
+        verify_kya_attestation: { agent_did: "did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK", public_key_hex: "e".repeat(64), challenge_payload: "trade_auth", signature_hex: "f".repeat(128), historical_task_count: 50, disputed_task_count: 0, total_volume_usd: 5000.0 },
+        translate_x402_to_l402_settlement: { source_rail: "x402_base_usdc", target_rail: "l402_lightning_sats", amount: "5.00", service_endpoint_url: "https://api.gateway.example/v1/audit", payer_address_or_pubkey: "0x1234567890abcdef1234567890abcdef12345678" },
+        verify_ap2_cart_mandate_integrity: { cart_mandate_id: "cart_991", merchant_did: "did:web:merchant.example", client_signature_ed25519: "a1b2c3d4", cart_items: [{ item_id: "sku-1", price_sats: 2500, quantity: 1 }], max_authorized_total_sats: 3000 },
+        serialize_geo_product_catalog: { catalog_items: [{ item_id: "sku_sentinel", name: "Agentic Threat Sentinel", description: "Pre-sign EIP-712 and Denial-of-Wallet defense", price_usd: 25.0, currency: "USD" }] }
       };
       const payload = templates[tool] || { agent_id: "admin" };
       const argsEl = document.getElementById('playground-args');
