@@ -135,7 +135,6 @@ def process_interaction_cycle(api_key: str, dry_run: bool = False) -> int:
 
         if dry_run:
             logger.info(f"[DRY-RUN] Respuesta a enviar a post {post_id}:\n{reply_content}")
-            processed_keys.add(interaction_key)
             handled_count += 1
             continue
 
@@ -166,8 +165,9 @@ def process_interaction_cycle(api_key: str, dry_run: bool = False) -> int:
             logger.error(f"Error procesando interacción en post {post_id}: {exc}")
 
     # Guardar estado actualizado
-    state["processed_post_comment_keys"] = list(processed_keys)[-200:]
-    save_state(state)
+    if not dry_run:
+        state["processed_post_comment_keys"] = list(processed_keys)[-200:]
+        save_state(state)
     logger.info(f"Ciclo completado: {handled_count} interacciones atendidas.")
     return handled_count
 
