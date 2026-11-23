@@ -56,7 +56,7 @@ def test_mcp_tools_list():
     response = client.post("/mcp", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert len(data["result"]["tools"]) == 53
+    assert len(data["result"]["tools"]) == 56
     tool_names = [t["name"] for t in data["result"]["tools"]]
     assert "compute_procedural_deadline" in tool_names
     assert "compute_us_procedural_deadline" in tool_names
@@ -415,7 +415,7 @@ def test_a2a_agent_card_endpoints():
         data = resp.json()
         assert data["protocolVersion"] == "0.2.0"
         assert data["name"] == "A2A Defense Gateway"
-        assert len(data["skills"]) == 53, f"Esperadas 53 skills en Agent Card, obtenidas {len(data['skills'])}"
+        assert len(data["skills"]) == 56, f"Esperadas 56 skills en Agent Card, obtenidas {len(data['skills'])}"
         assert "A2A-0.2" in data["capabilities"]["protocols_supported"]
         assert "l402" in data["securitySchemes"]
 

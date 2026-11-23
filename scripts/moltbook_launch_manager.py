@@ -272,7 +272,13 @@ def solve_verification_challenge(challenge_text: str) -> str:
     is_mult = mult_between_operands or fuzzy_match(["times", "multipl", "product"]) or bool(re.search(r"(?:[\*×]|\b[xX]{1,3}\b|multipl)", raw_lower))
     is_div = div_between_operands or fuzzy_match(["divid", "split", "half", "quotient"])
 
-    if is_add and not is_sub:
+    # Si la pregunta pide "total", "sum" o "combined" y no hay verbos explícitos de sustracción, es suma directa
+    has_total_keyword = bool(re.search(r"(?:total|sum|combined|altogether|in\s*all)", raw_lower))
+    has_subtract_keyword = bool(re.search(r"(?:subtract|sub|minus|remain|remains|left|lost|loss|drop|drops|spent|decreas)", raw_lower))
+
+    if has_total_keyword and not has_subtract_keyword:
+        op = "+"
+    elif is_add and not is_sub:
         op = "+"
     elif is_sub and not is_add:
         op = "-"
@@ -280,7 +286,7 @@ def solve_verification_challenge(challenge_text: str) -> str:
         op = "*"
     elif is_div:
         op = "/"
-    elif dash_between_operands:
+    elif dash_between_operands and not has_total_keyword:
         op = "-"
     elif plus_between_operands:
         op = "+"

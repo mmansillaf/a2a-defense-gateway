@@ -989,6 +989,62 @@ class MoltbookMonetizationMCPServer:
                     "required": ["primary_type", "domain", "message"],
                 },
             },
+            {
+                "name": "verify_meatspace_attestation",
+                "description": "Oráculo zk-Presence para RentAHuman: valida atestación de hardware de cámara, frescura de timestamp EXIF vs nonce, proximidad GPS y detecta inyecciones de prompt OCR.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "task_id": {"type": "string"},
+                        "challenge_nonce": {"type": "string"},
+                        "hardware_attestation_type": {
+                            "type": "string",
+                            "enum": ["secure_enclave", "android_keystore", "tpm_chip", "unverified_software"],
+                            "default": "unverified_software",
+                        },
+                        "hardware_signature": {"type": "string"},
+                        "image_hash_sha256": {"type": "string"},
+                        "exif_timestamp": {"type": "string"},
+                        "gps_coordinates": {"type": "array", "items": {"type": "number"}, "description": "[lat, lon]"},
+                        "target_coordinates": {"type": "array", "items": {"type": "number"}, "description": "[lat, lon]"},
+                        "max_distance_meters": {"type": "number", "default": 250.0},
+                        "ocr_extracted_text": {"type": "string"},
+                    },
+                    "required": ["task_id", "challenge_nonce", "hardware_signature", "image_hash_sha256", "exif_timestamp"],
+                },
+            },
+            {
+                "name": "verify_kya_attestation",
+                "description": "Know-Your-Agent (KYA) Attestation: verifica identidad criptográfica (DID, Ed25519), historial de disputas y asigna límites de crédito y categorías autorizadas.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "agent_did": {"type": "string"},
+                        "public_key_hex": {"type": "string"},
+                        "challenge_payload": {"type": "string"},
+                        "signature_hex": {"type": "string"},
+                        "historical_task_count": {"type": "integer", "default": 0},
+                        "disputed_task_count": {"type": "integer", "default": 0},
+                        "total_volume_usd": {"type": "number", "default": 0.0},
+                    },
+                    "required": ["agent_did", "public_key_hex", "challenge_payload", "signature_hex"],
+                },
+            },
+            {
+                "name": "translate_x402_to_l402_settlement",
+                "description": "Ruteador y pasarela dual x402 <-> L402: traduce cobros y pagos entre HTTP 402 en Base/Solana USDC y Lightning Network sats.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "source_rail": {"type": "string", "enum": ["x402_base_usdc", "x402_solana_usdc", "l402_lightning_sats"]},
+                        "target_rail": {"type": "string", "enum": ["x402_base_usdc", "x402_solana_usdc", "l402_lightning_sats"]},
+                        "amount": {"type": "string", "description": "Monto en unidades del rail de origen"},
+                        "service_endpoint_url": {"type": "string"},
+                        "payer_address_or_pubkey": {"type": "string"},
+                    },
+                    "required": ["source_rail", "target_rail", "amount", "service_endpoint_url", "payer_address_or_pubkey"],
+                },
+            },
         ]
 
     def call_tool(self, name: str, arguments: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
@@ -1545,6 +1601,36 @@ class MoltbookMonetizationMCPServer:
                 payload_eip = EIP712DrainerAuditRequest.model_validate(arguments)
                 res_eip = audit_eip712_permit_drainer_payload(payload_eip)
                 return res_eip.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "verify_meatspace_attestation":
+            try:
+                from meatspace_verifier import MeatspaceAttestationRequest, verify_meatspace_attestation
+
+                payload_meat = MeatspaceAttestationRequest.model_validate(arguments)
+                res_meat = verify_meatspace_attestation(payload_meat)
+                return res_meat.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "verify_kya_attestation":
+            try:
+                from kya_identity_registry import KYAAttestationRequest, verify_kya_attestation
+
+                payload_kya = KYAAttestationRequest.model_validate(arguments)
+                res_kya = verify_kya_attestation(payload_kya)
+                return res_kya.model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name == "translate_x402_to_l402_settlement":
+            try:
+                from payment_rail_router import RailTranslationRequest, translate_x402_to_l402_settlement
+
+                payload_rail = RailTranslationRequest.model_validate(arguments)
+                res_rail = translate_x402_to_l402_settlement(payload_rail)
+                return res_rail.model_dump(mode="json")
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 

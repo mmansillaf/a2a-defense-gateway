@@ -110,5 +110,11 @@ tools:
     description: Financial inference circuit breaker cutting off Denial-of-Wallet and LLMjacking token amplification loops and runaway billing.
   - name: audit_eip712_permit_drainer_payload
     description: Pre-sign inspection of Permit, Permit2, and EIP-712 typed messages to prevent silent wallet drainers, infinite approvals, and blind signatures.
+  - name: verify_meatspace_attestation
+    description: zk-Presence and physical task verification oracle for RentAHuman, validating hardware attestations, EXIF freshness, GPS proximity, and OCR prompt injection detection.
+  - name: verify_kya_attestation
+    description: Know-Your-Agent (KYA) attestation verifying DID identities, cryptographic signatures, dispute history, and assigning risk tiers and credit envelopes.
+  - name: translate_x402_to_l402_settlement
+    description: Dual-rail payment router translating settlement between HTTP 402 micro-transactions (Base/Solana USDC) and Lightning Network L402 satoshis.
 
 

@@ -214,7 +214,7 @@ def test_audit_eip712_known_drainer_and_blind_sign():
 
 def test_mcp_server_dispatches_tools_51_52_53():
     server = MoltbookMonetizationMCPServer()
-    assert len(server.list_tools()) == 53
+    assert len(server.list_tools()) == 56
 
     # Dispatch Tool #51
     res51 = server.call_tool(

@@ -143,7 +143,7 @@ def test_enforce_trading_circuit_breaker():
 
 def test_mcp_server_dispatches_tools_48_49_50():
     server = MoltbookMonetizationMCPServer()
-    assert len(server.list_tools()) == 53
+    assert len(server.list_tools()) == 56
 
     # Test Tool #48 via call_tool
     res48 = server.call_tool(
