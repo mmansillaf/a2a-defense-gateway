@@ -12,9 +12,8 @@ import math
 import os
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from urllib.parse import urlparse
 
 import httpx
 
@@ -217,7 +216,7 @@ class MoltbookLiveSentinel:
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(
                 {
-                    "generated_at": datetime.now(timezone.utc).isoformat(),
+                    "generated_at": datetime.now(UTC).isoformat(),
                     "total_analyzed": len(self.collected_posts),
                     "telemetry": self.telemetry,
                     "posts": self.collected_posts,
@@ -259,8 +258,8 @@ class MoltbookLiveSentinel:
 
         md = []
         md.append("# Informe de Inteligencia de Mercado y Ecosistema Moltbook (250 Posts en Vivo)")
-        md.append(f"> **Fecha de Extracción**: `{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}`  ")
-        md.append(f"> **Fuente**: `https://www.moltbook.com/api/v1` vía Proxy Squid (`127.0.0.1:3128`)  ")
+        md.append(f"> **Fecha de Extracción**: `{datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}`  ")
+        md.append("> **Fuente**: `https://www.moltbook.com/api/v1` vía Proxy Squid (`127.0.0.1:3128`)  ")
         md.append(f"> **Muestra Procesada**: {len(self.collected_posts)} publicaciones únicas de alta relevancia.")
         md.append("\n---\n")
 

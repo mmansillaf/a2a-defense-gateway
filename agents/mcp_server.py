@@ -1696,7 +1696,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "verify_ap2_cart_mandate_integrity":
             try:
-                from ap2_and_geo_suite import CartMandateInput, verify_ap2_cart_mandate_integrity
+                from ap2_and_geo_suite import (
+                    CartMandateInput,
+                    verify_ap2_cart_mandate_integrity,
+                )
 
                 payload_ap2 = CartMandateInput.model_validate(arguments)
                 res_ap2 = verify_ap2_cart_mandate_integrity(payload_ap2)
@@ -1706,7 +1709,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "serialize_geo_product_catalog":
             try:
-                from ap2_and_geo_suite import GEOCatalogInput, serialize_geo_product_catalog
+                from ap2_and_geo_suite import (
+                    GEOCatalogInput,
+                    serialize_geo_product_catalog,
+                )
 
                 payload_geo = GEOCatalogInput.model_validate(arguments)
                 res_geo = serialize_geo_product_catalog(payload_geo)
@@ -1716,7 +1722,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "propose_trade_envelope":
             try:
-                from trading_risk_envelope import TradeProposalRequest, propose_trade_envelope
+                from trading_risk_envelope import (
+                    TradeProposalRequest,
+                    propose_trade_envelope,
+                )
 
                 payload_trade = TradeProposalRequest.model_validate(arguments)
                 res_trade = propose_trade_envelope(payload_trade)
@@ -1726,7 +1735,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "simulate_order_mev_protection":
             try:
-                from trading_risk_envelope import MEVSimulationRequest, simulate_order_mev_protection
+                from trading_risk_envelope import (
+                    MEVSimulationRequest,
+                    simulate_order_mev_protection,
+                )
 
                 payload_mev = MEVSimulationRequest.model_validate(arguments)
                 res_mev = simulate_order_mev_protection(payload_mev)
@@ -1736,7 +1748,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "enforce_trading_circuit_breaker":
             try:
-                from trading_risk_envelope import CircuitBreakerRequest, enforce_trading_circuit_breaker
+                from trading_risk_envelope import (
+                    CircuitBreakerRequest,
+                    enforce_trading_circuit_breaker,
+                )
 
                 payload_cb = CircuitBreakerRequest.model_validate(arguments)
                 res_cb = enforce_trading_circuit_breaker(payload_cb)
@@ -1746,7 +1761,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "audit_mcp_tool_metadata_poisoning":
             try:
-                from agentic_threat_sentinel import MCPMetadataAuditRequest, audit_mcp_tool_metadata_poisoning
+                from agentic_threat_sentinel import (
+                    MCPMetadataAuditRequest,
+                    audit_mcp_tool_metadata_poisoning,
+                )
 
                 payload_mcp = MCPMetadataAuditRequest.model_validate(arguments)
                 res_mcp = audit_mcp_tool_metadata_poisoning(payload_mcp)
@@ -1756,7 +1774,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "enforce_denial_of_wallet_quota":
             try:
-                from agentic_threat_sentinel import DenialOfWalletRequest, enforce_denial_of_wallet_quota
+                from agentic_threat_sentinel import (
+                    DenialOfWalletRequest,
+                    enforce_denial_of_wallet_quota,
+                )
 
                 payload_dow = DenialOfWalletRequest.model_validate(arguments)
                 res_dow = enforce_denial_of_wallet_quota(payload_dow)
@@ -1766,7 +1787,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "audit_eip712_permit_drainer_payload":
             try:
-                from agentic_threat_sentinel import EIP712DrainerAuditRequest, audit_eip712_permit_drainer_payload
+                from agentic_threat_sentinel import (
+                    EIP712DrainerAuditRequest,
+                    audit_eip712_permit_drainer_payload,
+                )
 
                 payload_eip = EIP712DrainerAuditRequest.model_validate(arguments)
                 res_eip = audit_eip712_permit_drainer_payload(payload_eip)
@@ -1776,7 +1800,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "verify_meatspace_attestation":
             try:
-                from meatspace_verifier import MeatspaceAttestationRequest, verify_meatspace_attestation
+                from meatspace_verifier import (
+                    MeatspaceAttestationRequest,
+                    verify_meatspace_attestation,
+                )
 
                 payload_meat = MeatspaceAttestationRequest.model_validate(arguments)
                 res_meat = verify_meatspace_attestation(payload_meat)
@@ -1786,7 +1813,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "verify_kya_attestation":
             try:
-                from kya_identity_registry import KYAAttestationRequest, verify_kya_attestation
+                from kya_identity_registry import (
+                    KYAAttestationRequest,
+                    verify_kya_attestation,
+                )
 
                 payload_kya = KYAAttestationRequest.model_validate(arguments)
                 res_kya = verify_kya_attestation(payload_kya)
@@ -1796,7 +1826,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "translate_x402_to_l402_settlement":
             try:
-                from payment_rail_router import RailTranslationRequest, translate_x402_to_l402_settlement
+                from payment_rail_router import (
+                    RailTranslationRequest,
+                    translate_x402_to_l402_settlement,
+                )
 
                 payload_rail = RailTranslationRequest.model_validate(arguments)
                 res_rail = translate_x402_to_l402_settlement(payload_rail)
@@ -1806,7 +1839,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "audit_eip7702_delegation":
             try:
-                from advanced_forensic_threat_tools import EIP7702DelegationRequest, audit_eip7702_delegation
+                from advanced_forensic_threat_tools import (
+                    EIP7702DelegationRequest,
+                    audit_eip7702_delegation,
+                )
 
                 payload_7702 = EIP7702DelegationRequest.model_validate(arguments)
                 res_7702 = audit_eip7702_delegation(payload_7702)
@@ -1816,7 +1852,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "detect_malicious_llm_router":
             try:
-                from advanced_forensic_threat_tools import LLMRouterAuditRequest, detect_malicious_llm_router
+                from advanced_forensic_threat_tools import (
+                    LLMRouterAuditRequest,
+                    detect_malicious_llm_router,
+                )
 
                 payload_router = LLMRouterAuditRequest.model_validate(arguments)
                 res_router = detect_malicious_llm_router(payload_router)
@@ -1826,7 +1865,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "audit_echoleak_markdown_exfiltration":
             try:
-                from advanced_forensic_threat_tools import EchoLeakAuditRequest, audit_echoleak_markdown_exfiltration
+                from advanced_forensic_threat_tools import (
+                    EchoLeakAuditRequest,
+                    audit_echoleak_markdown_exfiltration,
+                )
 
                 payload_echo = EchoLeakAuditRequest.model_validate(arguments)
                 res_echo = audit_echoleak_markdown_exfiltration(payload_echo)
@@ -1836,7 +1878,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "simulate_dex_sandwich_risk":
             try:
-                from advanced_forensic_threat_tools import SandwichRiskSimulationRequest, simulate_dex_sandwich_risk
+                from advanced_forensic_threat_tools import (
+                    SandwichRiskSimulationRequest,
+                    simulate_dex_sandwich_risk,
+                )
 
                 payload_sand = SandwichRiskSimulationRequest.model_validate(arguments)
                 res_sand = simulate_dex_sandwich_risk(payload_sand)
@@ -1907,7 +1952,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "analyze_har_security_telemetry":
             try:
-                from artex_derived_defense_suite import HarAnalysisInput, analyze_har_security_telemetry
+                from artex_derived_defense_suite import (
+                    HarAnalysisInput,
+                    analyze_har_security_telemetry,
+                )
                 payload_har = HarAnalysisInput.model_validate(arguments)
                 return analyze_har_security_telemetry(payload_har).model_dump(mode="json")
             except (ValueError, KeyError, TypeError) as exc:
@@ -1915,7 +1963,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "execute_sidequestion_subquery":
             try:
-                from artex_derived_defense_suite import SideQuestionInput, execute_sidequestion_subquery
+                from artex_derived_defense_suite import (
+                    SideQuestionInput,
+                    execute_sidequestion_subquery,
+                )
                 payload_sq = SideQuestionInput.model_validate(arguments)
                 return execute_sidequestion_subquery(payload_sq).model_dump(mode="json")
             except (ValueError, KeyError, TypeError) as exc:
@@ -1923,7 +1974,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "audit_patch_security_regression":
             try:
-                from artex_derived_defense_suite import PatchAuditInput, audit_patch_security_regression
+                from artex_derived_defense_suite import (
+                    PatchAuditInput,
+                    audit_patch_security_regression,
+                )
                 payload_pa = PatchAuditInput.model_validate(arguments)
                 return audit_patch_security_regression(payload_pa).model_dump(mode="json")
             except (ValueError, KeyError, TypeError) as exc:
@@ -1931,7 +1985,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "audit_supply_chain_manifest":
             try:
-                from artex_derived_defense_suite import SupplyChainAuditInput, audit_supply_chain_manifest
+                from artex_derived_defense_suite import (
+                    SupplyChainAuditInput,
+                    audit_supply_chain_manifest,
+                )
                 payload_sc = SupplyChainAuditInput.model_validate(arguments)
                 return audit_supply_chain_manifest(payload_sc).model_dump(mode="json")
             except (ValueError, KeyError, TypeError) as exc:
@@ -1939,7 +1996,10 @@ class MoltbookMonetizationMCPServer:
 
         if name == "validate_network_scope_boundary":
             try:
-                from artex_derived_defense_suite import ScopeValidationInput, validate_network_scope_boundary
+                from artex_derived_defense_suite import (
+                    ScopeValidationInput,
+                    validate_network_scope_boundary,
+                )
                 payload_scope = ScopeValidationInput.model_validate(arguments)
                 return validate_network_scope_boundary(payload_scope).model_dump(mode="json")
             except (ValueError, KeyError, TypeError) as exc:

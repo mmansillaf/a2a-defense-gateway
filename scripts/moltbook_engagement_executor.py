@@ -7,7 +7,6 @@ and logs verification evidence.
 
 import json
 import logging
-import re
 import sys
 import time
 from pathlib import Path

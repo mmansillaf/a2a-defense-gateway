@@ -3,8 +3,10 @@
 import json
 from pathlib import Path
 
-import pytest
-from why_trail_indexer import get_why_trail_metrics_summary, init_why_trail_db, sync_ledger_to_sqlite
+from why_trail_indexer import (
+    get_why_trail_metrics_summary,
+    sync_ledger_to_sqlite,
+)
 
 
 def test_init_and_sync_why_trail_sqlite(tmp_path: Path):

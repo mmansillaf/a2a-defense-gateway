@@ -1,8 +1,8 @@
 import pytest
+
 from agents.moltbook_interactive_executor import (
-    MoltbookInteractiveExecutor,
-    ExecutionCommand,
     CommandType,
+    MoltbookInteractiveExecutor,
 )
 
 

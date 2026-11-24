@@ -29,6 +29,7 @@ sys.path.insert(0, str(BASE_DIR))
 sys.path.insert(0, str(AGENTS_DIR))
 
 import nostr_sdk as ns
+
 from agents.mcp_server import MoltbookMonetizationMCPServer
 from agents.skill_security_certifier import SkillSecurityCertifier
 

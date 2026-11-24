@@ -12,7 +12,6 @@ import logging
 import re
 import sys
 import time
-from collections import Counter
 from pathlib import Path
 
 SCRIPTS_DIR = Path(__file__).resolve().parent

@@ -435,7 +435,7 @@ def main():
                 f.write(f"#### Tool {t['tool_id']}: `{t['name']}`\n")
                 f.write(f"- **Propósito**: {t['purpose']}\n")
                 f.write(f"- **Caso de Uso en Producción**: {t['use_case']}\n")
-                f.write(f"- **Configuración / Payload JSON-RPC**:\n")
+                f.write("- **Configuración / Payload JSON-RPC**:\n")
                 f.write("```json\n")
                 f.write(json.dumps({
                     "jsonrpc": "2.0",

@@ -4,7 +4,6 @@ Verifica determinísticamente las 5 herramientas defensivas.
 """
 
 import json
-import pytest
 import sys
 from pathlib import Path
 
@@ -13,17 +12,16 @@ sys.path.insert(0, str(AGENTS_DIR))
 
 from artex_derived_defense_suite import (
     HarAnalysisInput,
-    SideQuestionInput,
     PatchAuditInput,
-    SupplyChainAuditInput,
     ScopeValidationInput,
+    SideQuestionInput,
+    SupplyChainAuditInput,
     analyze_har_security_telemetry,
-    execute_sidequestion_subquery,
     audit_patch_security_regression,
     audit_supply_chain_manifest,
+    execute_sidequestion_subquery,
     validate_network_scope_boundary,
 )
-
 
 # =====================================================================
 # 1. PRUEBAS PARA analyze_har_security_telemetry

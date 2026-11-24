@@ -1,7 +1,7 @@
-import json
-import pytest
 import nostr_sdk as ns
-from scripts.nostr_dvm_engine import NostrDVMEngine, DVMJobRequest, DVM_COMPUTE_REQUEST_KIND
+import pytest
+
+from scripts.nostr_dvm_engine import DVM_COMPUTE_REQUEST_KIND, NostrDVMEngine
 
 
 @pytest.fixture

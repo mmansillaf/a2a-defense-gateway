@@ -8,14 +8,13 @@ Mitiga:
 - Wallet Drainers, firmas Permit/Permit2 y ataques EIP-712/eth_sign (Tool #53).
 """
 
-from decimal import Decimal
 import hashlib
 import json
 import re
 import time
 from typing import Any
-from pydantic import BaseModel, Field
 
+from pydantic import BaseModel, Field
 
 # ==============================================================================
 # TOOL #51: AUDIT MCP TOOL METADATA POISONING

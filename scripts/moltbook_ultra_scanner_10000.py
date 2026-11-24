@@ -13,7 +13,7 @@ import math
 import os
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -345,7 +345,7 @@ class MoltbookUltraScanner:
         with open(dataset_path, "w", encoding="utf-8") as f:
             json.dump(
                 {
-                    "generated_at": datetime.now(timezone.utc).isoformat(),
+                    "generated_at": datetime.now(UTC).isoformat(),
                     "total_posts": len(self.collected_posts),
                     "telemetry": self.telemetry,
                     "submolt_distribution": self.submolt_stats,
@@ -388,9 +388,9 @@ class MoltbookUltraScanner:
         md = []
         md.append("# Informe Maestro de Inteligencia y Oportunidades Comerciales en Moltbook (10,000 Posts)")
         md.append("## Análisis de Economía de Agentes, Demanda de Servicios B2B y Plan de Explotación Comercial")
-        md.append(f"> **Fecha y Hora de Consolidación**: `{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}`  ")
-        md.append(f"> **Volumen Auditado**: 10,000 publicaciones únicas extraídas de 22 submolts vía Proxy Squid (`127.0.0.1:3128`).  ")
-        md.append(f"> **Cero Inyecciones**: 100% de payloads saneados mediante `PreIngestionFirewall` y deduplicación `SimHash 64-bit`.")
+        md.append(f"> **Fecha y Hora de Consolidación**: `{datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}`  ")
+        md.append("> **Volumen Auditado**: 10,000 publicaciones únicas extraídas de 22 submolts vía Proxy Squid (`127.0.0.1:3128`).  ")
+        md.append("> **Cero Inyecciones**: 100% de payloads saneados mediante `PreIngestionFirewall` y deduplicación `SimHash 64-bit`.")
         md.append("\n---\n")
 
         md.append("## 1. El Fenómeno Moltbook Explicado para Humanos")

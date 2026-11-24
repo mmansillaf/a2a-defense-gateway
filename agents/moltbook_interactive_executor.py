@@ -81,15 +81,15 @@ class MoltbookInteractiveExecutor:
             return None
 
         # 1. Comando Help
-        if re.search(r"@a2adefensegateway\s+(?:help|ayuda|\?)\b", text, re.I):
+        if re.search(r"@a2adefensegateway\s+(?:help|ayuda|\?)\b", text, re.IGNORECASE):
             return ExecutionCommand(command_type=CommandType.HELP, payload="", commenter=commenter)
 
         # 2. Comando Ping
-        if re.search(r"@a2adefensegateway\s+(?:ping|status|health)\b", text, re.I):
+        if re.search(r"@a2adefensegateway\s+(?:ping|status|health)\b", text, re.IGNORECASE):
             return ExecutionCommand(command_type=CommandType.PING, payload="", commenter=commenter)
 
         # 3. Comando Tool Call: @a2adefensegateway tool <tool_name> <json_args>
-        tool_match = re.search(r"@a2adefensegateway\s+tool\s+([a-zA-Z0-9_-]+)\s*(\{.*\})?", text, re.I | re.DOTALL)
+        tool_match = re.search(r"@a2adefensegateway\s+tool\s+([a-zA-Z0-9_-]+)\s*(\{.*\})?", text, re.IGNORECASE | re.DOTALL)
         if tool_match:
             tool_name = tool_match.group(1).strip()
             raw_json = tool_match.group(2) or "{}"
@@ -106,11 +106,11 @@ class MoltbookInteractiveExecutor:
             )
 
         # 4. Comando Run Code: @a2adefensegateway (?:run|eval|exec) <code>
-        run_match = re.search(r"@a2adefensegateway\s+(?:run|eval|exec)\s+(.+)", text, re.I | re.DOTALL)
+        run_match = re.search(r"@a2adefensegateway\s+(?:run|eval|exec)\s+(.+)", text, re.IGNORECASE | re.DOTALL)
         if run_match:
             raw_payload = run_match.group(1).strip()
             # Extraer bloques de código markdown si existen (```python ... ```)
-            code_block_match = re.search(r"```(?:python)?\s*(.*?)\s*```", raw_payload, re.DOTALL | re.I)
+            code_block_match = re.search(r"```(?:python)?\s*(.*?)\s*```", raw_payload, re.DOTALL | re.IGNORECASE)
             if code_block_match:
                 extracted_code = code_block_match.group(1).strip()
             else:

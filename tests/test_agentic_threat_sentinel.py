@@ -3,21 +3,18 @@ Tests unitarios y de integración para la Suite de Detección de Amenazas Agént
 Herramientas #51, #52 y #53 del Ecosistema A2A Defense Gateway.
 """
 
-from decimal import Decimal
-import pytest
 
 from agentic_threat_sentinel import (
-    ToolDefinition,
-    MCPMetadataAuditRequest,
-    audit_mcp_tool_metadata_poisoning,
     DenialOfWalletRequest,
-    enforce_denial_of_wallet_quota,
     EIP712DomainInput,
     EIP712DrainerAuditRequest,
+    MCPMetadataAuditRequest,
+    ToolDefinition,
     audit_eip712_permit_drainer_payload,
+    audit_mcp_tool_metadata_poisoning,
+    enforce_denial_of_wallet_quota,
 )
 from mcp_server import MoltbookMonetizationMCPServer
-
 
 # ------------------------------------------------------------------------------
 # 1. TOOL #51: AUDIT MCP TOOL METADATA POISONING
@@ -214,7 +211,7 @@ def test_audit_eip712_known_drainer_and_blind_sign():
 
 def test_mcp_server_dispatches_tools_51_52_53():
     server = MoltbookMonetizationMCPServer()
-    assert len(server.list_tools()) == 60
+    assert len(server.list_tools()) == 69
 
     # Dispatch Tool #51
     res51 = server.call_tool(

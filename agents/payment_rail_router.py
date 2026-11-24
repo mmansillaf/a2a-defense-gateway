@@ -6,7 +6,7 @@ and L402 (Lightning Network Sats) with dynamic exchange rates and routing fees.
 
 from decimal import Decimal
 from enum import Enum
-from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -42,7 +42,7 @@ class RailTranslationResponse(BaseModel):
 
 # Reference rate: 1 BTC = 96,000 USD -> 1 sat = $0.00096 USD -> 1 USD ≈ 1,041.67 sats
 BTC_USD_RATE = Decimal("96000.00")
-SATS_PER_BTC = Decimal("100000000")
+SATS_PER_BTC = Decimal(100000000)
 SATS_PER_USD = SATS_PER_BTC / BTC_USD_RATE  # ≈ 1041.66666667
 
 
@@ -54,7 +54,7 @@ def translate_x402_to_l402_settlement(req: RailTranslationRequest) -> RailTransl
         net_usd = usd_val + fee_usd
 
         if req.target_rail == PaymentRail.L402_LIGHTNING_SATS:
-            target_amount = (net_usd * SATS_PER_USD).quantize(Decimal("1"))
+            target_amount = (net_usd * SATS_PER_USD).quantize(Decimal(1))
             target_unit = "satoshis"
             header_name = "Authorization"
             header_val = f"L402 invoice=lnbc{int(target_amount)}u1p...:macaroon=AgEEbW9sd..."

@@ -4,7 +4,6 @@ Tests unitarios y de integración para las Herramientas #46 y #47:
 - Tool #47: serialize_geo_product_catalog
 """
 
-import pytest
 from ap2_and_geo_suite import (
     CartItem,
     CartMandateInput,
@@ -115,7 +114,7 @@ def test_serialize_geo_product_catalog_success():
 
 def test_mcp_server_dispatches_new_tools():
     server = MoltbookMonetizationMCPServer()
-    assert len(server.list_tools()) == 60
+    assert len(server.list_tools()) == 69
 
     # Test call tool 46
     res_ap2 = server.call_tool(

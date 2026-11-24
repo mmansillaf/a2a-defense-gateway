@@ -13,24 +13,21 @@ Cumple con las directivas maestras:
 - Tablas exhaustivas de especificación técnica de las 56 tools
 """
 
-import os
-import sys
 import textwrap
 from pathlib import Path
+
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.pdfgen import canvas
 from reportlab.platypus import (
-    SimpleDocTemplate,
+    HRFlowable,
     Paragraph,
+    SimpleDocTemplate,
     Spacer,
     Table,
     TableStyle,
-    KeepTogether,
-    Preformatted,
-    HRFlowable,
 )
-from reportlab.pdfgen import canvas
 
 BASE_DIR = Path("/home/usuario/Descargas/pycode/SkillA2A_Moltbook/moltbook_defense_system")
 DOCS_DIR = BASE_DIR / "data" / "artifacts" / "docs"

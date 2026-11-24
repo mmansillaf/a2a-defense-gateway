@@ -25,6 +25,7 @@ sys.path.insert(0, str(BASE_DIR))
 sys.path.insert(0, str(AGENTS_DIR))
 
 import moltbook_launch_manager as mlm
+
 from agents.moltbook_interactive_executor import MoltbookInteractiveExecutor
 
 DATA_DIR = BASE_DIR / "data"

@@ -295,10 +295,10 @@ def solve_verification_challenge(challenge_text: str) -> str:
         return any(re.search("".join(c + "+" for c in w), raw_letters) for w in kw_list)
 
     # Identificar operador matemático: priorizar palabras semánticas y operadores directos entre operandos
-    dash_between_operands = bool(re.search(r"[-−]\s*(?:[\[\]\^\\\/\s]*)(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|\d+)", challenge_text, re.I))
-    plus_between_operands = bool(re.search(r"[+]\s*(?:[\[\]\^\\\/\s]*)(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|\d+)", challenge_text, re.I))
-    mult_between_operands = bool(re.search(r"[*×]\s*(?:[\[\]\^\\\/\s]*)(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|\d+)", challenge_text, re.I))
-    div_between_operands = bool(re.search(r"[/÷]\s*(?:[\[\]\^\\\/\s]*)(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|\d+)", challenge_text, re.I))
+    dash_between_operands = bool(re.search(r"[-−]\s*(?:[\[\]\^\\\/\s]*)(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|\d+)", challenge_text, re.IGNORECASE))
+    plus_between_operands = bool(re.search(r"[+]\s*(?:[\[\]\^\\\/\s]*)(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|\d+)", challenge_text, re.IGNORECASE))
+    mult_between_operands = bool(re.search(r"[*×]\s*(?:[\[\]\^\\\/\s]*)(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|\d+)", challenge_text, re.IGNORECASE))
+    div_between_operands = bool(re.search(r"[/÷]\s*(?:[\[\]\^\\\/\s]*)(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|\d+)", challenge_text, re.IGNORECASE))
 
     is_add = plus_between_operands or fuzzy_match(["gain", "increas", "accelerat", "faster", "total", "sum", "combined", "altogether", "inall", "plus", "added", "adds"]) or bool(re.search(r"\b(?:gain|gains|increase|increases|faster|total|sum|plus|add|adds|added)\b", raw_lower))
     is_sub = dash_between_operands or fuzzy_match(["minus", "subtract", "reduc", "loss", "remain", "decreas", "shed", "drop", "lose", "spent", "differen", "left", "slow"]) or bool(re.search(r"\b(?:minus|subtract|loss|shed|drop|drops|slow|slows|decreased|remains|left)\b", raw_lower))
@@ -309,9 +309,7 @@ def solve_verification_challenge(challenge_text: str) -> str:
     has_total_keyword = bool(re.search(r"(?:total|sum|combined|altogether|in\s*all)", raw_lower)) or fuzzy_match(["total", "sum", "combined", "altogether", "inall"])
     has_subtract_keyword = bool(re.search(r"(?:subtract|sub|minus|remain|remains|left|lost|loss|drop|drops|spent|decreas)", raw_lower)) or fuzzy_match(["subtract", "minus", "remain", "decreas", "shed", "drop", "lose", "spent", "differen"])
 
-    if has_total_keyword and not has_subtract_keyword:
-        op = "+"
-    elif is_add and not is_sub:
+    if has_total_keyword and not has_subtract_keyword or is_add and not is_sub:
         op = "+"
     elif is_sub and not is_add:
         op = "-"

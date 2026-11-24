@@ -18,10 +18,11 @@ if env_file.exists():
                 os.environ.setdefault(k.strip(), v.strip())
 
 from uagents_core.utils.registration import (
-    register_chat_agent,
-    RegistrationRequestCredentials,
     AgentverseRequestError,
+    RegistrationRequestCredentials,
+    register_chat_agent,
 )
+
 
 def main() -> None:
     api_key = os.environ.get("AGENTVERSE_KEY")

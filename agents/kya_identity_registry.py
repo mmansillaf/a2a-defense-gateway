@@ -4,10 +4,8 @@ Validates cryptographic agent identities (DIDs, Ed25519 signatures, ERC-8004 met
 checks dispute history against Why-Trail and computes authorized transaction limits.
 """
 
-import hashlib
-import time
 from enum import Enum
-from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 
 

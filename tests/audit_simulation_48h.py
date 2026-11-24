@@ -3,25 +3,25 @@ Auditoría y Simulación Empírica de Seguridad, Lógica y Cálculos (Últimas 4
 Ecosistema A2A Defense Gateway & Herramientas #46 a #50.
 """
 
-from decimal import Decimal
 import json
 import time
-import requests
-from pydantic import ValidationError
+from decimal import Decimal
 
-from ap2_and_geo_suite import CartItem, CartMandateInput, verify_ap2_cart_mandate_integrity, serialize_geo_product_catalog, GEOCatalogInput, RawProductItem
+import requests
+from ap2_and_geo_suite import (
+    CartItem,
+    CartMandateInput,
+    verify_ap2_cart_mandate_integrity,
+)
 from trading_risk_envelope import (
-    FinancialPolicyEngine,
-    TradeProposalRequest,
-    OrderSide,
-    DEXProtocol,
-    MEVSimulationRequest,
     CircuitBreakerRequest,
+    MEVSimulationRequest,
+    OrderSide,
+    TradeProposalRequest,
+    enforce_trading_circuit_breaker,
     propose_trade_envelope,
     simulate_order_mev_protection,
-    enforce_trading_circuit_breaker,
 )
-from mcp_server import MoltbookMonetizationMCPServer
 
 
 def run_audit_suite():

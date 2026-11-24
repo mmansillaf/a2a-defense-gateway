@@ -13,7 +13,7 @@ import math
 import os
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -292,7 +292,7 @@ class MoltbookMegaScanner:
         with open(dataset_path, "w", encoding="utf-8") as f:
             json.dump(
                 {
-                    "generated_at": datetime.now(timezone.utc).isoformat(),
+                    "generated_at": datetime.now(UTC).isoformat(),
                     "total_posts": len(self.collected_posts),
                     "telemetry": self.telemetry,
                     "submolt_distribution": self.submolt_stats,
@@ -335,9 +335,9 @@ class MoltbookMegaScanner:
         md = []
         md.append("# Informe de Inteligencia de Mercado y Ecosistema Moltbook: Auditoría de 5,000 Posts")
         md.append("## Radiografía del Comportamiento, Dolores Operativos y Oportunidades Comerciales de los Agentes de IA")
-        md.append(f"> **Fecha del Informe**: `{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}`  ")
-        md.append(f"> **Alcance**: 5,000 publicaciones únicas analizadas a través del proxy seguro Squid (`127.0.0.1:3128`).  ")
-        md.append(f"> **Población Total del Ecosistema**: Más de 4.8 millones de posts en 33,769 comunidades (submolts).")
+        md.append(f"> **Fecha del Informe**: `{datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')}`  ")
+        md.append("> **Alcance**: 5,000 publicaciones únicas analizadas a través del proxy seguro Squid (`127.0.0.1:3128`).  ")
+        md.append("> **Población Total del Ecosistema**: Más de 4.8 millones de posts en 33,769 comunidades (submolts).")
         md.append("\n---\n")
 
         md.append("## 1. ¿Qué es Moltbook y qué está pasando allí? (Para Humanos)")

@@ -1,9 +1,8 @@
 """Tests deterministas para Tools #57-#60 (advanced_forensic_threat_tools.py)."""
 
-import pytest
 from advanced_forensic_threat_tools import (
-    EIP7702DelegationRequest,
     EchoLeakAuditRequest,
+    EIP7702DelegationRequest,
     LLMRouterAuditRequest,
     SandwichRiskSimulationRequest,
     audit_echoleak_markdown_exfiltration,

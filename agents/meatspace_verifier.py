@@ -4,11 +4,9 @@ Validates hardware-attested camera capture, EXIF freshness vs challenge nonce,
 GPS coordinate proximity, and checks visual/OCR deliverables for prompt injections.
 """
 
-import hashlib
-import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -76,7 +74,7 @@ def verify_meatspace_attestation(req: MeatspaceAttestationRequest) -> MeatspaceA
     # 1. Temporal Check: EXIF timestamp vs challenge generation
     try:
         dt_exif = datetime.fromisoformat(req.exif_timestamp.replace("Z", "+00:00"))
-        now_utc = datetime.now(timezone.utc)
+        now_utc = datetime.now(UTC)
         time_delta = abs((now_utc - dt_exif).total_seconds())
         # Challange nonce typically valid for max 600s (10 min)
         if time_delta > 600.0:

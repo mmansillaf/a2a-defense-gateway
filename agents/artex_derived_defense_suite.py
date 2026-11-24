@@ -14,11 +14,9 @@ import ipaddress
 import json
 import re
 import socket
-from typing import Any
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field
-
 
 # =====================================================================
 # MODELOS PYDANTIC DE ENTRADA Y SALIDA

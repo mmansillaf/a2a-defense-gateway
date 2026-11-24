@@ -10,7 +10,6 @@ Respeta el cooldown estricto de 160 segundos entre publicaciones y resuelve desa
 
 import json
 import logging
-import os
 import re
 import sys
 import time

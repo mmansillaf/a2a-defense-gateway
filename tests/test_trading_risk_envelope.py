@@ -1,17 +1,17 @@
 from decimal import Decimal
+
 import pytest
-from trading_risk_envelope import (
-    FinancialPolicyEngine,
-    TradeProposalRequest,
-    OrderSide,
-    DEXProtocol,
-    MEVSimulationRequest,
-    CircuitBreakerRequest,
-    propose_trade_envelope,
-    simulate_order_mev_protection,
-    enforce_trading_circuit_breaker,
-)
 from mcp_server import MoltbookMonetizationMCPServer
+from trading_risk_envelope import (
+    CircuitBreakerRequest,
+    DEXProtocol,
+    FinancialPolicyEngine,
+    MEVSimulationRequest,
+    OrderSide,
+    TradeProposalRequest,
+    enforce_trading_circuit_breaker,
+    simulate_order_mev_protection,
+)
 
 
 def test_financial_policy_engine_approval():
@@ -143,7 +143,7 @@ def test_enforce_trading_circuit_breaker():
 
 def test_mcp_server_dispatches_tools_48_49_50():
     server = MoltbookMonetizationMCPServer()
-    assert len(server.list_tools()) == 60
+    assert len(server.list_tools()) == 69
 
     # Test Tool #48 via call_tool
     res48 = server.call_tool(

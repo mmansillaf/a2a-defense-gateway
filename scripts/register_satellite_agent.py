@@ -40,7 +40,7 @@ def register_satellite(name: str = "a2athreatintel", desc: str = "") -> dict:
         with open(SATELLITE_CREDS_FILE, "w") as f:
             json.dump(agent_data, f, indent=2)
         
-        logger.info(f"[SUCCESS] Agente satélite registrado!")
+        logger.info("[SUCCESS] Agente satélite registrado!")
         logger.info(f"API Key guardada en: {SATELLITE_CREDS_FILE}")
         logger.info(f"CLAIM URL (Hacer clic para reclamar): {agent_data.get('claim_url')}")
         return agent_data

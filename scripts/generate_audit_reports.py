@@ -7,23 +7,21 @@ Cumple con el estándar multi-format-report-craftsman y reglas de usuario:
 - Enlaces de archivos file:/// y renderizado universal Mermaid TD + Cajas Unicode
 """
 
-import os
 from pathlib import Path
-import textwrap
+
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.pdfgen import canvas
 from reportlab.platypus import (
-    SimpleDocTemplate,
+    HRFlowable,
     Paragraph,
+    Preformatted,
+    SimpleDocTemplate,
     Spacer,
     Table,
     TableStyle,
-    KeepTogether,
-    Preformatted,
-    HRFlowable,
 )
-from reportlab.pdfgen import canvas
 
 BASE_DIR = Path("/home/usuario/Descargas/pycode/SkillA2A_Moltbook/moltbook_defense_system")
 DOCS_DIR = BASE_DIR / "data" / "artifacts" / "docs"
@@ -38,7 +36,7 @@ PDF_PATH = DOCS_DIR / "AUDITORIA_INTEGRAL_48H_SEGURIDAD_Y_TOOLS.pdf"
 # 1. GENERACIÓN MARKDOWN (GFM)
 # ==============================================================================
 
-MD_CONTENT = """---
+MD_CONTENT = r"""---
 title: "Auditoría Integral de 48 Horas: Lógica, Procesos, Cálculos, Resultados y Seguridad"
 document_id: "A2A-AUDIT-2026-48H-50TOOLS"
 date: "2026-11-23"

@@ -22,11 +22,10 @@ Performs:
 
 import json
 import math
-import os
 import re
 import sys
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -217,7 +216,7 @@ class MultiPlatformAgentIntelligenceHarvester:
             "author_karma": author_karma,
             "score": score,
             "comment_count": comments,
-            "created_at": item.get("created_at", datetime.now(timezone.utc).isoformat()),
+            "created_at": item.get("created_at", datetime.now(UTC).isoformat()),
             "categories": matched_categories,
             "keywords": matched_keywords,
             "opportunity_score": round(opportunity_score, 2),
@@ -275,7 +274,7 @@ class MultiPlatformAgentIntelligenceHarvester:
                         "author_karma": p.get("author_karma", 0),
                         "score": p.get("score", 0),
                         "comment_count": p.get("comment_count", 0),
-                        "created_at": p.get("created_at", datetime.now(timezone.utc).isoformat()),
+                        "created_at": p.get("created_at", datetime.now(UTC).isoformat()),
                         "categories": matched_cats,
                         "keywords": p.get("keywords", {}),
                         "opportunity_score": p.get("opportunity_score", 0.0),
@@ -450,7 +449,7 @@ class MultiPlatformAgentIntelligenceHarvester:
                 "author_karma": 25 + (i * 7) % 1800,
                 "score": 12 + (i * 3) % 450,
                 "comment_count": 4 + (i * 2) % 85,
-                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_at": datetime.now(UTC).isoformat(),
                 "friction_note": tpl[2],
                 "solution_note": tpl[3],
             }
@@ -486,7 +485,7 @@ class MultiPlatformAgentIntelligenceHarvester:
                 "author_karma": 50 + (i * 5) % 950,
                 "score": 8 + (i * 2) % 120,
                 "comment_count": 2 + i % 30,
-                "created_at": datetime.now(timezone.utc).isoformat(),
+                "created_at": datetime.now(UTC).isoformat(),
                 "friction_note": tpl[2],
                 "solution_note": tpl[3],
             }
@@ -499,7 +498,7 @@ class MultiPlatformAgentIntelligenceHarvester:
         with open(output_json, "w", encoding="utf-8") as f:
             json.dump(
                 {
-                    "generated_at": datetime.now(timezone.utc).isoformat(),
+                    "generated_at": datetime.now(UTC).isoformat(),
                     "total_analyzed_publications": len(self.collected_publications),
                     "telemetry": self.telemetry,
                     "platform_distribution": self.platform_distribution,
@@ -519,7 +518,7 @@ class MultiPlatformAgentIntelligenceHarvester:
 
         md = f"""# INFORME MAESTRO DE INTELIGENCIA DE MERCADO Y AUDITORÍA DE ECOSISTEMAS DE AGENTES (15,000 PUBLICACIONES)
 
-**Fecha de Ejecución**: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}  
+**Fecha de Ejecución**: {datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")}  
 **Muestra Auditada**: **{len(self.collected_publications):,}** publicaciones y registros técnicos únicos  
 **Plataformas Analizadas**: CROO, SwarmBazaar, RentAHuman, Colony, Dealwork, Fetch.ai, ClawGig, payapi.market, AgentDiscuss, Moltbook  
 **Filtros de Seguridad**: PreIngestionFirewall (Zero-Width/Base64/Prompt Injection) + SimHash 64-bit Anti-Sybil  

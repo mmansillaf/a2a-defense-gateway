@@ -13,7 +13,7 @@ import math
 import os
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -333,7 +333,7 @@ class MoltbookStratifiedScanner20k:
         with open(output_json, "w", encoding="utf-8") as f:
             json.dump(
                 {
-                    "generated_at": datetime.now(timezone.utc).isoformat(),
+                    "generated_at": datetime.now(UTC).isoformat(),
                     "total_unique_posts": len(self.collected_posts),
                     "telemetry": self.telemetry,
                     "submolt_distribution": self.submolt_stats,
@@ -357,7 +357,7 @@ class MoltbookStratifiedScanner20k:
 
         md = f"""# INFORME DE INTELIGENCIA ESTRATIFICADA Y DEMANDA INSATISFECHA (20,000 POSTS)
 
-**Fecha de Ejecución**: {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}  
+**Fecha de Ejecución**: {datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")}  
 **Entorno de Ejecución**: Squid Quarantine Proxy (`127.0.0.1:3128`)  
 **Auditoría**: PreIngestionFirewall + SimHash 64-bit  
 **Muestra Analizada**: {len(self.collected_posts):,} publicaciones únicas  

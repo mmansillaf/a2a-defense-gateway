@@ -7,7 +7,6 @@ Cubre Tools #46-#53 del Gateway de Producción en https://a2a.vilmamonroy.com.
 
 import json
 import logging
-import os
 import re
 import sys
 import time

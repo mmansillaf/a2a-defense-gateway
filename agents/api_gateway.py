@@ -671,7 +671,10 @@ async def health_check():
 async def get_metrics_summary():
     """Retorna métricas consolidadas en tiempo real desde el índice SQLite Why-Trail."""
     try:
-        from why_trail_indexer import get_why_trail_metrics_summary, sync_ledger_to_sqlite
+        from why_trail_indexer import (
+            get_why_trail_metrics_summary,
+            sync_ledger_to_sqlite,
+        )
 
         try:
             sync_ledger_to_sqlite()
