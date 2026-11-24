@@ -382,8 +382,13 @@ def test_financial_policy_gateway_endpoints():
 def test_dashboard_and_login_inline_javascript_syntax():
     """Valida determinísticamente que el JavaScript embebido en DASHBOARD_HTML y LOGIN_HTML no contenga SyntaxError."""
     import os
+    import shutil
     import subprocess
     import tempfile
+
+    if shutil.which("node") is None:
+        pytest.skip("NodeJS no está instalado en este host; validación sintáctica JS omitida.")
+
     try:
         from api_gateway import DASHBOARD_HTML, LOGIN_HTML
     except ImportError:
