@@ -417,6 +417,7 @@ async def audit_http_interaction_middleware(request: Request, call_next):
                 "path": path,
                 "status_code": response.status_code,
                 "duration_ms": duration_ms,
+                "execution_latency_ms": duration_ms,
             },
             actor_agent_id=agent_id,
             metadata={
@@ -1187,8 +1188,8 @@ async def get_mcp_server_metadata():
     return json.dumps({
         "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
         "name": "com.vilmamonroy.a2a/defense-gateway",
-        "description": "A2A Defense & Monetization Gateway: L402 Lightning payments, M2M Financial Policy Proxy (FIN-01..05), Sagas, US/Peruvian LegalTech, and 69 MCP production tools.",
-        "version": "1.2.0",
+        "description": f"A2A Defense & Monetization Gateway: L402 Lightning payments, M2M Financial Policy Proxy (FIN-01..05), Binance Agentic Firewall, LATAM P2P/Tax, and {len(server.list_tools())} MCP production tools.",
+        "version": "1.3.0",
         "homepage": "https://a2a.vilmamonroy.com",
         "remotes": [{"type": "streamable-http", "url": "https://a2a.vilmamonroy.com/mcp"}],
         "tools_count": len(server.list_tools())

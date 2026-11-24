@@ -70,7 +70,7 @@ class DeterministicHookEngine:
             )
 
         # Detección básica de evasión / prompt injection indirecto (excluyendo análisis forense y CTI)
-        if tool_name not in ("report_malicious_agent", "certify_skill_safety"):
+        if tool_name not in ("report_malicious_agent", "certify_skill_safety", "sanitize_onchain_metadata_injection"):
             for k, v in arguments.items():
                 if isinstance(v, str):
                     lower_v = v.lower()

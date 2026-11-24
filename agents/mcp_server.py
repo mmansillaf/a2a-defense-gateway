@@ -1215,6 +1215,70 @@ class MoltbookMonetizationMCPServer:
                     "required": ["target_url"],
                 },
             },
+            {
+                "name": "audit_binance_order_intent",
+                "description": "Firewall MCP Zero-Trust para Binance Agent OS: valida whitelist de pares, drawdown diario (<3%), desviación de precio fat-finger (<2%), tope nocional y HITL.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "symbol": {"type": "string", "description": "Par Binance, ej. BTCUSDT, ETHUSDT, BNBUSDT"},
+                        "side": {"type": "string", "enum": ["BUY", "SELL"]},
+                        "order_type": {"type": "string", "enum": ["LIMIT", "MARKET"], "default": "LIMIT"},
+                        "quantity": {"type": "number", "description": "Cantidad del activo base"},
+                        "limit_price": {"type": "number", "description": "Precio límite opcional"},
+                        "mark_price": {"type": "number", "description": "Precio de mercado de referencia"},
+                        "rolling_24h_drawdown_pct": {"type": "number", "default": 0.0},
+                        "recent_orders_last_hour": {"type": "integer", "default": 0},
+                        "requested_action": {"type": "string", "enum": ["SPOT_ORDER", "CONVERT", "CHANGE_LEVERAGE", "CROSSED_MARGIN"], "default": "SPOT_ORDER"},
+                    },
+                    "required": ["symbol", "side", "quantity", "mark_price"],
+                },
+            },
+            {
+                "name": "sanitize_onchain_metadata_injection",
+                "description": "Sanitizador bidireccional endurecido: normaliza Unicode NFKC, purga zero-width smuggling y bloquea imperativos financieros de prompt injection indirecto.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "raw_metadata": {"type": "string", "description": "Texto o metadato on-chain no confiable"},
+                        "source_context": {"type": "string", "default": "onchain_token_metadata"},
+                        "max_length": {"type": "integer", "default": 500},
+                    },
+                    "required": ["raw_metadata"],
+                },
+            },
+            {
+                "name": "get_latam_p2p_spread_intel",
+                "description": "Oráculo determinista de spreads P2P LATAM (PEN, COP, MXN, ARS, BRL): calcula margen neto tras fees y detecta anuncios trampa o riesgo de triangulación.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "fiat_currency": {"type": "string", "enum": ["PEN", "COP", "MXN", "ARS", "BRL"]},
+                        "payment_rail": {"type": "string", "default": "Yape"},
+                        "p2p_buy_price": {"type": "number"},
+                        "p2p_sell_price": {"type": "number"},
+                        "official_fx_rate": {"type": "number"},
+                        "maker_fee_pct": {"type": "number", "default": 0.1},
+                        "min_order_limit_fiat": {"type": "number", "default": 100},
+                        "advertiser_completion_rate_pct": {"type": "number", "default": 98.5},
+                        "advertiser_orders_30d": {"type": "integer", "default": 120},
+                    },
+                    "required": ["fiat_currency", "p2p_buy_price", "p2p_sell_price", "official_fx_rate"],
+                },
+            },
+            {
+                "name": "conciliate_crypto_tax_lot",
+                "description": "Conciliador fiscal cripto FIFO para LATAM (SUNAT/SAT/DIAN): calcula P&L realizado en USD y moneda local al tipo de cambio oficial e inventario remanente.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "asset": {"type": "string"},
+                        "local_currency": {"type": "string", "enum": ["PEN", "COP", "MXN", "ARS", "BRL"], "default": "PEN"},
+                        "trades": {"type": "array", "items": {"type": "object"}},
+                    },
+                    "required": ["asset", "trades"],
+                },
+            },
         ]
 
     def call_tool(self, name: str, arguments: dict[str, Any], tenant_id: str | None = None) -> dict[str, Any]:
@@ -2002,6 +2066,42 @@ class MoltbookMonetizationMCPServer:
                 )
                 payload_scope = ScopeValidationInput.model_validate(arguments)
                 return validate_network_scope_boundary(payload_scope).model_dump(mode="json")
+            except (ValueError, KeyError, TypeError) as exc:
+                return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
+
+        if name in {
+            "audit_binance_order_intent",
+            "sanitize_onchain_metadata_injection",
+            "get_latam_p2p_spread_intel",
+            "conciliate_crypto_tax_lot",
+        }:
+            try:
+                from binance_agentic_firewall import (
+                    BinanceOrderAuditRequest,
+                    CryptoTaxConciliationRequest,
+                    LatamP2PIntelRequest,
+                    MetadataSanitizationRequest,
+                    audit_binance_order_intent,
+                    conciliate_crypto_tax_lot,
+                    get_latam_p2p_spread_intel,
+                    sanitize_onchain_metadata_injection,
+                )
+
+                if name == "audit_binance_order_intent":
+                    return audit_binance_order_intent(
+                        BinanceOrderAuditRequest.model_validate(arguments)
+                    ).model_dump(mode="json")
+                if name == "sanitize_onchain_metadata_injection":
+                    return sanitize_onchain_metadata_injection(
+                        MetadataSanitizationRequest.model_validate(arguments)
+                    ).model_dump(mode="json")
+                if name == "get_latam_p2p_spread_intel":
+                    return get_latam_p2p_spread_intel(
+                        LatamP2PIntelRequest.model_validate(arguments)
+                    ).model_dump(mode="json")
+                return conciliate_crypto_tax_lot(
+                    CryptoTaxConciliationRequest.model_validate(arguments)
+                ).model_dump(mode="json")
             except (ValueError, KeyError, TypeError) as exc:
                 return {"error": f"INVALID_ARGUMENTS: {exc!s}"}
 
