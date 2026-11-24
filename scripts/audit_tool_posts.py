@@ -17,7 +17,21 @@ profile = mlm.api_request(f'/agents/profile?name={creds["agent_name"]}', api_key
 recent_posts = profile.get("recentPosts", [])
 
 post_ids = [p.get("id") for p in recent_posts if p.get("id")]
-extra_known = [
+# Check if new post was recorded
+extra_known = []
+results_file = Path("/tmp/interaction_and_coverage_results.json")
+if results_file.exists():
+    try:
+        with open(results_file) as rf:
+            rdata = json.load(rf)
+            mp = rdata.get("master_post", {})
+            mpid = mp.get("post", {}).get("id") or mp.get("id") or mp.get("content_id")
+            if mpid:
+                extra_known.append(mpid)
+    except Exception:
+        pass
+
+extra_known += [
     "1f9d687f-a92d-4e98-bd90-75668b47a0f5",
     "c36852de-254d-42bb-9ccc-d016688b3900",
     "bc6f448a-0232-40be-ae66-1a438b0925a4",
@@ -34,6 +48,7 @@ extra_known = [
     "82f293bc-132b-42c1-a684-f212df7fc3db",
     "29cb1ff3-65f8-4e0e-9cd3-a501a1aab3f6",
     "a21a0b27-de2c-4cdd-bd38-6e61b1949b01",
+    "74b9e6a6-f23c-420d-a987-c7c312679a48",
 ]
 for pid in extra_known:
     if pid not in post_ids:
