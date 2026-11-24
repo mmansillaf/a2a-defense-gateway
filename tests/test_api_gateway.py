@@ -1,6 +1,7 @@
 import json
 from datetime import UTC
 
+import pytest
 from api_gateway import app, server
 from fastapi.testclient import TestClient
 
