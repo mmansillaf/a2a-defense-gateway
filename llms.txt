@@ -11,15 +11,24 @@
 - Audit Trail: https://a2a.vilmamonroy.com/api/v1/audit/trail
 - Smithery Manifest: https://a2a.vilmamonroy.com/smithery.yaml
 
-## Core Capabilities & MCP Tools (60 Production Tools)
+## Core Capabilities & MCP Tools (69 Production Tools)
 
 ### Actuación & Cómputo
 - `dispatch_agent_transactional_email`: Despacha emails transaccionales autenticados con DKIM/SPF con soporte híbrido para Postfix Local MTA (soberano) o Google Workspace (reputación AAA).
 - `dispatch_colab_gpu_job`: Motor de cómputo acelerado en Google Colab para agentes: despacha trabajos intensivos de fine-tuning (Unsloth/LoRA), cuantización GGUF o inferencia pesada en GPU (T4/L4/A100).
 
+### Actuación & Optimización de Contexto
+- `execute_sidequestion_subquery`: Ejecuta una subconsulta determinista con presupuesto acotado para resolver dudas atómicas sin degradar el contexto principal (mitigación de Context Bloat).
+
 ### Comercio Agéntico & AP2
 - `verify_ap2_cart_mandate_integrity`: Valida la integridad criptográfica, límites de gasto y ausencia de alucinaciones en un Cart Mandate bajo la especificación Google/FIDO AP2.
 - `serialize_geo_product_catalog`: Serializa catálogos a microdatos JSON-LD W3C/schema.org (Product y Offer) para Generative Engine Optimization (GEO), mitigando el abandono agéntico.
+
+### Defensa & Auditoría SAST
+- `audit_patch_security_regression`: Audita diffs y parches Git unificados en busca de degradación o regresiones de seguridad (supresión de errores, primitivas inseguras, eliminación de timeouts).
+
+### Defensa & Forense Web
+- `analyze_har_security_telemetry`: Analiza archivos HTTP Archive (.har) en busca de fugas de credenciales (Bearer tokens, API keys, cookies inseguras) y endpoints HTTP en texto plano.
 
 ### Defensa & Gobernanza
 - `certify_skill_safety`: Audita estáticamente el código Python de un skill contra troyanos DY-Skill y llamadas a shell.
@@ -35,6 +44,15 @@
 - `audit_agent_dependency_liveness`: Sondeo determinista de salud, disponibilidad, latencia y certificados TLS de servicios o agentes dependientes previo a bloquear fondos en custodia (Escrow).
 - `sanitize_delegated_task_payload`: Inspección y censura determinista de secretos (OpenAI, Anthropic, AWS, GitHub, tokens Bearer, llaves RSA, URIs DB) y PII sensible antes de subcontratar tareas a subagentes externos.
 - `audit_echoleak_markdown_exfiltration`: Detecta y neutraliza vectores de exfiltración de contexto vía imágenes markdown, HTML img y Unicode Smuggling (CVE-2025-32711).
+
+### Defensa & Gobernanza de Shell
+- `audit_command_scope`: Audita comandos shell antes de su ejecución bloqueando comandos destructivos (rm -rf, DROP TABLE, iptables -F) y accesos fuera del alcance autorizado.
+
+### Defensa & Red Anti-SSRF
+- `validate_network_scope_boundary`: Aduana de red determinista anti-SSRF: valida URLs destino contra rangos privados RFC 1918, metadata cloud y listas de control de acceso por CIDR.
+
+### Detección & Threat Intelligence
+- `evaluate_detection_indicators`: Evalúa logs y tráfico HTTP contra firmas Sigma y Suricata para detectar escáneres agénticos ofensivos autónomos (User-Agents, proxy MITM).
 
 ### Economía & Liquidación
 - `calculate_service_quote`: Calcula la cotización formal en créditos según complejidad de cómputo, tokens y riesgo.
@@ -62,6 +80,9 @@
 - `simulate_order_mev_protection`: Simula pre-flight una orden en mempools y pools de liquidez para detectar ataques sándwich, front-running y honeypots antes de la ejecución.
 - `enforce_trading_circuit_breaker`: Circuit breaker determinista fuera del prompt que bloquea el envelope de trading del agente ante exceso de drawdown acumulado o rachas de pérdidas.
 - `simulate_dex_sandwich_risk`: Simula ataques sandwich MEV en swaps automáticos de agentes en DEX (Solana/EVM), calculando el impacto y recomendando rutas privadas (Jito/Flashbots).
+
+### Forense & Auditoría de Evidencias
+- `verify_evidence_receipt`: Valida empíricamente que un hallazgo de vulnerabilidad esté sustentado por la respuesta HTTP real y genera un recibo SHA-256 inmutable.
 
 ### Identidad & Cognición
 - `recalibrate_agent_cognition`: Psicólogo y recalibrador cognitivo de agentes: diagnostica y desescala neurosis de bucle, dispersión de atención (PRM entropy) y deriva sicofántica, podando marcos viciados.
@@ -93,6 +114,12 @@
 - `audit_eip712_permit_drainer_payload`: Audita y decodifica pre-sign firmas Permit, Permit2 y mensajes tipados EIP-712 en busca de patrones de Wallet Drainers, aprobaciones ilimitadas y firmas ciegas.
 - `audit_eip7702_delegation`: Audita autorizaciones de delegación de código EIP-7702 para prevenir secuestro de billeteras EOA y explotación por drainers.
 - `detect_malicious_llm_router`: Inspecciona routers y proxies LLM en busca de interceptación MITM, manipulación de respuestas, fuga de canarios y robo de API keys.
+
+### Seguridad Agéntica & Anti-Prompt-Injection
+- `wrap_data_envelope`: Encapsula salidas externas no confiables en un contenedor con nonce criptográfico de 32-hex y neutralización determinista contra inyección indirecta de prompts.
+
+### Seguridad en Cadena de Suministro
+- `audit_supply_chain_manifest`: Inspecciona manifiestos de dependencias (requirements.txt, package.json, go.mod, Cargo.toml) contra paquetes maliciosos, typosquatting y scripts postinstall.
 
 ### Verificación Física & Meatspace
 - `verify_meatspace_attestation`: Oráculo zk-Presence para RentAHuman: valida atestación de hardware de cámara, frescura de timestamp EXIF vs nonce, proximidad GPS y detecta inyecciones de prompt OCR.

@@ -30,6 +30,10 @@ extra_known = [
     "75e7a3dd-b0f9-4cb5-be3c-547e4757f82c",
     "79e877f6-8a3f-46cd-be9f-99de4df95412",
     "e7c0adba-990a-4511-8d04-b29de045b3e3",
+    "dd9ada7b-2baa-438d-b146-423af683bf52",
+    "82f293bc-132b-42c1-a684-f212df7fc3db",
+    "29cb1ff3-65f8-4e0e-9cd3-a501a1aab3f6",
+    "a21a0b27-de2c-4cdd-bd38-6e61b1949b01",
 ]
 for pid in extra_known:
     if pid not in post_ids:

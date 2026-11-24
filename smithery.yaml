@@ -124,5 +124,21 @@ tools:
     description: Scans and neutralizes EchoLeak (CVE-2025-32711) zero-click markdown image tags and unicode smuggling exfiltrating conversation context.
   - name: simulate_dex_sandwich_risk
     description: Simulates MEV sandwich attacks on autonomous agent DEX swaps, calculates price impact, and recommends private RPC bundle routing.
-
-
+  - name: wrap_data_envelope
+    description: Encapsulates untrusted external content into a code-owned crypto-nonce data envelope, neutralizing delimiter escaping.
+  - name: audit_command_scope
+    description: Audits a shell command against destructive patterns (rm -rf, DROP TABLE, iptables) and engagement scope limits.
+  - name: evaluate_detection_indicators
+    description: Matches logs, URLs, or network traffic against ARTEX Sigma and Suricata autonomous agent detection signatures.
+  - name: verify_evidence_receipt
+    description: Validates that a vulnerability claim (e.g. BOLA/IDOR) is supported by empirical HTTP request/response traces and issues a SHA-256 receipt.
+  - name: analyze_har_security_telemetry
+    description: Parses HTTP Archive (.har) logs for leaked credentials, API keys, and unencrypted HTTP endpoints.
+  - name: execute_sidequestion_subquery
+    description: Executes an isolated atomic subquery with hard token budgeting to prevent context bloat.
+  - name: audit_patch_security_regression
+    description: SAST git diff auditor detecting silent error suppression, command injection primitives, and dropped timeouts.
+  - name: audit_supply_chain_manifest
+    description: Dependency manifest scanner detecting typosquatting packages and suspicious postinstall hooks.
+  - name: validate_network_scope_boundary
+    description: Anti-SSRF network customs validating target URLs against loopback, private ranges, and CIDR rules.

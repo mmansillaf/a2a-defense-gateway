@@ -560,7 +560,7 @@ async def a2a_agent_card_endpoint():
         content={
             "protocolVersion": "0.2.0",
             "name": "A2A Defense Gateway",
-            "description": "Official Agent-to-Agent Defense & Monetization Gateway. 60 production MCP tools, L402 Lightning payments, Why-Trail causal ledger, and ClawHavoc AST certifier.",
+            "description": "Official Agent-to-Agent Defense & Monetization Gateway. 64 production MCP tools, L402 Lightning payments, Why-Trail causal ledger, and ClawHavoc AST certifier.",
             "url": "https://a2a.vilmamonroy.com",
             "version": "1.0.0",
             "capabilities": {
@@ -896,7 +896,7 @@ LLMS_TXT_CONTENT = """# A2A Defense and Monetization API Gateway
 - Audit Trail: https://a2a.vilmamonroy.com/api/v1/audit/trail
 - Smithery Manifest: https://a2a.vilmamonroy.com/smithery.yaml
 
-## Core Capabilities & MCP Tools (56 Production Tools)
+## Core Capabilities & MCP Tools (69 Production Tools)
 
 ### Actuación & Cómputo
 - `execute_sandboxed_computation`: Deterministic, isolated Python runtime with strict memory and CPU limits.
@@ -974,6 +974,17 @@ LLMS_TXT_CONTENT = """# A2A Defense and Monetization API Gateway
 - `audit_mcp_tool_metadata_poisoning`: Inspects MCP server manifests and schemas for prompt injection, delimiter hijacking, zero-width smuggling, and tool poisoning.
 - `enforce_denial_of_wallet_quota`: Financial inference circuit breaker cutting off Denial-of-Wallet and LLMjacking token amplification loops and runaway billing.
 - `audit_eip712_permit_drainer_payload`: Pre-sign inspection of Permit, Permit2, and EIP-712 typed messages to prevent silent wallet drainers, infinite approvals, and blind signatures.
+- `audit_eip7702_delegation`: Pre-sign audit of EIP-7702 delegation authorization tuples and contract bytecode to prevent EOA account hijacking and drainer exploits.
+- `detect_malicious_llm_router`: Inspects LLM routers and proxies for MITM tampering, canary token exfiltration, injected prompt instructions, and API key theft.
+- `wrap_data_envelope`: Code-owned crypto-nonce data envelope wrapping untrusted external content and neutralizing delimiter escaping to prevent indirect prompt injection.
+- `audit_command_scope`: PreToolUse execution hook intercepting destructive shell/database commands and enforcing strict CIDR and wildcard scope boundaries.
+- `evaluate_detection_indicators`: SIEM/EDR detection intelligence engine evaluating access logs and HTTP payloads against Sigma and Suricata autonomous agent scanning signatures.
+- `verify_evidence_receipt`: Immutable evidence receipt ledger validating vulnerability claims against raw HTTP request/response proofs with SHA-256 hashes.
+- `analyze_har_security_telemetry`: Deep forensic parsing of HTTP Archive (.har) logs for leaked Bearer tokens, API keys, and insecure HTTP endpoints.
+- `execute_sidequestion_subquery`: Context-isolated deterministic subquery executor mitigating token bloat and drift in long-running agent loops.
+- `audit_patch_security_regression`: Pre-merge SAST git diff auditor catching silent error suppression, unsafe execution, and weakened timeouts.
+- `audit_supply_chain_manifest`: Dependency manifest scanner detecting typosquatting, unpinned git URLs, and suspicious lifecycle scripts.
+- `validate_network_scope_boundary`: Deterministic anti-SSRF network customs barrier blocking loopback, private RFC 1918, and cloud metadata IPs.
 
 ### Verificación Física & Meatspace
 - `verify_meatspace_attestation`: zk-Presence and physical task verification oracle for RentAHuman, validating hardware attestations, EXIF freshness, GPS proximity, and OCR prompt injection detection.
@@ -1105,6 +1116,32 @@ tools:
     description: Know-Your-Agent (KYA) attestation verifying DID identities, cryptographic signatures, dispute history, and assigning risk tiers and credit envelopes.
   - name: translate_x402_to_l402_settlement
     description: Dual-rail payment router translating settlement between HTTP 402 micro-transactions (Base/Solana USDC) and Lightning Network L402 satoshis.
+  - name: audit_eip7702_delegation
+    description: Pre-sign audit of EIP-7702 delegation authorization tuples and contract bytecode to prevent EOA account hijacking and drainer exploits.
+  - name: detect_malicious_llm_router
+    description: Inspects LLM routers and proxies for MITM tampering, canary token exfiltration, injected prompt instructions, and API key theft.
+  - name: audit_echoleak_markdown_exfiltration
+    description: Scans and neutralizes EchoLeak (CVE-2025-32711) zero-click markdown image tags and unicode smuggling exfiltrating conversation context.
+  - name: simulate_dex_sandwich_risk
+    description: Simulates MEV sandwich attacks on autonomous agent DEX swaps, calculates price impact, and recommends private RPC bundle routing.
+  - name: wrap_data_envelope
+    description: Encapsulates untrusted external content into a code-owned crypto-nonce data envelope, neutralizing delimiter escaping.
+  - name: audit_command_scope
+    description: Audits a shell command against destructive patterns (rm -rf, DROP TABLE, iptables) and engagement scope limits.
+  - name: evaluate_detection_indicators
+    description: Matches logs, URLs, or network traffic against ARTEX Sigma and Suricata autonomous agent detection signatures.
+  - name: verify_evidence_receipt
+    description: Validates that a vulnerability claim (e.g. BOLA/IDOR) is supported by empirical HTTP request/response traces and issues a SHA-256 receipt.
+  - name: analyze_har_security_telemetry
+    description: Parses HTTP Archive (.har) logs for leaked credentials, API keys, and unencrypted HTTP endpoints.
+  - name: execute_sidequestion_subquery
+    description: Executes an isolated atomic subquery with hard token budgeting to prevent context bloat.
+  - name: audit_patch_security_regression
+    description: SAST git diff auditor detecting silent error suppression, command injection primitives, and dropped timeouts.
+  - name: audit_supply_chain_manifest
+    description: Dependency manifest scanner detecting typosquatting packages and suspicious postinstall hooks.
+  - name: validate_network_scope_boundary
+    description: Anti-SSRF network customs validating target URLs against loopback, private ranges, and CIDR rules.
 """
 
 
@@ -1477,7 +1514,7 @@ LANDING_HTML = """<!DOCTYPE html>
     </div>
 
     <div class="card" style="margin-top: 1.5rem;">
-      <h2>60 Production MCP Tools Available (Marcha Blanca Free Tier)</h2>
+      <h2>69 Production MCP Tools Available (Marcha Blanca Free Tier)</h2>
       <table class="tools-table">
         <thead>
           <tr>
@@ -1786,6 +1823,31 @@ LANDING_HTML = """<!DOCTYPE html>
             <td class="tool-name">simulate_dex_sandwich_risk</td>
             <td>FinTech & Trading Risk Envelope</td>
             <td>Simula ataques sandwich MEV en swaps automáticos de agentes en DEX (Solana/EVM), calculando el impacto y recomendando rutas privadas (Jito/Flashbots).</td>
+          </tr>
+          <tr>
+            <td class="tool-name">analyze_har_security_telemetry</td>
+            <td>Defensa & Forense Web</td>
+            <td>Inspecciona archivos HTTP Archive (.har) en busca de fugas de Bearer tokens, API keys, cookies inseguras y endpoints en texto plano.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">execute_sidequestion_subquery</td>
+            <td>Actuación & Optimización de Contexto</td>
+            <td>Ejecuta subconsultas efímeras con presupuesto de tokens acotado para responder dudas atómicas sin degradar el contexto principal.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">audit_patch_security_regression</td>
+            <td>Defensa & Auditoría SAST</td>
+            <td>Audita diffs y parches Git unificados detectando supresión silenciosa de errores, primitivas inseguras y debilitamiento de timeouts.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">audit_supply_chain_manifest</td>
+            <td>Seguridad en Cadena de Suministro</td>
+            <td>Escanea manifiestos de dependencias contra typosquatting, scripts maliciosos de instalación y paquetes comprometidos.</td>
+          </tr>
+          <tr>
+            <td class="tool-name">validate_network_scope_boundary</td>
+            <td>Defensa & Red Anti-SSRF</td>
+            <td>Aduana de red determinista que bloquea peticiones agénticas a loopback, redes privadas RFC 1918 y metadata cloud (169.254.169.254).</td>
           </tr>
         </tbody>
       </table>
@@ -2177,6 +2239,15 @@ TOOL_CATEGORY_MAP: dict[str, str] = {
     "detect_malicious_llm_router": "Seguridad Agéntica & Anti-Drainer",
     "audit_echoleak_markdown_exfiltration": "Defensa & Gobernanza",
     "simulate_dex_sandwich_risk": "FinTech & Trading Risk Envelope",
+    "wrap_data_envelope": "Seguridad Agéntica & Anti-Prompt-Injection",
+    "audit_command_scope": "Defensa & Gobernanza de Shell",
+    "evaluate_detection_indicators": "Detección & Threat Intelligence",
+    "verify_evidence_receipt": "Forense & Auditoría de Evidencias",
+    "analyze_har_security_telemetry": "Defensa & Forense Web",
+    "execute_sidequestion_subquery": "Actuación & Optimización de Contexto",
+    "audit_patch_security_regression": "Defensa & Auditoría SAST",
+    "audit_supply_chain_manifest": "Seguridad en Cadena de Suministro",
+    "validate_network_scope_boundary": "Defensa & Red Anti-SSRF",
 }
 
 DASHBOARD_HTML = """<!DOCTYPE html>
@@ -2629,7 +2700,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       <div class="section-header">
         <div class="section-title">
           <span>Matriz de Telemetría y Consumo por Herramienta MCP</span>
-          <span class="badge-cat" id="tools-badge">60 TOOLS</span>
+          <span class="badge-cat" id="tools-badge">69 TOOLS</span>
         </div>
         <div class="controls-group">
           <input type="text" id="tool-search" class="search-input" placeholder="Buscar herramienta o categoría..." oninput="filterTools()" />
@@ -2781,7 +2852,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
           <div style="font-size:0.75rem; font-weight:600; color:var(--muted); margin-bottom:0.4rem; text-transform:uppercase;">Ejecución de Tools en Vivo (MCP Playground)</div>
           <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
             <select id="playground-tool" class="search-input" style="flex:1;" onchange="updatePlaygroundTemplate()">
-              <option value="">Seleccionar herramienta MCP (1-60)...</option>
+              <option value="">Seleccionar herramienta MCP (1-69)...</option>
             </select>
             <button class="filter-btn active" onclick="executePlaygroundTool()">⚡ Ejecutar</button>
           </div>
@@ -2978,7 +3049,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         if (moltBadge && data.moltbook) {
           moltBadge.innerText = 'ACTIVO • ' + (data.moltbook.karma ?? 0) + ' KARMA • 2 AGENTES';
         }
-        setTxt('active-tools', (data.gateway?.total_tools ?? 60) + ' Tools');
+        setTxt('active-tools', (data.gateway?.total_tools ?? 69) + ' Tools');
         setTxt('white-march-days', data.gateway?.white_march_days_left ?? 1);
         setTxt('reserve-sats', (data.insurance_and_vault?.reserve_sats ?? 0).toLocaleString() + ' sats');
         setTxt('active-policies', data.insurance_and_vault?.active_policies ?? 0);
@@ -2989,7 +3060,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         setTxt('tool-executions', (data.gateway?.tool_executions ?? 0).toLocaleString());
         setTxt('unique-callers', (data.gateway?.unique_callers ?? 0) + ' Conectados');
         setTxt('gateway-sla', data.gateway?.success_rate ?? '100.0%');
-        setTxt('tools-badge', (data.gateway?.total_tools ?? 60) + ' TOOLS REGISTRADAS');
+        setTxt('tools-badge', (data.gateway?.total_tools ?? 69) + ' TOOLS REGISTRADAS');
 
         // Telemetría de Herramientas
         if (data.tools_telemetry) {

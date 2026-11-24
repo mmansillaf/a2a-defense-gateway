@@ -1,7 +1,7 @@
 import json
 from datetime import UTC
 
-from api_gateway import app
+from api_gateway import app, server
 from fastapi.testclient import TestClient
 
 client = TestClient(app)
@@ -56,7 +56,7 @@ def test_mcp_tools_list():
     response = client.post("/mcp", json=payload)
     assert response.status_code == 200
     data = response.json()
-    assert len(data["result"]["tools"]) == 60
+    assert len(data["result"]["tools"]) == len(server.list_tools())
     tool_names = [t["name"] for t in data["result"]["tools"]]
     assert "compute_procedural_deadline" in tool_names
     assert "compute_us_procedural_deadline" in tool_names
@@ -418,17 +418,17 @@ def test_a2a_agent_card_endpoints():
         data = resp.json()
         assert data["protocolVersion"] == "0.2.0"
         assert data["name"] == "A2A Defense Gateway"
-        assert len(data["skills"]) == 60, f"Esperadas 60 skills en Agent Card, obtenidas {len(data['skills'])}"
+        assert len(data["skills"]) == len(server.list_tools()), f"Esperadas {len(server.list_tools())} skills en Agent Card, obtenidas {len(data['skills'])}"
         assert "A2A-0.2" in data["capabilities"]["protocols_supported"]
         assert "l402" in data["securitySchemes"]
 
 
 def test_llms_txt_and_smithery_endpoints():
-    """Valida que /llms.txt y /smithery.yaml expongan las 60 herramientas activas."""
+    """Valida que /llms.txt y /smithery.yaml expongan las herramientas activas."""
     resp_llms = client.get("/llms.txt")
     assert resp_llms.status_code == 200
     text_llms = resp_llms.text
-    assert "60 Production Tools" in text_llms
+    assert f"{len(server.list_tools())} Production Tools" in text_llms
     assert "verify_meatspace_attestation" in text_llms
     assert "verify_kya_attestation" in text_llms
     assert "translate_x402_to_l402_settlement" in text_llms
@@ -439,7 +439,7 @@ def test_llms_txt_and_smithery_endpoints():
 
     resp_full = client.get("/llms-full.txt")
     assert resp_full.status_code == 200
-    assert "60 Production Tools" in resp_full.text
+    assert f"{len(server.list_tools())} Production Tools" in resp_full.text
 
     resp_smith = client.get("/smithery.yaml")
     assert resp_smith.status_code == 200
@@ -455,7 +455,7 @@ def test_metrics_summary_endpoint():
     assert resp.status_code == 200
     data = resp.json()
     assert data["status"] == "HEALTHY"
-    assert data["active_tools"] == 60
+    assert data["active_tools"] == len(server.list_tools())
     assert "total_events" in data
     assert "total_tool_calls" in data
     assert "threat_distribution" in data
