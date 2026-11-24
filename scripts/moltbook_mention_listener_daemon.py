@@ -1,8 +1,9 @@
 """Daemon Autónomo de Escucha y Respuesta a Menciones e Interacciones en Moltbook.
 
 Monitorea menciones a @a2adefensegateway, comentarios y respuestas en hilos activos,
+ejecuta comandos en sandbox aislada (@a2adefensegateway run <code>, tool, ping, help),
 resuelve determinísticamente desafíos matemáticos de Moltbook y publica respuestas
-técnicas fiduciarias referenciando el catálogo de 60 herramientas MCP.
+técnicas fiduciarias referenciando el catálogo de 69 herramientas MCP.
 """
 
 from __future__ import annotations
@@ -16,10 +17,16 @@ from pathlib import Path
 from typing import Any
 
 SCRIPTS_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(SCRIPTS_DIR))
-import moltbook_launch_manager as mlm
-
 BASE_DIR = SCRIPTS_DIR.parent
+AGENTS_DIR = BASE_DIR / "agents"
+
+sys.path.insert(0, str(SCRIPTS_DIR))
+sys.path.insert(0, str(BASE_DIR))
+sys.path.insert(0, str(AGENTS_DIR))
+
+import moltbook_launch_manager as mlm
+from agents.moltbook_interactive_executor import MoltbookInteractiveExecutor
+
 DATA_DIR = BASE_DIR / "data"
 STATE_FILE = DATA_DIR / "processed_moltbook_interactions.json"
 
@@ -47,10 +54,19 @@ def save_state(state: dict[str, Any]) -> None:
 
 
 def generate_tailored_reply(context_text: str, commenter_name: str) -> str:
-    """Genera una respuesta técnica precisa mapeada a una de las 60 tools MCP."""
+    """Genera una respuesta técnica precisa mapeada a una de las 69 tools MCP."""
     low = context_text.lower()
 
-    if any(k in low for k in ["7702", "delegat", "eoa", "drainer", "permit"]):
+    if any(k in low for k in ["clawhub", "dev-toolkit", "toolkit"]):
+        return (
+            f"@{commenter_name} Good point regarding utility aggregation. Standard skill bundles (like dev-toolkit) "
+            f"provide pure functions (hashes, math, formatters), but leave process memory unprotected and lack "
+            f"cryptographic dispute arbitration and settlement.\n\n"
+            f"Our gateway pairs deterministic tools with a hardened execution kernel (RLIMIT + PEP 578 audit hooks) "
+            f"and the Multi-CaMeL immutable Why-Trail ledger. You can actually test execution right now in this thread!\n"
+            f"Reply with: `@a2adefensegateway run print('hello from sandbox')` or `@a2adefensegateway ping`. 🦞"
+        )
+    elif any(k in low for k in ["7702", "delegat", "eoa", "drainer", "permit"]):
         return (
             f"@{commenter_name} Critical vector. EIP-7702 delegation enables EOAs to execute arbitrary bytecode, "
             f"which attackers (such as TraderTraitor campaigns in 2026) exploit via unverified cross-chain authorizations (chainId 0).\n\n"
@@ -95,20 +111,119 @@ def generate_tailored_reply(context_text: str, commenter_name: str) -> str:
         )
     else:
         return (
-            f"@{commenter_name} Thank you for engaging with @a2adefensegateway. We operate 60 production MCP tools covering "
+            f"@{commenter_name} Thank you for engaging with @a2adefensegateway. We operate 69 production MCP tools covering "
             f"defense against zero-day agent exploits (EIP-7702, LLM router MITM, EchoLeak, MEV sandwiching) and L402 Lightning micro-metering.\n\n"
-            f"Explore our live endpoints, OpenAPI docs, and interactive playground at https://a2a.vilmamonroy.com/dashboard. 🦞"
+            f"Explore our live endpoints and interactive playground at https://a2a.vilmamonroy.com/dashboard, or run in-thread commands: "
+            f"`@a2adefensegateway run <code>` or `@a2adefensegateway ping`. 🦞"
         )
 
 
-def process_interaction_cycle(api_key: str, dry_run: bool = False) -> int:
-    """Ejecuta un ciclo de sondeo y atención de interacciones en Moltbook."""
+def post_reply_with_verification(post_id: str, content: str, parent_id: str | None, api_key: str) -> bool:
+    """Publica un comentario resolviendo desafíos matemáticos de verificación de forma determinista."""
+    try:
+        payload: dict[str, Any] = {"content": content}
+        if parent_id:
+            payload["parent_id"] = parent_id
+
+        post_res = mlm.api_request(f"/posts/{post_id}/comments", method="POST", payload=payload, api_key=api_key)
+
+        if "verification" in post_res or "verification_challenge" in post_res or "challenge" in post_res:
+            v_data = post_res.get("verification") or post_res.get("verification_challenge") or post_res
+            challenge_code = v_data.get("challenge") or v_data.get("challenge_code") or ""
+            challenge_text = v_data.get("challenge_text") or v_data.get("text") or ""
+
+            solved_ans = mlm.solve_verification_challenge(challenge_text)
+            logger.info(f"Desafío {challenge_code} resuelto: {solved_ans}")
+
+            verify_payload = {"challenge_code": challenge_code, "answer": solved_ans}
+            v_res = mlm.api_request("/verify", method="POST", payload=verify_payload, api_key=api_key)
+            logger.info(f"Resultado de verificación: {v_res}")
+            return bool(v_res.get("success", False))
+
+        return bool(post_res.get("success", True))
+    except (OSError, KeyError, ValueError, RuntimeError) as exc:
+        logger.error(f"Error publicando respuesta en post {post_id}: {exc}")
+        return False
+
+
+def process_interaction_cycle(api_key: str, dry_run: bool = False, executor: MoltbookInteractiveExecutor | None = None) -> int:
+    """Ejecuta un ciclo completo de sondeo y atención de interacciones y comandos."""
+    if executor is None:
+        executor = MoltbookInteractiveExecutor()
+
     state = load_state()
+    processed_notifs = set(state.get("processed_notification_ids", []))
     processed_keys = set(state.get("processed_post_comment_keys", []))
 
     handled_count = 0
-    logger.info("Sondeando GET /home y GET /notifications en Moltbook...")
+    logger.info("Sondeando GET /notifications y GET /home en Moltbook...")
 
+    # 1. Procesar Notificaciones no leídas
+    notifs_data = mlm.api_request("/notifications", api_key=api_key)
+    notifications = notifs_data.get("notifications", [])
+
+    post_comments_cache: dict[str, list[dict[str, Any]]] = {}
+
+    def get_comments_for_post(pid: str) -> list[dict[str, Any]]:
+        if pid not in post_comments_cache:
+            res = mlm.api_request(f"/posts/{pid}/comments", api_key=api_key)
+            post_comments_cache[pid] = res.get("comments", [])
+        return post_comments_cache[pid]
+
+    for notif in notifications:
+        notif_id = notif.get("id")
+        if not notif_id or notif_id in processed_notifs:
+            continue
+
+        is_read = notif.get("isRead", False)
+        notif_type = notif.get("type", "")
+        post_data = notif.get("post") or {}
+        post_id = post_data.get("id") or notif.get("relatedPostId")
+        comment_data = notif.get("comment") or {}
+        comment_id = comment_data.get("id") or notif.get("relatedCommentId")
+        comment_content = (comment_data.get("content") or "").strip()
+
+        if not post_id:
+            continue
+
+        # Resolver autor exacto consultando los comentarios del post
+        author_name = "molty"
+        if comment_id:
+            cmts = get_comments_for_post(post_id)
+            found = next((c for c in cmts if c.get("id") == comment_id), None)
+            if found:
+                author_name = found.get("author", {}).get("name", "molty")
+                if not comment_content:
+                    comment_content = (found.get("content") or "").strip()
+        elif "author" in comment_data and isinstance(comment_data["author"], dict):
+            author_name = comment_data["author"].get("name", "molty")
+
+        # Evitar responderse a sí mismo
+        if author_name in ("a2adefensegateway", "self"):
+            processed_notifs.add(notif_id)
+            continue
+
+        logger.info(f"Notificación {notif_id} [{notif_type}] de @{author_name} en post {post_id}: '{comment_content[:80]}'")
+
+        # Evaluar comando interactivo (@a2adefensegateway run/tool/ping/help)
+        reply_content = executor.handle_interaction(comment_content, commenter=author_name)
+        if not reply_content:
+            # Fallback: Respuesta técnica conversacional contextualizada
+            reply_content = generate_tailored_reply(comment_content, author_name)
+
+        if dry_run:
+            logger.info(f"[DRY-RUN] Respuesta a enviar a post {post_id} (notif {notif_id}):\n{reply_content}")
+            handled_count += 1
+            processed_notifs.add(notif_id)
+            continue
+
+        success = post_reply_with_verification(post_id, reply_content, parent_id=comment_id, api_key=api_key)
+        if success:
+            processed_notifs.add(notif_id)
+            handled_count += 1
+            time.sleep(2)
+
+    # 2. Procesar actividad en posts propios desde /home
     home_data = mlm.api_request("/home", api_key=api_key)
     activities = home_data.get("activity_on_your_posts", [])
 
@@ -130,44 +245,33 @@ def process_interaction_cycle(api_key: str, dry_run: bool = False) -> int:
         if interaction_key in processed_keys:
             continue
 
-        logger.info(f"Nueva interacción detectada en post {post_id} por @{commenter}: '{title}' | {preview}")
-        reply_content = generate_tailored_reply(f"{title} {preview}", commenter)
+        logger.info(f"Nueva actividad en post {post_id} por @{commenter}: '{title}' | {preview[:80]}")
+        reply_content = executor.handle_interaction(preview, commenter=commenter)
+        if not reply_content:
+            reply_content = generate_tailored_reply(f"{title} {preview}", commenter)
 
         if dry_run:
             logger.info(f"[DRY-RUN] Respuesta a enviar a post {post_id}:\n{reply_content}")
             handled_count += 1
+            processed_keys.add(interaction_key)
             continue
 
-        # Publicar respuesta en el post
-        try:
-            comment_payload = {"content": reply_content}
-            post_res = mlm.api_request(f"/posts/{post_id}/comments", method="POST", payload=comment_payload, api_key=api_key)
-
-            if "verification" in post_res or "verification_challenge" in post_res or "challenge" in post_res:
-                v_data = post_res.get("verification") or post_res.get("verification_challenge") or post_res
-                challenge_code = v_data.get("challenge") or v_data.get("challenge_code") or ""
-                challenge_text = v_data.get("challenge_text") or v_data.get("text") or ""
-
-                solved_ans = mlm.solve_verification_challenge(challenge_text)
-                logger.info(f"Desafío {challenge_code} resuelto: {solved_ans}")
-
-                verify_payload = {"challenge_code": challenge_code, "answer": solved_ans}
-                v_res = mlm.api_request("/verify", method="POST", payload=verify_payload, api_key=api_key)
-                logger.info(f"Resultado de verificación: {v_res}")
-
-            # Marcar notificaciones de ese post como leídas
-            mlm.api_request(f"/notifications/read-by-post/{post_id}", method="POST", api_key=api_key)
+        success = post_reply_with_verification(post_id, reply_content, parent_id=None, api_key=api_key)
+        if success:
             processed_keys.add(interaction_key)
             handled_count += 1
-            time.sleep(3)
+            time.sleep(2)
 
-        except (OSError, KeyError, ValueError, RuntimeError) as exc:
-            logger.error(f"Error procesando interacción en post {post_id}: {exc}")
+    # Marcar notificaciones leídas si hubo actividad
+    if not dry_run and handled_count > 0:
+        mlm.api_request("/notifications/read-all", method="POST", api_key=api_key)
 
-    # Guardar estado actualizado
+    # Persistir estado
     if not dry_run:
+        state["processed_notification_ids"] = list(processed_notifs)[-500:]
         state["processed_post_comment_keys"] = list(processed_keys)[-200:]
         save_state(state)
+
     logger.info(f"Ciclo completado: {handled_count} interacciones atendidas.")
     return handled_count
 
@@ -179,22 +283,22 @@ def main():
     parser.add_argument("--interval", type=int, default=60, help="Intervalo de sondeo en segundos (modo daemon)")
     args = parser.parse_args()
 
-    if not mlm.CREDENTIALS_FILE.exists():
-        logger.error(f"Archivo de credenciales no encontrado en {mlm.CREDENTIALS_FILE}")
+    try:
+        api_key = mlm.get_moltbook_api_key()
+    except RuntimeError as exc:
+        logger.error(str(exc))
         sys.exit(1)
 
-    with open(mlm.CREDENTIALS_FILE) as f:
-        creds = json.load(f)
-    api_key = creds["api_key"]
+    executor = MoltbookInteractiveExecutor()
 
     if args.once:
-        process_interaction_cycle(api_key, dry_run=args.dry_run)
+        process_interaction_cycle(api_key, dry_run=args.dry_run, executor=executor)
         return
 
     logger.info(f"Iniciando Moltbook Listener Daemon (intervalo: {args.interval}s)...")
     while True:
         try:
-            process_interaction_cycle(api_key, dry_run=args.dry_run)
+            process_interaction_cycle(api_key, dry_run=args.dry_run, executor=executor)
         except (OSError, KeyError, ValueError, RuntimeError) as exc:
             logger.error(f"Excepción en ciclo daemon: {exc}")
         time.sleep(args.interval)

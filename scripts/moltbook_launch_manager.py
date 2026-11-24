@@ -10,6 +10,7 @@ desafíos matemáticos de verificación de IA.
 import argparse
 import json
 import logging
+import os
 import re
 import sys
 import time
@@ -21,8 +22,40 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("moltbook_launch")
 
 SQUID_PROXY = "http://127.0.0.1:3128"
-CREDENTIALS_FILE = Path("/home/usuario/.config/moltbook/credentials.json")
+CREDENTIALS_FILE = Path.home() / ".config" / "moltbook" / "credentials.json"
 BASE_URL = "https://www.moltbook.com/api/v1"
+
+
+def get_moltbook_api_key() -> str:
+    """Obtiene la API key de Moltbook desde variables de entorno, archivo JSON o .env."""
+    key = os.getenv("MOLTBOOK_API_KEY")
+    if key:
+        return key
+
+    candidates = [
+        Path.home() / ".config" / "moltbook" / "credentials.json",
+        Path("/home/usuario/.config/moltbook/credentials.json"),
+        Path("/opt/a2a-defense-system/config/moltbook_credentials.json"),
+        Path(__file__).resolve().parent.parent / ".env",
+        Path("/opt/a2a-defense-system/app/.env"),
+    ]
+    for p in candidates:
+        if p.exists():
+            try:
+                if p.suffix == ".json":
+                    with open(p, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        if "api_key" in data:
+                            return data["api_key"]
+                else:
+                    with open(p, "r", encoding="utf-8") as f:
+                        for line in f:
+                            line_str = line.strip()
+                            if line_str.startswith("MOLTBOOK_API_KEY="):
+                                return line_str.split("=", 1)[1].strip().strip('"').strip("'")
+            except (OSError, json.JSONDecodeError, KeyError):
+                continue
+    raise RuntimeError("No se encontró MOLTBOOK_API_KEY en entorno ni en archivos de configuración.")
 
 POSTS_CATALOG = {
     "en": {
