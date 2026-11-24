@@ -367,6 +367,7 @@ EXEMPT_PATHS = (
     "/llms.txt",
     "/llms-full.txt",
     "/smithery.yaml",
+    "/server.json",
     "/robots.txt",
     "/sitemap.xml",
     "/.well-known",
@@ -1156,6 +1157,7 @@ async def get_llms_txt():
 
 
 @app.get("/smithery.yaml", response_class=PlainTextResponse)
+@app.head("/smithery.yaml")
 async def get_smithery_manifest():
     """Retorna el manifiesto formal para registro en directorios Smithery.ai."""
     manifest_path = Path(__file__).resolve().parent.parent / "smithery.yaml"
@@ -1167,12 +1169,37 @@ async def get_smithery_manifest():
     return SMITHERY_YAML_CONTENT
 
 
+@app.get("/server.json", response_class=PlainTextResponse)
+@app.head("/server.json")
+@app.get("/.well-known/mcp.json", response_class=PlainTextResponse)
+@app.head("/.well-known/mcp.json")
+async def get_mcp_server_metadata():
+    """Retorna el manifiesto formal MCP de servidor según la especificación modelcontextprotocol.io."""
+    server_json_path = Path(__file__).resolve().parent.parent / "server.json"
+    if server_json_path.exists():
+        try:
+            return server_json_path.read_text(encoding="utf-8")
+        except Exception:
+            pass
+    return json.dumps({
+        "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+        "name": "com.vilmamonroy.a2a/defense-gateway",
+        "description": "A2A Defense & Monetization Gateway: L402 Lightning payments, M2M Financial Policy Proxy (FIN-01..05), Sagas, US/Peruvian LegalTech, and 69 MCP production tools.",
+        "version": "1.2.0",
+        "homepage": "https://a2a.vilmamonroy.com",
+        "remotes": [{"type": "streamable-http", "url": "https://a2a.vilmamonroy.com/mcp"}],
+        "tools_count": len(server.list_tools())
+    }, indent=2)
+
+
 ROBOTS_TXT_CONTENT = """User-agent: *
 Allow: /
 Allow: /mcp
 Allow: /llms.txt
 Allow: /llms-full.txt
 Allow: /smithery.yaml
+Allow: /server.json
+Allow: /.well-known/
 Allow: /docs
 Allow: /openapi.json
 
@@ -1192,7 +1219,17 @@ SITEMAP_XML_CONTENT = """<?xml version="1.0" encoding="UTF-8"?>
     <priority>0.9</priority>
   </url>
   <url>
+    <loc>https://a2a.vilmamonroy.com/server.json</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://a2a.vilmamonroy.com/llms.txt</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://a2a.vilmamonroy.com/smithery.yaml</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -1250,6 +1287,8 @@ LANDING_HTML = """<!DOCTYPE html>
   
   <!-- WebMCP & Agent Discovery -->
   <link rel="mcp-server" href="https://a2a.vilmamonroy.com/mcp">
+  <link rel="alternate" type="application/json" href="https://a2a.vilmamonroy.com/server.json" title="MCP Server Manifest">
+  <link rel="alternate" type="application/json" href="https://a2a.vilmamonroy.com/.well-known/mcp.json" title="Well-Known MCP">
   <link rel="alternate" type="text/plain" href="https://a2a.vilmamonroy.com/llms.txt" title="LLMs.txt">
   <link rel="alternate" type="text/yaml" href="https://a2a.vilmamonroy.com/smithery.yaml" title="Smithery Manifest">
 
